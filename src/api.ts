@@ -2,7 +2,7 @@ import type {DirectoryData} from './lib/directoryTree';
 import type {AnalysisProgress} from '../shared/analysis-progress.js';
 export const BASE='/api/bidv4';
 export type Stage='new'|'parsed'|'analyzed'|'outlined'|'drafting'|'delivered';
-export interface Task {id:string;title:string;created_at:string;stage:Stage;last_activity_at?:string}
+export interface Task {id:string;title:string;created_at:string;stage:Stage;last_activity_at?:string;review_status?:ReviewState['status'];review_mode?:'platform'|'external'}
 export interface SourceFile {name:string;size:number;modified_at:string}
 export interface WorkFile {path:string;content:string;hash:string;registry?:DirectoryData['registry']}
 export interface WorkEntry {path:string;size:number;mtime:string}
@@ -12,7 +12,10 @@ export interface Artifact {artifact_id:string;display_name:string;kind:string;co
 export interface BodySection {volume:string;title:string;path:string;status:'missing'|'ready'|'stale'|'unverified'|'draft'}
 export interface VolumeState {name:string;path:string;artifact_id:string|null;status:'missing'|'ready'|'stale'}
 export interface Bidder {company_id?:string;signer_id?:string;sign_date?:string;revision:number;confirmed:boolean;stale:boolean;snapshot:{company:{name:string;profile:Record<string,string>};signer:{name:string};sign_date:string}|null}
-export interface Flow {bidder?:Bidder;task:Task;execution:Execution|null;analysis_progress:AnalysisProgress[];files:WorkFile[];directory:{artifact_id:string;content_seq:number;content:DirectoryData}|null;source_selection:{main:string;supplements:Array<{file:string;role:string}>;excluded:string[]};body_files:string[];body_sections:BodySection[];build_preparation:{guide:'ready'|'missing'|'stale';promises:'ready'|'missing'|'stale'};build_preparation_changes?:{guide:string[];promises:string[]};orphan_body_files:string[];volume_states:VolumeState[];input_versions:Record<string,string>}
+export interface ReviewEvidence {document_id:string;start:number;end:number;quote:string}
+export interface ReviewReport {summary:string;requirements:Array<{id:string;category:string;text:string;status:'responded'|'missing'|'uncertain'|'conflict';tender:ReviewEvidence[];bid:ReviewEvidence[]}>;issues:Array<{id:string;requirement_id:string;severity:'high'|'medium'|'low';title:string;explanation:string;suggestion:string}>;coverage:Array<{category:string;note:string}>;limitations:string[]}
+export interface ReviewState {mode:'platform'|'external';bids:string[];status:'unreviewed'|'running'|'needs_input'|'reviewed'|'stale'|'failed'|'stopped';input_version:string;report:{session_id:string;created_at:string;input_version:string;report:ReviewReport;documents:Array<{id:string;name:string;kind:'tender'|'bid'}>;decisions:Record<string,{status:'pending'|'confirmed'|'fixed'|'ignored';note:string}>}|null}
+export interface Flow {review:ReviewState;bidder?:Bidder;task:Task;execution:Execution|null;analysis_progress:AnalysisProgress[];files:WorkFile[];directory:{artifact_id:string;content_seq:number;content:DirectoryData}|null;source_selection:{main:string;supplements:Array<{file:string;role:string}>;excluded:string[]};body_files:string[];body_sections:BodySection[];build_preparation:{guide:'ready'|'missing'|'stale';promises:'ready'|'missing'|'stale'};build_preparation_changes?:{guide:string[];promises:string[]};orphan_body_files:string[];volume_states:VolumeState[];input_versions:Record<string,string>}
 export class ApiError extends Error {constructor(public status:number,message:string){super(message)}}
 export async function request<T>(path:string, options:RequestInit={}):Promise<T> {
   const response=await fetch(BASE+path,{cache:'no-store',...options});

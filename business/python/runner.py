@@ -5,7 +5,7 @@ from pydantic import BaseModel,TypeAdapter,create_model
 request=json.load(sys.stdin);os.environ['DATA_DIR']=request['data_root']
 from app import db,artifact_store,runctx,task_stage
 from app.services.errors import BusinessError,FileDownload,IncomingFile,Response
-from app.services import page_flow, build_state
+from app.services import page_flow, build_state, review
 from app.tools import TOOLS
 from app import document
 from app.work_paths import normalize_work_path
@@ -23,7 +23,7 @@ def schemas():
 
 def state(tid):
     task=page_flow.require_task(tid);d=page_flow.directory(tid);work=artifact_store.work_dir(tid)
-    return {'task':task_stage.enrich([task])[0],'files':page_flow.files(tid),'directory':d,'source_selection':page_flow.source_selection(tid),'body_files':[p.relative_to(work).as_posix() for p in work.joinpath('body').rglob('*.docx')], **build_state.snapshot(tid), 'bidder':__import__('app.services.bidder',fromlist=['status']).status(tid), 'input_versions':page_flow.input_versions(tid)}
+    return {'task':task_stage.enrich([task])[0],'files':page_flow.files(tid),'directory':d,'source_selection':page_flow.source_selection(tid),'body_files':[p.relative_to(work).as_posix() for p in work.joinpath('body').rglob('*.docx')], **build_state.snapshot(tid), 'bidder':__import__('app.services.bidder',fromlist=['status']).status(tid), 'review':review.snapshot(tid), 'input_versions':page_flow.input_versions(tid)}
 
 def tool_context():
     runctx.set_run(request.get('session_id',''),request.get('call_id',''),request.get('task_id'))
@@ -45,6 +45,11 @@ async def dispatch():
     if op=='bidder_snapshot':
         from app.services.bidder import snapshot_for_task
         return snapshot_for_task(args['task_id'])
+    if op=='review_prepare':return review.prepare(args['task_id'])
+    if op=='review_documents':return {'documents':review.documents(args['task_id'])}
+    if op=='review_finish':return review.finish(args['task_id'],args['session_id'])
+    if op=='review_input':return review.set_input(args['task_id'],args['bids'])
+    if op=='review_decide':return review.decide(args['task_id'],args['session_id'],args['issue_id'],args['status'],args['note'])
     if op=='state':return state(args['task_id'])
     if op=='tasks':return {'tasks':task_stage.enrich(db.list_tasks())}
     if op=='create_task':

@@ -13,4 +13,5 @@ from .templates import list_templates
 from .validate_analysis import validate_analysis
 from .validate_body import validate_body
 from .web_fetch import fetch_url
-TOOLS = [ read_company_asset, build_preparation, assemble_tender,  publish_artifact, read_artifact, search_company_assets, search_references, check_name_residue, check_pipeline_state, validate_analysis, validate_body, update_task_progress, fetch_url, list_templates, docx_section_create, docx_section_read, docx_material_inject, docx_source_inject, docx_image_insert, docx_comment_add, docx_diagram_insert, docx_html_figure, docx_section_revise, docx_assemble_volume]
+from .review import save_review_report
+TOOLS = [save_review_report, read_company_asset, build_preparation, assemble_tender,  publish_artifact, read_artifact, search_company_assets, search_references, check_name_residue, check_pipeline_state, validate_analysis, validate_body, update_task_progress, fetch_url, list_templates, docx_section_create, docx_section_read, docx_material_inject, docx_source_inject, docx_image_insert, docx_comment_add, docx_diagram_insert, docx_html_figure, docx_section_revise, docx_assemble_volume]

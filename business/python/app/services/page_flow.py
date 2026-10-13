@@ -60,6 +60,10 @@ def set_sources(tid, main_file, supplements):
     names = {p.name for p in artifact_store.sources_dir(tid).iterdir() if p.is_file() and not p.name.startswith('.')}
     if not isinstance(main_file, str) or not isinstance(supplements, list) or any(not isinstance(s, str) for s in supplements):
         raise BusinessError(422, '来源选择参数无效')
+    from .review import selection as review_selection
+    bid_names = set(review_selection(tid)['bids'])
+    if bid_names.intersection([main_file, *supplements]):
+        raise BusinessError(422, '投标文件不能作为招标解读依据')
     selected = [main_file, *supplements]
     if not main_file or len(set(selected)) != len(selected) or any(n not in names for n in selected):
         raise BusinessError(422, '请选择已上传的招标原文与补充来源')
@@ -82,4 +86,5 @@ def input_versions(tid):
     planning = {**shared, 'assets':asset_basis(tid,['guide']), 'directory': {k: v for k, v in content.items() if k != 'numbering'} if content else None}
     body_input = {**shared, 'assets':asset_basis(tid,['guide','promises',*[s['path'] for s in build_state.sections(tid)]]), 'guide': md.get('body/写作指引.md'), 'promises': md.get('body/关键事实与承诺.md')}
     bodies = {p.relative_to(root).as_posix(): file_hash(p) for p in (root / 'body').rglob('*.docx')}
-    return {'analyse': digest(source_input), 'outline': digest({**source_input, 'analysis': analysis}), 'guide': digest(planning), 'promises': digest({**planning, 'assets':asset_basis(tid,['guide','promises']), 'guide': md.get('body/写作指引.md')}), 'body': digest(body_input), 'revise': digest({**body_input, 'body_files': bodies}), 'build': digest({**body_input, 'body_files': bodies})}
+    from .review import basis
+    return {'review': basis(tid), 'analyse': digest(source_input), 'outline': digest({**source_input, 'analysis': analysis}), 'guide': digest(planning), 'promises': digest({**planning, 'assets':asset_basis(tid,['guide','promises']), 'guide': md.get('body/写作指引.md')}), 'body': digest(body_input), 'revise': digest({**body_input, 'body_files': bodies}), 'build': digest({**body_input, 'body_files': bodies})}

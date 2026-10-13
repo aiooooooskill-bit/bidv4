@@ -113,4 +113,8 @@ def compute_task_meta(tasks: list[dict]) -> dict[str, dict]:
 def enrich(tasks: list[dict]) -> list[dict]:
     """给任务行附加 stage / last_activity_at（GET 列表、POST、PATCH 三处复用）。"""
     meta = compute_task_meta(tasks)
+    from .services.review import snapshot
+    for t in tasks:
+        r = snapshot(t["id"])
+        meta[t["id"]].update(review_status=r["status"], review_mode=r["mode"])
     return [{**t, **meta.get(t["id"], {})} for t in tasks]

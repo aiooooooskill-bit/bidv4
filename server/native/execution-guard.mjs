@@ -24,10 +24,11 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
   return next();
  },{global:true});
  const guard=ctx.on('tools/execute',async(exec,next)=>{
-  if(!exec.agent||(!mutations.has(exec.name)&&!['read','read_image','glob','grep'].includes(exec.name))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
+  if(!exec.agent||(!mutations.has(exec.name)&&!['read','read_image','glob','grep','save_review_report'].includes(exec.name))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
   const tid=basename(exec.agent.session.header.cwd??''),cwd=join(dataRoot,'workspace',tid);
   if(resolve(exec.agent.session.header.cwd??'')!==resolve(cwd))return next();
   let record;try{record=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'))}catch(e){if(e.code==='ENOENT')return next();throw e}
+  if(record.kind==='review'){if(record.stopped_at)throw new BusinessError(409,'审查已停止');if(!['read','read_image','glob','grep','check_pipeline_state','save_review_report'].includes(exec.name))throw new BusinessError(409,'审查只读取投标文件和保存报告，不能修改制作成果');return next()}
   if(!['body','revise','build','guide','promises'].includes(record.kind))return next();
   let agent=exec.agent;
   while(agent.session.id!==record.session_id&&agent.session.header.origin==='subagent'&&agent.session.header.parentSession){agent=ctx.agents.get(agent.session.header.parentSession);if(!agent)break}

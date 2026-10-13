@@ -49,14 +49,16 @@ export async function apply(ctx){
    if(path.startsWith('/assets/')){if(!['GET','HEAD'].includes(method))throw new BusinessError(405,'操作不支持');const dir=resolve(root,'dist'),asset=resolve(dir,decodeURIComponent(path.slice('/assets/'.length)));if(!asset.startsWith(dir+sep))throw new BusinessError(404,'文件不存在');const mime={'.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm'};await file(res,asset,null,mime[extname(asset)],method==='HEAD');return}
    parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req):{body:{},cleanup:async()=>{}};
    const body=parsed.body;
-   if(path==='/tasks'&&method==='GET'){send(res,await business(scope.ctx,'tasks'));return}
+   if(path==='/tasks'&&method==='GET'){send(res,await runtime.tasks());return}
    if(path==='/tasks'&&method==='POST'){send(res,await business(scope.ctx,'create_task',body),201);return}
    let match;
    if((match=path.match(/^\/tasks\/([^/]+)$/))&&method==='DELETE'){await runtime.assertIdle(match[1]);send(res,await business(scope.ctx,'archive_task',{task_id:match[1]}));return}
-   if((match=path.match(/^\/page-flow\/([^/]+)(?:\/(action|sources|checks|export|stop|answer|accept-section))?$/))){
+   if((match=path.match(/^\/page-flow\/([^/]+)(?:\/(action|sources|checks|export|stop|answer|accept-section|review-input|review-decision))?$/))){
     const [,tid,operation]=match;
     if(!operation&&method==='GET'){send(res,await runtime.state(tid));return}
     if(operation==='action'&&method==='POST'){send(res,await runtime.action(tid,body),202);return}
+    if(operation==='review-input'&&method==='PUT'){send(res,await runtime.saveReviewInput(tid,body));return}
+    if(operation==='review-decision'&&method==='PUT'){send(res,await runtime.reviewDecision(tid,body));return}
     if(operation==='sources'&&method==='PUT'){send(res,await runtime.saveSources(tid,body));return}
     if(operation==='stop'&&method==='POST'){send(res,await runtime.stop(tid,body.session_id));return}
     if(operation==='answer'&&method==='POST'){send(res,await runtime.answer(tid,body.session_id,body));return}

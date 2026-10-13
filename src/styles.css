@@ -207,3 +207,19 @@ a.bp-btn { text-decoration: none; display: inline-block; line-height: 1.5; }
 .bp-modal-mask[data-feedback="true"] { z-index:10000; }
 .bp-modal-mask[data-feedback="true"] .bp-modal { width:min(480px,92vw); max-height:85vh; overflow:auto; }
 
+/* Tender comparison report: one shared visual system for both review entry points. */
+.review-workspace{display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden}
+.review-scroll{flex:1;min-height:0;overflow:auto;padding:16px 20px}
+.review-scroll h2{font-size:18px;margin:0 0 12px}.review-scroll h3{font-size:14px;margin:20px 0 8px}
+.review-sources,.review-overview,.review-coverage{border:1px solid var(--bid-color-border);border-radius:10px;background:var(--bid-color-surface);padding:20px;margin-bottom:16px}
+.review-sources>div:first-of-type{display:grid;grid-template-columns:80px minmax(0,1fr);gap:8px 12px;overflow-wrap:anywhere}.review-sources .bp-row{margin-top:14px;flex-wrap:wrap}
+.review-file-picks{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:18px 0}.review-file-picks label{display:flex;flex-direction:column;gap:10px;min-width:0;padding:18px;border:1px dashed var(--bid-color-control-border);border-radius:8px}.review-file-picks input{max-width:100%}.review-file-picks span{overflow-wrap:anywhere;color:var(--bid-color-text-secondary)}
+.review-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.review-metrics .bp-stat{display:flex;align-items:center;gap:16px}.review-metrics strong{font-size:28px}
+.review-filter{display:flex;align-items:center;gap:12px;padding:16px 0}.review-filter label{display:flex;gap:6px;align-items:center}
+.review-issue-layout{display:grid;grid-template-columns:minmax(240px,35%) minmax(0,1fr);gap:20px;margin-top:16px;align-items:start}
+.review-issue-list{display:flex;flex-direction:column;gap:8px}.review-issue{display:grid;grid-template-columns:1fr auto;gap:10px;text-align:left;font:inherit;color:inherit;background:var(--bid-color-surface);border:1px solid var(--bid-color-border);border-radius:8px;padding:14px;cursor:pointer}.review-issue strong,.review-issue>span:last-child{grid-column:1/-1}.review-issue>span:last-child,.review-issue small{color:var(--bid-color-text-secondary);font-size:12px}.review-issue[data-active=true]{border-color:var(--bid-color-primary);background:var(--bid-color-selected)}
+.review-issue-detail{min-width:0;padding:20px;border:1px solid var(--bid-color-border);border-radius:10px;background:var(--bid-color-surface)}.review-evidence{margin:10px 0}.review-evidence small{overflow-wrap:anywhere;color:var(--bid-color-text-secondary)}.review-evidence blockquote{margin:8px 0;padding:12px;border-left:3px solid var(--bid-color-control-border);background:var(--bid-color-page);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
+.review-issue-detail label{display:flex;flex-direction:column;gap:8px}.review-issue-detail textarea{font:inherit;padding:10px;border:1px solid var(--bid-color-control-border);border-radius:6px;resize:vertical}.review-decisions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.review-coverage table{width:100%;border-collapse:collapse}.review-coverage td,.review-coverage th{padding:10px;text-align:left;border-bottom:1px solid var(--bid-color-border)}
+@media(max-width:760px){.review-file-picks,.review-issue-layout{grid-template-columns:1fr}.review-scroll{padding:12px}.review-issue-list{max-height:320px;overflow:auto}.review-metrics{gap:6px}.review-metrics .bp-stat{padding:12px;flex-direction:column;gap:6px}}
+
+.review-upload>.bp-row,.review-sources .bp-row{display:flex;align-items:center;gap:10px}.review-upload>.bp-row{flex-wrap:wrap}
