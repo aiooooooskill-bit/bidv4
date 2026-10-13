@@ -1,0 +1,3048 @@
+{
+  "name": "ooo-bidpliot",
+  "releaseVersion": null,
+  "startedAt": "2026-10-13T05:26:40.248Z",
+  "workspace": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3",
+  "installation": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install",
+  "hostHome": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/dsh-home",
+  "system": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.15.0",
+    "dsh": "0.2.0-rc.2"
+  },
+  "stages": [
+    {
+      "name": "干净白名单目录与空环境",
+      "passed": true,
+      "milliseconds": 156,
+      "evidence": {
+        "exportOutput": "无版本本地目录已导出：/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install\n",
+        "emptyNodeEnvironment": true,
+        "emptyPythonEnvironment": true,
+        "containsUserData": false,
+        "releaseVersion": null
+      }
+    },
+    {
+      "name": "全新Node与Python依赖准备及构建",
+      "passed": true,
+      "milliseconds": 8168,
+      "evidence": {
+        "prepareOutput": "npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\n\nadded 795 packages in 4s\nUsing CPython 3.13.13\nCreating virtual environment at: /var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/business/python/.venv\nResolved 42 packages in 4ms\nInstalled 39 packages in 62ms\n + annotated-types==0.8.0\n + anyio==4.15.1\n + babel==2.18.0\n + certifi==2026.7.22\n + charset-normalizer==3.5.2\n + courlan==1.4.0\n + dateparser==1.4.3\n + h11==0.16.0\n + htmldate==1.11.0\n + httpcore==1.0.9\n + httpx==0.28.1\n + idna==3.20\n + iniconfig==2.3.1\n + jieba==0.42.1\n + justext==3.0.2\n + lxml==6.1.3\n + lxml-html-clean==0.4.5\n + markdown-it-py==4.2.0\n + mdurl==0.1.2\n + packaging==26.3\n + pillow==12.3.0\n + pluggy==1.6.0\n + pydantic==2.14.0\n + pydantic-core==2.50.0\n + pygments==2.21.0\n + pypdfium2==4.30.0\n + pytest==9.1.1\n + python-dateutil==2.9.0.post0\n + python-docx==1.2.0\n + pytz==2026.5\n + regex==2026.9.29\n + reportlab==5.0.1\n + six==1.17.0\n + tld==0.13.2\n + trafilatura==2.3.1\n + typing-extensions==4.16.0\n + typing-inspection==0.4.4\n + tzlocal==5.4.4\n + urllib3==2.8.0\n\n> check\n> tsc --noEmit\n\n正式插件和 PDF 本地资源已构建\nooo-bidpliot 固定目录准备完成，可通过 dsh 官方本地目录安装\n",
+        "doctor": {
+          "ok": true,
+          "directory": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install",
+          "name": "ooo-bidpliot",
+          "version": null,
+          "node": "24.15.0",
+          "python": {
+            "version": "3.13.13",
+            "prefix": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/business/python/.venv"
+          },
+          "checks": [
+            {
+              "name": "Node.js",
+              "ok": true
+            },
+            {
+              "name": "操作系统",
+              "ok": true
+            },
+            {
+              "name": "插件清单",
+              "ok": true
+            },
+            {
+              "name": "package.json",
+              "ok": true
+            },
+            {
+              "name": "package-lock.json",
+              "ok": true
+            },
+            {
+              "name": "cordis.patch.yml",
+              "ok": true
+            },
+            {
+              "name": "server/agent.mjs",
+              "ok": true
+            },
+            {
+              "name": "server/native/roles.json",
+              "ok": true
+            },
+            {
+              "name": "business/python/runner.py",
+              "ok": true
+            },
+            {
+              "name": "business/python/pyproject.toml",
+              "ok": true
+            },
+            {
+              "name": "business/python/uv.lock",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/resources/tender_base_template.docx",
+              "ok": true
+            },
+            {
+              "name": "dist/client.js",
+              "ok": true
+            },
+            {
+              "name": "dist/renderer/figureRenderer.js",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/pdf.worker.min.mjs",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/document-parse/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-analysis/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-outline/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-body/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-qa/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/humanizer-zh/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/cmaps",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/standard_fonts",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/wasm",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 busboy",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 docx-preview",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 html2canvas",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 mermaid",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 pdfjs-dist",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 react-markdown",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 remark-gfm",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 remark-parse",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 unified",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 micromark-util-decode-string",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-fs-local",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-session-projection",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-session",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-system-prompt",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tools",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-skill",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-agent",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-session-persistence-jsonl",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-agent-preset-registry",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-subagent",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-user-questions",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-agent-loop",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-session-checkpoint-policy",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-token-meter",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-compaction-basic",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-persona",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-fs",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-fs-search",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-skill",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-ask-user",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-skill-filesystem",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/cordis",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/cordis-plugin-loader",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-llm",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-scope",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-agent-preset",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-client-ui-layout",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-client-locale",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 react",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 react-dom",
+              "ok": true
+            },
+            {
+              "name": "dsh版本",
+              "ok": true
+            },
+            {
+              "name": "Python环境",
+              "ok": true
+            }
+          ],
+          "errors": []
+        },
+        "developmentEnvironmentReused": false
+      }
+    },
+    {
+      "name": "官方CLI本地link安装",
+      "passed": true,
+      "milliseconds": 424,
+      "evidence": {
+        "cli": "dsh: initialized profile web at /var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/dsh-home/profiles/web\n\ndependencies:\n+ ooo-bidpliot link:/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install\n\nAlready up to date\nDone in 238ms using pnpm v11.25.0\n",
+        "dependency": "link:/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install",
+        "bundle": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app",
+          "ooo-bidpliot"
+        ],
+        "independentTarget": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install"
+      }
+    },
+    {
+      "name": "公开/私有Agent预设与页面实际业务全流程",
+      "passed": true,
+      "milliseconds": 35485,
+      "evidence": {
+        "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+        "companyId": "co_d77d36dda45d",
+        "sessions": [
+          "bid-de0e6cb6-5f38-4f4a-b3e6-2ebbb9d2c465",
+          "bid-0228d2ee-ba6c-4e9b-8300-79c585372076",
+          "bid-f950f2fc-ef55-4034-a86d-d775459bd774",
+          "bid-22c98350-a40f-4642-bfc2-98d6355bf066",
+          "bid-e0468aa6-7de0-4477-afed-defc3d23852b",
+          "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe"
+        ],
+        "businessSessions": {
+          "bid-de0e6cb6-5f38-4f4a-b3e6-2ebbb9d2c465": {
+            "eventCount": 37,
+            "eventHashes": [
+              "02a85d2f0c3d4e135b383d75fad91567ad090da8c79e81940fbe368a8a839ec7",
+              "af281b7dadc34143be8222a2b290233ac8e02e809e8aeea1cea56686bb33522b",
+              "1e9c58bb29c7d6647d7473e245200eb98ffab55e9e6b645b5c33400253c2c83b",
+              "f0581f5e9f59dad387a2c50641d4a481cc393ffa3902a7adc4accc3e84d06498",
+              "bc277fcfdd95ade685a6e2d1356b13e5e2eedf265968af6b63a230eb9053c4e1",
+              "476e93a8a88d28ef4386b92a705c34ffd3bec5988c0c52b743ceda25cba8e6b0",
+              "87049d4ab69a20083f65edbe4d0aa616bfebae9aac6ad8f294eb01274846e34f",
+              "686a93da5b21fed06b7b172db214fc814c4eb4b7c8d9d3648d7d231b685cf469",
+              "cf705ec0fc0e270d3d54c25df736087e07977ce98155b2219c2fa3326fd259b0",
+              "e734d69b7806e98a2049d9cac22dd80738cbd6cdfbc89b5d95494db3f874d7ce",
+              "c9d6a7768aa338bfb7b0706322a99f44185633b12a3274a8edfd22ea79f3a5b3",
+              "a7672da74f4f84fe220f359c5784784dfac8ff2ae3f4dc1d1443e1174255d8fb",
+              "5d672f287d53dc9141eddc8f8bdba15ec67ffdd68b1f3da975e159a7577e922b",
+              "251e62114da4222a830e556b75568f94d6c8a70dd51aad2bb07a1f2278ba9d6d",
+              "aeb6f84c9db06584ebbadc186d861e82dc510e9652c4db01ff56f80d4668375b",
+              "d7f9f61f090768a5ee22b2bc15bffa1a7405e6203f71e7f18c9609a59f8fcf81",
+              "6c8a3b17c6b72899a4f7ccf903d0a355f151fe7599166cc2522181dbbc06feab",
+              "00d6bc009d3fa0055c70b5b5ebca4323c4691eee76ddc819deb95448fbe36005",
+              "02cb197ec778f4fca7acafb575e6d187de0aade9bb1f5c48448b28a49fe8677f",
+              "088a0d58831099edee3b1ff41f59893be84e24d06502e9e240ef812cc9205f7c",
+              "95c1a5d4ad0add12e4f33d9b3aebb4dd1d0f3eb0efee8264e85c457ac18eea24",
+              "b6666cbca8e19be3d4f7bc198179af700373ade9bd33729fc39746a12b85fd80",
+              "58c977f9658db7d508c8687b61b049190095e40cc500acc97715382665a8290e",
+              "115e2b6583395a385c91042d5ec7fb0cdbe77e1c61bfeb54d6cbb4f1cf76647b",
+              "52077429b2acb9690709d6cd2fc03414c38121082676454dd182a4d85892953b",
+              "de7eb28ad05af650869b7e3b06ca44c5cae73e805ff32b2389c9a37999458e25",
+              "39fdcad18c33094c32a5445e8b91158622e56c2370d45e9e64354e2be800a75d",
+              "6eb760be052f2386321669b00e975e134cb4206730e8ef0ee4c01c1afe517137",
+              "800490deeef0fa4f8be64ee69ac13448a2a2d3a508172fcbbd064a3a6b11f3c5",
+              "6a5dca2ff6e3ce714f38494842ff6fe4f4ce678004cb6b2a6df7b98ef9a7f901",
+              "603bd91fbb754b027d81702e943cd6c6e680337bc530ede5e505cb0c03cee917",
+              "868d89e699cb4d1cff03d80fea9263cbb1fed28d0d65c25f5dcfd021d658d842",
+              "c3de7f00902514e171f95507225b9c3fdaef16fa5d6ff65de696418f2631fb1e",
+              "b0a2055abb08f59493653101f2404e21a155d155c5452cb9c3fc520b30c49835",
+              "9e88acd4133c5bf01a51f9e128d1628dfe4b6c4491f6173ecd2ecdcbb1e511fd",
+              "00828c62c5c5a4abad1df8e2220cb1e972cf9ed172e6f19f06963675094cdd99",
+              "f2e625d11ef9ebd59e2bb20ee985133fd7ad594117f8d99a83b2d230366520fe"
+            ],
+            "lastTurn": "completed"
+          },
+          "bid-0228d2ee-ba6c-4e9b-8300-79c585372076": {
+            "eventCount": 22,
+            "eventHashes": [
+              "53c5defa78157e216df241866e068766ab784352ea9de8e362b1c019c5dc77d2",
+              "9cda05ac4e3a4cb399de9e766786b29fd8b689ed145e499fc860b13bea16d0b4",
+              "21fef9e692a8d86e1aa5be60ba577a860f783ebf9c75b6efbccb41d8817253ad",
+              "3a9e46f88d55ba4014885b8254023a9a8306f2aca9a2c9a1d61cd944ca5dfba2",
+              "ecb8e477fd75d47e9b2208ba0fb87c08aaeb89670ea30aa36bb8a3d97dfa01f6",
+              "31671e1c911bf6295172e835666acd52c4a2dc3c392fac8e9bfca4541b679b6c",
+              "ad18f3ba1b901e70a7c26777a02db6ee65c9d02f65cc3f93068e24492ce4a124",
+              "03ff0e91a0bc2082b5aaac2c4e0b28a5c4c966b882a6d621bc7bb55898fc716c",
+              "fbb9132f26d5eba01a528b3881bcadcf07daed360094aa27c078ead983167fbc",
+              "471e6fd56e6298d9794527547200082a79763ae2e4ef532211ab88ff599e649a",
+              "f5321f3a6eb28c6807fcee22b80158da978321b9cf5d36ef7764a6e605ac85cb",
+              "1f40d446d8c9fdd40004b68f254bec622142d859560071e011e25a6844f39f48",
+              "d74c571e258f2c4a454d78ab11d9b6e3b2c945f3d799607e55e56f286f518db2",
+              "d418bc655fd802bc7509566e9f20d062352989524fe498f99d914e9cd3bf3821",
+              "2fc8d655db06af4ad811192c3e1f49cbf630e86e33b9adc29e5470cc19277724",
+              "6c5afbedd3477c1fcc5d2f36819156cc8882be9f64e7311d97a555deea79ee7e",
+              "16b54e9c072c2272d22e9665b5cff2fde78cb8054b5a4002e12284f185742861",
+              "2aec61e3f32808cb6dfc85c9da7fa962c5375390ce698c98e889f05e041cecec",
+              "0162600ba293b297bd42494890d03dd5a82f5b9a8b46cc72fd61de01e4c30932",
+              "16b4abf5e4c88bdb9a4821d1b0dfbd349b38f6f9c2cdcb4780f86f4c5ab9c539",
+              "348c47de0f09cb43b93b651cf710a49c80b6e89b5d681cc8e1420011c9b2e075",
+              "3f2265855eb39c55a1108075288306fe0cc6cf4b28dcf4e3c035a0c88cb0454e"
+            ],
+            "lastTurn": "completed"
+          },
+          "bid-f950f2fc-ef55-4034-a86d-d775459bd774": {
+            "eventCount": 17,
+            "eventHashes": [
+              "0b88026dd5a342a134b7de2d334d5e5f7f18d0f3bcbc517ce08986ab23642c53",
+              "09f232bda4d5a1c8e92b7aa84008afa0215747d2554da600c01864a64ae09be0",
+              "3f44709d1a0523ccf3af299d3ed399ed7150f055193f2d1ed35a2fb3aa035f8a",
+              "7d3d6eaa97a0117884f4046b8e08db97a4acc9c22660412e339ec942bc26f00d",
+              "fd8e2fe4bfec4753aee35c5af4ae3b5198949475561464672381a69da18c87c6",
+              "3a6547f344ccb3641a8d849694457b133bda62b184220419416e43444525805e",
+              "9105859be48e300efd5116aefb86cab96d4b26ff383002092c629b97761c8eaa",
+              "91de7b6df51e59b6a5e1ede3c5e11c0df822662853ec14dc910462e0f84b5112",
+              "c8f9eb0d11a060531330cd77152c37b6e297a450f400dada16b7f14ee9e1f936",
+              "ce76d0ed85b5abbd6ada04abc09fd28ca0fd54bbc942616a220f0bce8db43a19",
+              "181bc35d3d6822106df81dda5b8f3f6a4805a50140328ca26f1fb452123f42f7",
+              "e57da7e2252fa887993616b60c5ff23f65a66e5b380237f2da96d6137881d93e",
+              "4fc0f928f08ccf8af200311be49e2779f58a3d1c8d61b9b898b1c8fca0ffa24c",
+              "7c34bbdd8532ffabe1d493190eada23ed80a36d9f4ac7ea7941de99174dbf343",
+              "668246fccbcc353636138a45ac9858acb7028bdb6aecc365684f8ba74c29dcd2",
+              "63922db38b0c4617f63b527f7135091d1bef10cbf6ea2faa5b67fb5b188d7665",
+              "3db921b76f06d8448c8234696cafa796d88aca7227be363c58b4f8c1ec9e6893"
+            ],
+            "lastTurn": "completed"
+          },
+          "bid-22c98350-a40f-4642-bfc2-98d6355bf066": {
+            "eventCount": 17,
+            "eventHashes": [
+              "739cf3716ec74e90a4cb9dacf12cbc526d2ed918baab1c8e5231fb16dd28900b",
+              "60552c91059831c67cded35bb1504ecf7e8dcec39d455e23877c4bebeabcd5aa",
+              "7cc304db09b00a1b1231abc7f20088bb56429451679027d61ca5df20bed60a59",
+              "d765e658a8e8abb0228c6a33196e3e49500924f3fa31caba9f004beb503e4b1f",
+              "ac1bc3ab4f891fefd83f3eb021d1e24c82c7f4b59d58302dbd3749bc8bee128b",
+              "a0bad54babb790041fa5631be14ecbe4a3ec678e0295ca89d7a0854eef202d41",
+              "170ab598a4ed9fb0f05fa9fe5bb0df53c11ba875663da2101ca143387d11058b",
+              "37eb857aedf8ed75c310234c919de8b5dbcb7e0cd93b1716aa933001fe0241cd",
+              "3bfdd2433a832df29e652665c531bc23d2d0431ee51820b35da3ce4506121a73",
+              "9fe91e978c01297e7f687dc80764e3ce9035fe031d50aa861b2e307cef587ce9",
+              "5cb85b10e0d88533719e393dfebc12aa1da00541af4617303b3c749ac29db087",
+              "4802a31a9e01927e8b797e13036c82e12e81c89f7c63228e6fccbe7a7fc49f80",
+              "460cc85f97353afb124a500f054e66cc0ef20be230d23cb6c858deb2d4cdeb36",
+              "058183ccb517da088647c5d035b8bf378b8f764d25f55c3e8a3f5acaf2d0f7cf",
+              "e86470e6755fc2d45c13997511b779ff6c55a288ef8ab998acc3b91dd4c72608",
+              "31d9b94398cde6c41a11fd7964cf5d09754c07ac4e2bfbc57f2136331fa4278c",
+              "b46bc0ceb78478b186481caac946cafe1eae40974e1c62c619315bd358a7417a"
+            ],
+            "lastTurn": "completed"
+          },
+          "bid-e0468aa6-7de0-4477-afed-defc3d23852b": {
+            "eventCount": 25,
+            "eventHashes": [
+              "28d08803c3cce866d4fefdbf35f382a0826feb22dd97f11be8d507b1663c08cb",
+              "b091132d49d6d43e7bc5abbd9459ebc09cb214dc6da2841ec98765291c8deb40",
+              "73931ef933851c588ec7b2aaa90a8829ab306f1518fa15dc352f2ced73b257e0",
+              "0971f3ab96169728342e9433efd6d7a5bfa67bbe4e70e3f0304651d41551e57b",
+              "9cc26f47d94a6ae931b4cf7bd782514e6a849dfdde04e279d34359bc2d480eb8",
+              "c1436771d031d13dab4e9f056df63a8db87dcbef7bd5b3d416a37a359f5fcb18",
+              "37240f2755978e8007d8afb67ba09aec8e79e8d7290249e7f6c1e81484562af2",
+              "f0a362510cf37c98f1af421ce685af8c6f86c3b195869ee5bb19ab3b59ff060a",
+              "ac8578bcb751bd9dd0e36a9b3cac0e843aee73e955b7d58eeaf490c34f220ee6",
+              "16602a3979a94e45fd89ffc8384900dc16292f3c0d441b8cc80e31f750b94782",
+              "44f329845c2547f2b9ed8f600b6d8fbaa491670b8d7232ffd99f59237f770241",
+              "33af986d7e4b9b6c88997e8d6d83e10e035f15d1f10b5cddcbac30957b0f4ca9",
+              "709e13d21fc65f9ec4014c604e7433a0a540573e28db0a10bd9a9ddd1d7aff11",
+              "6da5b5c095fe5634103ec75b1549c3bf495c040cdd9bc525ff40a51bfb78be0c",
+              "07294adc273cb2fdc4ca105923b9326d1fb0c703f8d65dcf31aa09574a494c96",
+              "8af17425ead6cdceb4fc234210266eddd4274d64b7418655f811c73f5808b793",
+              "c0f0988eba721703c6fbf28ac400ecadfe67046a7fda613066273788c78d09ff",
+              "2822ea0fc85e960e871e7f9591f314669f82203285f7105e5ed7f08eb4bbebbc",
+              "33b728afd1e84c60f051a9b202f7b0951b7dbe637cc2d9eca861db9803adca5f",
+              "236dca045993c5fc47955306bfce0253391d6bf5987bf676853b76092d238c69",
+              "846ad4acb49ff9923082852973812c5b85f8ad3a511ff9315470d2116ddb5542",
+              "490cdb389bcd88100e641f1a9c6581c24d3850a0d839c1d81c2d3b7de33a94cf",
+              "2bf9b5d1ac05fe1c787a1246511c9b2872e5d0f547255557631a97f6bc58e6d9",
+              "fc9e4cedb862f138012217af177a30704ddc18d23fa3487a13e8d3485145bccf",
+              "c3fb160fb34caac45b82b76fbd9cde3938dec4440911482d7e8ab71704910752"
+            ],
+            "lastTurn": "completed"
+          },
+          "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe": {
+            "eventCount": 22,
+            "eventHashes": [
+              "13c9cbcab11d376cc0a439cb9292a4af82f2fb3682d25b03023a8d7507b922fb",
+              "f46fdcb15a122c4a491fd96dd01072aed1cdea533e6335ecee35031e10d05e56",
+              "23c206367e831af017daa0561eaee0de40070f3690385d980d9bcccd8581555a",
+              "e2b1e01ca52d13e12e8f7d732bc7e68e720b614734aa6fe05be3b10cabb90add",
+              "2aeff4d0fbe89269417def241c5b1a83aa6fdf1d6466782b9eeb92fe11ee88dc",
+              "4a003d2466f94bee631087fb2b50bf5f6843bca7a2fe15c93eaa2ddb08f73480",
+              "9f7d457e1b4e7c3e9312212236b60252e0e7cf5eca936b91988392b2a032a146",
+              "548b64aeadddf8a615e2c7b7dc56b99c2454a54fdc672838d2e3ab546fbc52f4",
+              "184740348116e3e4b6c255734084052eed9908d27e8023e4bf8c0d53f9ab50e1",
+              "e5f9c56cc1e3ec78ef1adf18b0c3257887ba80ec5bbd010c5dde460fcb524779",
+              "210c7e801462785b050209413397956127252f7176b90ed02459a4152d497037",
+              "79687760c71ac8fe386d418cc99ffb9b645fba7bc3edf8d9d3dd7b2a7ea5c407",
+              "b2b9343a21b495f36b585450495083932a56d94c8fbda9b43826eb85d3fbde51",
+              "2b7116567e7d6bb4f188b4e4dcb6d51de6c6853b18b81b2f8118d7bef6561349",
+              "2c252a17e8fda4a631166dc07f8cf30a6be3194e3dcbbc55b7890517ab39746e",
+              "4f4064f45c28cb1c0236bfe19fda146495a2ff5925b287e0c6dab1c26a3d4f83",
+              "cece1c901b3204f967e6c89dbe23ee5ab8ed62f57e00906634bf6a5946e65996",
+              "8bdee52432d6f2046f78f3681072ee2a872a45b82b33069a1223d42db59b36fd",
+              "d109e4e942679d46a999c0c3d81ffadd0724ce2185b254fb917c6cc79f9750c8",
+              "9e14fd82ce8bb3d158af1a76731fdc585436491ea549c7633c51949a3d9b7d5a",
+              "c397c488c1d17dec8d45a6c6b7fc00d117351fe406e5ff1e79acd32bf1153b5e",
+              "24376f9c1d09857e383477f570454b5c99f573fbe10bd76284e2bca72baecbfd"
+            ],
+            "lastTurn": "completed"
+          }
+        },
+        "agentSession": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+        "agent": {
+          "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+          "eventCount": 19,
+          "eventHashes": [
+            "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+            "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+            "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+            "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+            "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+            "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+            "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+            "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+            "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+            "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+            "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+            "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+            "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+            "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+            "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+            "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+            "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+            "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+            "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b"
+          ],
+          "lastTurn": "completed",
+          "toolCalls": 1,
+          "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+          "document": "http://127.0.0.1:53275/api/bidv4/workbench/content?task_id=t_f7803017fb014066b9373af9ee00a6a3&path=analysis%2Fstructure.md",
+          "output": "http://127.0.0.1:53275/api/bidv4/artifacts/art_14080959b208/file",
+          "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+          "modelRequests": 2
+        },
+        "switchedAgent": {
+          "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+          "eventCount": 34,
+          "eventHashes": [
+            "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+            "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+            "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+            "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+            "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+            "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+            "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+            "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+            "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+            "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+            "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+            "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+            "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+            "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+            "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+            "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+            "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+            "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+            "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b",
+            "7715b0a06e36604da0a5dc7920ca0d9439dcefed892ce9cb380735dc1466f77c",
+            "ae832598eda50d5821f90653f8aed991df8452afa6674f6f7165be9339470afd",
+            "6aa16f7bbcfe2fde4504cb2994a5f533f3c5c77da8971ff26e5fcab14f80c332",
+            "7cfdf8ae2a5bce11a16ab141ec10ce83bac9f131ac50de1f7e1fbe8b6d273521",
+            "f089d8d2ebe86adb72f737737df79e918c172cbadaf74bc787cce69494f98ab2",
+            "4e04e928c414f1f8e2ff4636e2218e1c0655de40bf86dafe7df9f46aad07c65d",
+            "0078ca98625a8a44dc92234403325bcd2334bc8a15c99b22bc398ed16fc87aa8",
+            "8d74cd8c8972df5637624ef512a510254b2e5f695d5b9d103fcf48584d1f92a6",
+            "3145875cb48832c8d21febe175f7ecce0e60c1e5862ffa59ec00c9e75ca27572",
+            "176b49249e3605003a37d04d82a07515bec542e8857e7d58311f30d357cbd4dc",
+            "234d0a3de5a827e465143feb6721bf7b72e35ecbb78a5fb0e6d8d59689522291",
+            "c9e6f56ba8bf18032832426890816c0a72d2cf5a4be817d244fe1ad7e0d5920b",
+            "e88a3556d3a39e4a7adfcb28052c65ec6ba2735ac18af90d6f98ff10d3eb5164",
+            "a1a5502cb8cce186905411915e306d07eceb22c251f27a12ea1002645cd6e7c6",
+            "3253e7716518628f365977906ab2bfa6c34081c4548d8c4e4d2ae46f9a49340c"
+          ],
+          "lastTurn": "completed",
+          "toolCalls": 2,
+          "taskId": "t_a9c3a241ae5b4df09a8d523ce2bfb8f8",
+          "document": "http://127.0.0.1:53275/api/bidv4/workbench/content?task_id=t_a9c3a241ae5b4df09a8d523ce2bfb8f8&path=analysis%2Fstructure.md",
+          "output": "http://127.0.0.1:53275/api/bidv4/artifacts/art_b76f967b7f1d/file",
+          "outputHash": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05",
+          "modelRequests": 2
+        },
+        "assets": [
+          {
+            "path": "client.js",
+            "bytes": 1874757,
+            "sha256": "f3a5a5a03f8ee2f12606cb44b8ba488656448c251003716ce3b3ae35d3960ae6"
+          },
+          {
+            "path": "renderer/figureRenderer.js",
+            "bytes": 3473,
+            "sha256": "4aa6d351f32369ba6da5d8b13f28c5d65d81ee0b7ea4cbcc06f95525518bcb00"
+          },
+          {
+            "path": "pdfjs/pdf.worker.min.mjs",
+            "bytes": 1265413,
+            "sha256": "8ab0e5e30031b4a06ecfddd5ae9562f0227f830ee7ec9ed1a968b134243d2386"
+          },
+          {
+            "path": "pdfjs/cmaps/UniGB-UCS2-H.bcmap",
+            "bytes": 43366,
+            "sha256": "9201569b402e81ad8860650bd86350c4fa28e5dd5971f05fcacaf40f51de18ed"
+          },
+          {
+            "path": "pdfjs/standard_fonts/FoxitSerif.pfb",
+            "bytes": 19469,
+            "sha256": "4f57d2b9d884af8f907bf22df6019b52d86cbf6214fdbd02b1ae05472a543f35"
+          },
+          {
+            "path": "pdfjs/wasm/jbig2.wasm",
+            "bytes": 104852,
+            "sha256": "e6bee67724a7b5436fe8162638e3708cfc8d52b6342db69a49715e30ff27cfdc"
+          }
+        ],
+        "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+        "originalHash": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467",
+        "artifactId": "art_14080959b208",
+        "state": {
+          "task": {
+            "id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "title": "本地目录安装与数据保留验收",
+            "progress_note": "",
+            "created_at": "2026-10-13T05:26:50+00:00",
+            "stage": "delivered",
+            "last_activity_at": "2026-10-13T05:27:09+00:00"
+          },
+          "files": [
+            {
+              "path": "analysis/clarifications.md",
+              "content": "# 本地目录验收 clarifications\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4",
+              "modified_at": 1791869213551.092
+            },
+            {
+              "path": "analysis/disqualification.md",
+              "content": "# 本地目录验收 disqualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0",
+              "modified_at": 1791869213542.1616
+            },
+            {
+              "path": "analysis/evaluation.md",
+              "content": "# 本地目录验收 evaluation\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2",
+              "modified_at": 1791869213525.2559
+            },
+            {
+              "path": "analysis/requirements-business.md",
+              "content": "# 本地目录验收 requirements-business\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87",
+              "modified_at": 1791869213506.6116
+            },
+            {
+              "path": "analysis/requirements-format.md",
+              "content": "# 本地目录验收 requirements-format\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3",
+              "modified_at": 1791869213534.447
+            },
+            {
+              "path": "analysis/requirements-qualification.md",
+              "content": "# 本地目录验收 requirements-qualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71",
+              "modified_at": 1791869213516.419
+            },
+            {
+              "path": "analysis/requirements-submission.md",
+              "content": "# 本地目录验收 requirements-submission\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c",
+              "modified_at": 1791869213497.1716
+            },
+            {
+              "path": "analysis/structure.md",
+              "content": "# 本地目录验收 structure\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23",
+              "modified_at": 1791869213489.0215
+            },
+            {
+              "path": "body/关键事实与承诺.md",
+              "content": "# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |",
+              "hash": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c",
+              "modified_at": 1791869220649.7593
+            },
+            {
+              "path": "body/写作指引.md",
+              "content": "# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |",
+              "hash": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db",
+              "modified_at": 1791869218066.597,
+              "registry": {}
+            }
+          ],
+          "directory": {
+            "artifact_id": "art_821051374bc1",
+            "content_seq": 1,
+            "content": {
+              "response_documents": [
+                {
+                  "name": "本地目录验收册",
+                  "directory": [
+                    {
+                      "目录名称": "交付验收章节",
+                      "level": 1,
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "page_target": 120,
+              "numbering": "decimal"
+            }
+          },
+          "source_selection": {
+            "main": "交付验收原件.png",
+            "supplements": [],
+            "excluded": []
+          },
+          "body_files": [
+            "body/交付验收章节.docx",
+            "body/整本-本地目录验收册.docx"
+          ],
+          "build_preparation": {
+            "guide": "ready",
+            "promises": "ready"
+          },
+          "build_preparation_changes": {
+            "guide": [],
+            "promises": []
+          },
+          "body_sections": [
+            {
+              "volume": "本地目录验收册",
+              "title": "交付验收章节",
+              "path": "body/交付验收章节.docx",
+              "status": "ready"
+            }
+          ],
+          "orphan_body_files": [],
+          "volume_states": [
+            {
+              "name": "本地目录验收册",
+              "path": "body/整本-本地目录验收册.docx",
+              "artifact_id": "art_14080959b208",
+              "status": "ready"
+            }
+          ],
+          "bidder": {
+            "task_id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "company_id": "co_d77d36dda45d",
+            "signer_id": "legal",
+            "sign_date": "2026-10-13",
+            "snapshot": {
+              "company": {
+                "id": "co_d77d36dda45d",
+                "name": "交付验收公司",
+                "credit_code": "",
+                "note": "",
+                "profile": {
+                  "legal_name": "验收法人",
+                  "legal_title": "总经理",
+                  "address": "验收地址",
+                  "phone": "123",
+                  "email": "fixture@example.test",
+                  "fax": "无"
+                },
+                "revision": 1,
+                "created_at": "2026-10-13T05:26:50+00:00"
+              },
+              "signer": {
+                "id": "legal",
+                "name": "验收法人",
+                "title": "总经理",
+                "revision": 1
+              },
+              "sign_date": "2026-10-13",
+              "source_versions": {}
+            },
+            "revision": 1,
+            "confirmed": true,
+            "stale": false
+          },
+          "input_versions": {
+            "analyse": "01c435dc698a614f6fb66b0e33d1e03c9bad4aff28a8f5b0aa11ee2b3e4bb36c",
+            "outline": "7a3715b393789a3147c3c4c32e24054b657cf203ee15b5a1f2158e6c430b577c",
+            "guide": "723f696cd430b626527b10cab4810e7d840fc0895230e6d0e5badffc8d179107",
+            "promises": "59714f4fe06cc47fdf48b4d996f771d96ee4a6c064ef7f26ba44ab2873d16b1a",
+            "body": "c7f22b13bf6d0780c894e5456dc8c4aeda567319117a4a33a56837f77ce9a6fe",
+            "revise": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9",
+            "build": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9"
+          },
+          "analysis_progress": [
+            {
+              "key": "basic",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "requirements",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "score",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "format",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "invalid",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "extra",
+              "done": 1,
+              "total": 1
+            }
+          ],
+          "execution": {
+            "session_id": "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe",
+            "kind": "revise",
+            "model": {
+              "provider": "fixture",
+              "model": "fixture"
+            },
+            "sections": [
+              {
+                "volume": "本地目录验收册",
+                "title": "交付验收章节",
+                "path": "body/交付验收章节.docx",
+                "status": "ready"
+              }
+            ],
+            "state": "completed",
+            "questions": []
+          }
+        },
+        "build": {
+          "taskId": "t_a9c3a241ae5b4df09a8d523ce2bfb8f8",
+          "sessionId": "bid-0a24ff64-3ec1-4b30-a6a7-fb496977c58d",
+          "sameSessionAnswer": true,
+          "state": "completed",
+          "volume": "ready"
+        },
+        "requests": 47
+      }
+    },
+    {
+      "name": "宿主其他Agent工具与聊天不受影响",
+      "passed": true,
+      "milliseconds": 71,
+      "evidence": {
+        "defaultPreset": "standard",
+        "writeToolVisible": true,
+        "pluginToolAbsent": true,
+        "completed": true
+      }
+    },
+    {
+      "name": "活宿主拒绝原位更新",
+      "passed": true,
+      "milliseconds": 24,
+      "evidence": {
+        "rejected": true,
+        "diagnostic": "file:///Users/ooo/Documents/AIwork/bidv4/server/installation.mjs:41\n  for(const name of names){const path=join(directory,relative,name),text=await readFile(path,'utf8');let pid;if(relative==='data/.hosts'){pid=JSON.parse(text).pid}else pid=Number(text);if(!Number.isSafeInteger(pid)||pid<=0)throw new Error('无法确认目录运行状态：'+path);if(alive(pid))throw new Error('目录仍由宿主或业务进程 '+pid+' 使用；请先关闭宿主或禁用插件再准备/更新');await unlink(path)}\n                                                                                                                                                                                                                                                                                       ^\n\nError: 目录仍由宿主或业务进程 58394 使用；请先关闭宿主或禁用插件再准备/更新\n    at assertStopped (file:///Users/ooo/Documents/AIwork/bidv4/server/installation.mjs:41:280)\n    at async file:///Users/ooo/Documents/AIwork/bidv4/scripts/delivery.mjs:27:156\n\nNode.js v24.15.0\n"
+      }
+    },
+    {
+      "name": "首次完整关闭与会话尾事件",
+      "passed": true,
+      "milliseconds": 54,
+      "evidence": {
+        "closed": true,
+        "diagnostics": ""
+      }
+    },
+    {
+      "name": "更新准备失败保留完整原目录与数据",
+      "passed": true,
+      "milliseconds": 7162,
+      "evidence": {
+        "rejected": true,
+        "diagnostic": "npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\n\nadded 795 packages in 4s\nUsing CPython 3.13.13\nCreating virtual environment at: business/python/.venv\nResolved 42 packages in 4ms\nInstalled 39 packages in 58ms\n + annotated-types==0.8.0\n + anyio==4.15.1\n + babel==2.18.0\n + certifi==2026.7.22\n + charset-normalizer==3.5.2\n + courlan==1.4.0\n + dateparser==1.4.3\n + h11==0.16.0\n + htmldate==1.11.0\n + httpcore==1.0.9\n + httpx==0.28.1\n + idna==3.20\n + iniconfig==2.3.1\n + jieba==0.42.1\n + justext==3.0.2\n + lxml==6.1.3\n + lxml-html-clean==0.4.5\n + markdown-it-py==4.2.0\n + mdurl==0.1.2\n + packaging==26.3\n + pillow==12.3.0\n + pluggy==1.6.0\n + pydantic==2.14.0\n + pydantic-core==2.50.0\n + pygments==2.21.0\n + pypdfium2==4.30.0\n + pytest==9.1.1\n + python-dateutil==2.9.0.post0\n + python-docx==1.2.0\n + pytz==2026.5\n + regex==2026.9.29\n + reportlab==5.0.1\n + six==1.17.0\n + tld==0.13.2\n + trafilatura==2.3.1\n + typing-extensions==4.16.0\n + typing-inspection==0.4.4\n + tzlocal==5.4.4\n + urllib3==2.8.0\n\n> check\n> tsc --noEmit\n\nsrc/plugin.tsx(119,7): error TS1134: Variable declaration expected.\nfile:///private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/.ooo-bidpliot-next-PybEtS/scripts/prepare.mjs:9\nasync function run(program,args){await new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd:directory,stdio:'inherit'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(program+' 准备失败（退出 '+code+'）')))})}\n                                                                                                                                                                                                                ^\n\nError: npm 准备失败（退出 2）\n    at ChildProcess.<anonymous> (file:///private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/.ooo-bidpliot-next-PybEtS/scripts/prepare.mjs:9:209)\n    at ChildProcess.emit (node:events:509:28)\n    at maybeClose (node:internal/child_process:1124:16)\n    at ChildProcess._handle.onexit (node:internal/child_process:306:5)\n\nNode.js v24.15.0\nfile:///Users/ooo/Documents/AIwork/bidv4/scripts/delivery.mjs:19\nasync function run(program,args,cwd){await new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd,stdio:'inherit'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(program+' 更新准备失败（退出 '+code+'）')))})}\n                                                                                                                                                                                                          ^\n\nError: /usr/local/bin/node 更新准备失败（退出 1）\n    at ChildProcess.<anonymous> (file:///Users/ooo/Documents/AIwork/bidv4/scripts/delivery.mjs:19:203)\n    at ChildProcess.emit (node:events:509:28)\n    at maybeClose (node:internal/child_process:1124:16)\n    at ChildProcess._handle.onexit (node:internal/child_process:306:5)\n\nNode.js v24.15.0\n",
+        "retained": {
+          "data": "b0ab6df2a30654653437480321b599bc6aed7e69357559e531314e877c16be38",
+          "database": {
+            "sha256": "d08f60548972cd0b4dc9be73494d752cc0fb4c1a609f49496a68d94861562c08",
+            "userVersion": 1,
+            "statements": 36
+          },
+          "sessions": "b7fab8d18698cc0346953750002fca34f445160295111c094fed19af0a3f372f",
+          "attachments": "9c31b655184b574ea798ab6e806ee26c887f30cdedfece20b6d2f8523c62a7f5",
+          "fileCount": 102
+        }
+      }
+    },
+    {
+      "name": "固定目录原位更新及全部数据保留",
+      "passed": true,
+      "milliseconds": 10015,
+      "evidence": {
+        "updateOutput": "npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead\n\nadded 795 packages in 4s\nUsing CPython 3.13.13\nCreating virtual environment at: business/python/.venv\nResolved 42 packages in 0.66ms\nInstalled 39 packages in 53ms\n + annotated-types==0.8.0\n + anyio==4.15.1\n + babel==2.18.0\n + certifi==2026.7.22\n + charset-normalizer==3.5.2\n + courlan==1.4.0\n + dateparser==1.4.3\n + h11==0.16.0\n + htmldate==1.11.0\n + httpcore==1.0.9\n + httpx==0.28.1\n + idna==3.20\n + iniconfig==2.3.1\n + jieba==0.42.1\n + justext==3.0.2\n + lxml==6.1.3\n + lxml-html-clean==0.4.5\n + markdown-it-py==4.2.0\n + mdurl==0.1.2\n + packaging==26.3\n + pillow==12.3.0\n + pluggy==1.6.0\n + pydantic==2.14.0\n + pydantic-core==2.50.0\n + pygments==2.21.0\n + pypdfium2==4.30.0\n + pytest==9.1.1\n + python-dateutil==2.9.0.post0\n + python-docx==1.2.0\n + pytz==2026.5\n + regex==2026.9.29\n + reportlab==5.0.1\n + six==1.17.0\n + tld==0.13.2\n + trafilatura==2.3.1\n + typing-extensions==4.16.0\n + typing-inspection==0.4.4\n + tzlocal==5.4.4\n + urllib3==2.8.0\n\n> check\n> tsc --noEmit\n\n正式插件和 PDF 本地资源已构建\nooo-bidpliot 固定目录准备完成，可通过 dsh 官方本地目录安装\n固定目录更新完成，原 data 已保留：/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install\n",
+        "changedCode": {
+          "previousSha256": "e0279b09d9370046de6b4c467d07f79417b81e6cd18725448fc6aa87d0e25181",
+          "updatedSha256": "c956ba399c7d9470ec74701a6e905184049f4fa86c70c59de673da95bc741ed0"
+        },
+        "retained": {
+          "data": "b0ab6df2a30654653437480321b599bc6aed7e69357559e531314e877c16be38",
+          "database": {
+            "sha256": "d08f60548972cd0b4dc9be73494d752cc0fb4c1a609f49496a68d94861562c08",
+            "userVersion": 1,
+            "statements": 36
+          },
+          "sessions": "b7fab8d18698cc0346953750002fca34f445160295111c094fed19af0a3f372f",
+          "attachments": "9c31b655184b574ea798ab6e806ee26c887f30cdedfece20b6d2f8523c62a7f5",
+          "fileCount": 102
+        }
+      }
+    },
+    {
+      "name": "更新后重启页面与独立Agent冷恢复",
+      "passed": true,
+      "milliseconds": 1707,
+      "evidence": {
+        "state": {
+          "task": {
+            "id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "title": "本地目录安装与数据保留验收",
+            "progress_note": "",
+            "created_at": "2026-10-13T05:26:50+00:00",
+            "stage": "delivered",
+            "last_activity_at": "2026-10-13T05:27:09+00:00"
+          },
+          "files": [
+            {
+              "path": "analysis/clarifications.md",
+              "content": "# 本地目录验收 clarifications\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4",
+              "modified_at": 1791869213551.092
+            },
+            {
+              "path": "analysis/disqualification.md",
+              "content": "# 本地目录验收 disqualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0",
+              "modified_at": 1791869213542.1616
+            },
+            {
+              "path": "analysis/evaluation.md",
+              "content": "# 本地目录验收 evaluation\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2",
+              "modified_at": 1791869213525.2559
+            },
+            {
+              "path": "analysis/requirements-business.md",
+              "content": "# 本地目录验收 requirements-business\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87",
+              "modified_at": 1791869213506.6116
+            },
+            {
+              "path": "analysis/requirements-format.md",
+              "content": "# 本地目录验收 requirements-format\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3",
+              "modified_at": 1791869213534.447
+            },
+            {
+              "path": "analysis/requirements-qualification.md",
+              "content": "# 本地目录验收 requirements-qualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71",
+              "modified_at": 1791869213516.419
+            },
+            {
+              "path": "analysis/requirements-submission.md",
+              "content": "# 本地目录验收 requirements-submission\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c",
+              "modified_at": 1791869213497.1716
+            },
+            {
+              "path": "analysis/structure.md",
+              "content": "# 本地目录验收 structure\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23",
+              "modified_at": 1791869213489.0215
+            },
+            {
+              "path": "body/关键事实与承诺.md",
+              "content": "# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |",
+              "hash": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c",
+              "modified_at": 1791869220649.7593
+            },
+            {
+              "path": "body/写作指引.md",
+              "content": "# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |",
+              "hash": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db",
+              "modified_at": 1791869218066.597,
+              "registry": {}
+            }
+          ],
+          "directory": {
+            "artifact_id": "art_821051374bc1",
+            "content_seq": 1,
+            "content": {
+              "response_documents": [
+                {
+                  "name": "本地目录验收册",
+                  "directory": [
+                    {
+                      "目录名称": "交付验收章节",
+                      "level": 1,
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "page_target": 120,
+              "numbering": "decimal"
+            }
+          },
+          "source_selection": {
+            "main": "交付验收原件.png",
+            "supplements": [],
+            "excluded": []
+          },
+          "body_files": [
+            "body/交付验收章节.docx",
+            "body/整本-本地目录验收册.docx"
+          ],
+          "build_preparation": {
+            "guide": "ready",
+            "promises": "ready"
+          },
+          "build_preparation_changes": {
+            "guide": [],
+            "promises": []
+          },
+          "body_sections": [
+            {
+              "volume": "本地目录验收册",
+              "title": "交付验收章节",
+              "path": "body/交付验收章节.docx",
+              "status": "ready"
+            }
+          ],
+          "orphan_body_files": [],
+          "volume_states": [
+            {
+              "name": "本地目录验收册",
+              "path": "body/整本-本地目录验收册.docx",
+              "artifact_id": "art_14080959b208",
+              "status": "ready"
+            }
+          ],
+          "bidder": {
+            "task_id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "company_id": "co_d77d36dda45d",
+            "signer_id": "legal",
+            "sign_date": "2026-10-13",
+            "snapshot": {
+              "company": {
+                "id": "co_d77d36dda45d",
+                "name": "交付验收公司",
+                "credit_code": "",
+                "note": "",
+                "profile": {
+                  "legal_name": "验收法人",
+                  "legal_title": "总经理",
+                  "address": "验收地址",
+                  "phone": "123",
+                  "email": "fixture@example.test",
+                  "fax": "无"
+                },
+                "revision": 1,
+                "created_at": "2026-10-13T05:26:50+00:00"
+              },
+              "signer": {
+                "id": "legal",
+                "name": "验收法人",
+                "title": "总经理",
+                "revision": 1
+              },
+              "sign_date": "2026-10-13",
+              "source_versions": {}
+            },
+            "revision": 1,
+            "confirmed": true,
+            "stale": false
+          },
+          "input_versions": {
+            "analyse": "01c435dc698a614f6fb66b0e33d1e03c9bad4aff28a8f5b0aa11ee2b3e4bb36c",
+            "outline": "7a3715b393789a3147c3c4c32e24054b657cf203ee15b5a1f2158e6c430b577c",
+            "guide": "723f696cd430b626527b10cab4810e7d840fc0895230e6d0e5badffc8d179107",
+            "promises": "59714f4fe06cc47fdf48b4d996f771d96ee4a6c064ef7f26ba44ab2873d16b1a",
+            "body": "c7f22b13bf6d0780c894e5456dc8c4aeda567319117a4a33a56837f77ce9a6fe",
+            "revise": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9",
+            "build": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9"
+          },
+          "analysis_progress": [
+            {
+              "key": "basic",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "requirements",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "score",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "format",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "invalid",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "extra",
+              "done": 1,
+              "total": 1
+            }
+          ],
+          "execution": {
+            "session_id": "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe",
+            "kind": "revise",
+            "model": {
+              "provider": "fixture",
+              "model": "fixture"
+            },
+            "sections": [
+              {
+                "volume": "本地目录验收册",
+                "title": "交付验收章节",
+                "path": "body/交付验收章节.docx",
+                "status": "ready"
+              }
+            ],
+            "state": "completed",
+            "questions": []
+          }
+        },
+        "agent": {
+          "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+          "eventCount": 50,
+          "eventHashes": [
+            "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+            "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+            "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+            "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+            "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+            "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+            "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+            "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+            "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+            "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+            "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+            "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+            "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+            "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+            "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+            "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+            "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+            "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+            "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b",
+            "7715b0a06e36604da0a5dc7920ca0d9439dcefed892ce9cb380735dc1466f77c",
+            "ae832598eda50d5821f90653f8aed991df8452afa6674f6f7165be9339470afd",
+            "6aa16f7bbcfe2fde4504cb2994a5f533f3c5c77da8971ff26e5fcab14f80c332",
+            "7cfdf8ae2a5bce11a16ab141ec10ce83bac9f131ac50de1f7e1fbe8b6d273521",
+            "f089d8d2ebe86adb72f737737df79e918c172cbadaf74bc787cce69494f98ab2",
+            "4e04e928c414f1f8e2ff4636e2218e1c0655de40bf86dafe7df9f46aad07c65d",
+            "0078ca98625a8a44dc92234403325bcd2334bc8a15c99b22bc398ed16fc87aa8",
+            "8d74cd8c8972df5637624ef512a510254b2e5f695d5b9d103fcf48584d1f92a6",
+            "3145875cb48832c8d21febe175f7ecce0e60c1e5862ffa59ec00c9e75ca27572",
+            "176b49249e3605003a37d04d82a07515bec542e8857e7d58311f30d357cbd4dc",
+            "234d0a3de5a827e465143feb6721bf7b72e35ecbb78a5fb0e6d8d59689522291",
+            "c9e6f56ba8bf18032832426890816c0a72d2cf5a4be817d244fe1ad7e0d5920b",
+            "e88a3556d3a39e4a7adfcb28052c65ec6ba2735ac18af90d6f98ff10d3eb5164",
+            "a1a5502cb8cce186905411915e306d07eceb22c251f27a12ea1002645cd6e7c6",
+            "3253e7716518628f365977906ab2bfa6c34081c4548d8c4e4d2ae46f9a49340c",
+            "1938ebcfa32c426f61e837c25d3db62e26c4f0dc86ab3756a4370de28a614b53",
+            "33574fb5f4379c005fb2b4718ad1ef58648ca8447fcfa4e921becb482ad100a2",
+            "3ee93ac2568f5e71e2159fb1b857b9c8d6c2820de2a931ffe66d924ef6452868",
+            "c6ec236a76f73fb6349f2f4d545620fba3727b8718efe9573baeb333f10f436f",
+            "a0bd04aa9b3f60f9f69eab0aeca3b422298a13a20152d900713bd6a93b87b7b4",
+            "b97631ba1427693517d47459a945b7e1943f5d6ed029ee4f179042c50af4be6f",
+            "5aa94b3beeaa1fc7369368b61b0c1db6c71b5c83aaba2e40696fcc0b84b93f93",
+            "6089ed89acb9b0d1f7afb381065e2167a6d6c72fec29178afb84fb9fe118888f",
+            "09e2ce2e55b66717a27d058a78fe569e1b51c14760d71d28f3c5b279599bebb8",
+            "6fb79bdc09fe1764a084a5899861b363929c08261fb00e1655ccb260f32f4f87",
+            "c7bf6f28a363ac1c2320faec506ebce2cea22217f893cdc39e300fe5d9124fec",
+            "1dd2480e709043919cff2dbfdbcbb4a6f7f70c36da5068b8247993205cd7508c",
+            "5597b79e0fd642bb7e92b6068e640e8230901050dc9fae0edd5d7528db3b1306",
+            "2ae0748884e6a3b6076c8eb4e90308daf329a080cfc9171af7c94a1710390175",
+            "dfd145859c054e0e07af96077d2b7dd63ce5fd8f2df3634aedce83075a64f788",
+            "f33bdcba96ac828d3e83c3d509ee2d95c526ef4b24db86a7f69503760c3d54f5"
+          ],
+          "lastTurn": "completed",
+          "toolCalls": 3,
+          "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+          "document": "http://127.0.0.1:53838/api/bidv4/workbench/content?task_id=t_f7803017fb014066b9373af9ee00a6a3&path=analysis%2Fstructure.md",
+          "output": "http://127.0.0.1:53838/api/bidv4/artifacts/art_14080959b208/file",
+          "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+          "modelRequests": 2
+        },
+        "originalHash": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467",
+        "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c"
+      }
+    },
+    {
+      "name": "更新后宿主其他Agent正常",
+      "passed": true,
+      "milliseconds": 61,
+      "evidence": {
+        "defaultPreset": "standard",
+        "writeToolVisible": true,
+        "pluginToolAbsent": true,
+        "completed": true
+      }
+    },
+    {
+      "name": "官方CLI真正卸载保留固定目录数据",
+      "passed": true,
+      "milliseconds": 397,
+      "evidence": {
+        "cli": "✓ Lockfile passes supply-chain policies (verified 58s ago)\n\ndependencies:\n- ooo-bidpliot link:/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install\n\nAlready up to date\nDone in 207ms using pnpm v11.25.0\n",
+        "retained": {
+          "data": "8a7c309a2ca35251eaab46539005ff3b0c95682f5aa506cdabd03dd8bae1245f",
+          "database": {
+            "sha256": "d08f60548972cd0b4dc9be73494d752cc0fb4c1a609f49496a68d94861562c08",
+            "userVersion": 1,
+            "statements": 36
+          },
+          "sessions": "4eec55ace690f67c9a1892088ee8e1bd41e53c1f00573140e7af2d8c183ed060",
+          "attachments": "9c31b655184b574ea798ab6e806ee26c887f30cdedfece20b6d2f8523c62a7f5",
+          "fileCount": 102
+        },
+        "targetExists": true,
+        "packageManagerRetainedLink": "../../../../../../../../../../../var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install"
+      }
+    },
+    {
+      "name": "卸载后页面404、公开Agent移除、宿主正常",
+      "passed": true,
+      "milliseconds": 112,
+      "evidence": {
+        "authenticatedPageStatus": 404,
+        "presetAbsent": true,
+        "host": {
+          "defaultPreset": "standard",
+          "writeToolVisible": true,
+          "pluginToolAbsent": true,
+          "completed": true
+        }
+      }
+    },
+    {
+      "name": "官方CLI本地目录重装且完整数据保留",
+      "passed": true,
+      "milliseconds": 310,
+      "evidence": {
+        "cli": "✓ Lockfile passes supply-chain policies (verified 1s ago)\n\ndependencies:\n+ ooo-bidpliot link:/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install\n\nAlready up to date\nDone in 184ms using pnpm v11.25.0\n",
+        "retained": {
+          "data": "8a7c309a2ca35251eaab46539005ff3b0c95682f5aa506cdabd03dd8bae1245f",
+          "database": {
+            "sha256": "d08f60548972cd0b4dc9be73494d752cc0fb4c1a609f49496a68d94861562c08",
+            "userVersion": 1,
+            "statements": 36
+          },
+          "sessions": "a886234ee88ff5e79e6cebfba71c93c393279d959031607c2edadd12a101241d",
+          "attachments": "9c31b655184b574ea798ab6e806ee26c887f30cdedfece20b6d2f8523c62a7f5",
+          "fileCount": 102
+        }
+      }
+    },
+    {
+      "name": "重装后页面成果、下载与独立Agent冷恢复",
+      "passed": true,
+      "milliseconds": 1569,
+      "evidence": {
+        "state": {
+          "task": {
+            "id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "title": "本地目录安装与数据保留验收",
+            "progress_note": "",
+            "created_at": "2026-10-13T05:26:50+00:00",
+            "stage": "delivered",
+            "last_activity_at": "2026-10-13T05:27:09+00:00"
+          },
+          "files": [
+            {
+              "path": "analysis/clarifications.md",
+              "content": "# 本地目录验收 clarifications\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4",
+              "modified_at": 1791869213551.092
+            },
+            {
+              "path": "analysis/disqualification.md",
+              "content": "# 本地目录验收 disqualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0",
+              "modified_at": 1791869213542.1616
+            },
+            {
+              "path": "analysis/evaluation.md",
+              "content": "# 本地目录验收 evaluation\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2",
+              "modified_at": 1791869213525.2559
+            },
+            {
+              "path": "analysis/requirements-business.md",
+              "content": "# 本地目录验收 requirements-business\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87",
+              "modified_at": 1791869213506.6116
+            },
+            {
+              "path": "analysis/requirements-format.md",
+              "content": "# 本地目录验收 requirements-format\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3",
+              "modified_at": 1791869213534.447
+            },
+            {
+              "path": "analysis/requirements-qualification.md",
+              "content": "# 本地目录验收 requirements-qualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71",
+              "modified_at": 1791869213516.419
+            },
+            {
+              "path": "analysis/requirements-submission.md",
+              "content": "# 本地目录验收 requirements-submission\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c",
+              "modified_at": 1791869213497.1716
+            },
+            {
+              "path": "analysis/structure.md",
+              "content": "# 本地目录验收 structure\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23",
+              "modified_at": 1791869213489.0215
+            },
+            {
+              "path": "body/关键事实与承诺.md",
+              "content": "# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |",
+              "hash": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c",
+              "modified_at": 1791869220649.7593
+            },
+            {
+              "path": "body/写作指引.md",
+              "content": "# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |",
+              "hash": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db",
+              "modified_at": 1791869218066.597,
+              "registry": {}
+            }
+          ],
+          "directory": {
+            "artifact_id": "art_821051374bc1",
+            "content_seq": 1,
+            "content": {
+              "response_documents": [
+                {
+                  "name": "本地目录验收册",
+                  "directory": [
+                    {
+                      "目录名称": "交付验收章节",
+                      "level": 1,
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "page_target": 120,
+              "numbering": "decimal"
+            }
+          },
+          "source_selection": {
+            "main": "交付验收原件.png",
+            "supplements": [],
+            "excluded": []
+          },
+          "body_files": [
+            "body/交付验收章节.docx",
+            "body/整本-本地目录验收册.docx"
+          ],
+          "build_preparation": {
+            "guide": "ready",
+            "promises": "ready"
+          },
+          "build_preparation_changes": {
+            "guide": [],
+            "promises": []
+          },
+          "body_sections": [
+            {
+              "volume": "本地目录验收册",
+              "title": "交付验收章节",
+              "path": "body/交付验收章节.docx",
+              "status": "ready"
+            }
+          ],
+          "orphan_body_files": [],
+          "volume_states": [
+            {
+              "name": "本地目录验收册",
+              "path": "body/整本-本地目录验收册.docx",
+              "artifact_id": "art_14080959b208",
+              "status": "ready"
+            }
+          ],
+          "bidder": {
+            "task_id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "company_id": "co_d77d36dda45d",
+            "signer_id": "legal",
+            "sign_date": "2026-10-13",
+            "snapshot": {
+              "company": {
+                "id": "co_d77d36dda45d",
+                "name": "交付验收公司",
+                "credit_code": "",
+                "note": "",
+                "profile": {
+                  "legal_name": "验收法人",
+                  "legal_title": "总经理",
+                  "address": "验收地址",
+                  "phone": "123",
+                  "email": "fixture@example.test",
+                  "fax": "无"
+                },
+                "revision": 1,
+                "created_at": "2026-10-13T05:26:50+00:00"
+              },
+              "signer": {
+                "id": "legal",
+                "name": "验收法人",
+                "title": "总经理",
+                "revision": 1
+              },
+              "sign_date": "2026-10-13",
+              "source_versions": {}
+            },
+            "revision": 1,
+            "confirmed": true,
+            "stale": false
+          },
+          "input_versions": {
+            "analyse": "01c435dc698a614f6fb66b0e33d1e03c9bad4aff28a8f5b0aa11ee2b3e4bb36c",
+            "outline": "7a3715b393789a3147c3c4c32e24054b657cf203ee15b5a1f2158e6c430b577c",
+            "guide": "723f696cd430b626527b10cab4810e7d840fc0895230e6d0e5badffc8d179107",
+            "promises": "59714f4fe06cc47fdf48b4d996f771d96ee4a6c064ef7f26ba44ab2873d16b1a",
+            "body": "c7f22b13bf6d0780c894e5456dc8c4aeda567319117a4a33a56837f77ce9a6fe",
+            "revise": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9",
+            "build": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9"
+          },
+          "analysis_progress": [
+            {
+              "key": "basic",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "requirements",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "score",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "format",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "invalid",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "extra",
+              "done": 1,
+              "total": 1
+            }
+          ],
+          "execution": {
+            "session_id": "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe",
+            "kind": "revise",
+            "model": {
+              "provider": "fixture",
+              "model": "fixture"
+            },
+            "sections": [
+              {
+                "volume": "本地目录验收册",
+                "title": "交付验收章节",
+                "path": "body/交付验收章节.docx",
+                "status": "ready"
+              }
+            ],
+            "state": "completed",
+            "questions": []
+          }
+        },
+        "agent": {
+          "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+          "eventCount": 66,
+          "eventHashes": [
+            "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+            "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+            "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+            "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+            "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+            "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+            "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+            "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+            "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+            "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+            "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+            "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+            "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+            "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+            "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+            "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+            "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+            "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+            "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b",
+            "7715b0a06e36604da0a5dc7920ca0d9439dcefed892ce9cb380735dc1466f77c",
+            "ae832598eda50d5821f90653f8aed991df8452afa6674f6f7165be9339470afd",
+            "6aa16f7bbcfe2fde4504cb2994a5f533f3c5c77da8971ff26e5fcab14f80c332",
+            "7cfdf8ae2a5bce11a16ab141ec10ce83bac9f131ac50de1f7e1fbe8b6d273521",
+            "f089d8d2ebe86adb72f737737df79e918c172cbadaf74bc787cce69494f98ab2",
+            "4e04e928c414f1f8e2ff4636e2218e1c0655de40bf86dafe7df9f46aad07c65d",
+            "0078ca98625a8a44dc92234403325bcd2334bc8a15c99b22bc398ed16fc87aa8",
+            "8d74cd8c8972df5637624ef512a510254b2e5f695d5b9d103fcf48584d1f92a6",
+            "3145875cb48832c8d21febe175f7ecce0e60c1e5862ffa59ec00c9e75ca27572",
+            "176b49249e3605003a37d04d82a07515bec542e8857e7d58311f30d357cbd4dc",
+            "234d0a3de5a827e465143feb6721bf7b72e35ecbb78a5fb0e6d8d59689522291",
+            "c9e6f56ba8bf18032832426890816c0a72d2cf5a4be817d244fe1ad7e0d5920b",
+            "e88a3556d3a39e4a7adfcb28052c65ec6ba2735ac18af90d6f98ff10d3eb5164",
+            "a1a5502cb8cce186905411915e306d07eceb22c251f27a12ea1002645cd6e7c6",
+            "3253e7716518628f365977906ab2bfa6c34081c4548d8c4e4d2ae46f9a49340c",
+            "1938ebcfa32c426f61e837c25d3db62e26c4f0dc86ab3756a4370de28a614b53",
+            "33574fb5f4379c005fb2b4718ad1ef58648ca8447fcfa4e921becb482ad100a2",
+            "3ee93ac2568f5e71e2159fb1b857b9c8d6c2820de2a931ffe66d924ef6452868",
+            "c6ec236a76f73fb6349f2f4d545620fba3727b8718efe9573baeb333f10f436f",
+            "a0bd04aa9b3f60f9f69eab0aeca3b422298a13a20152d900713bd6a93b87b7b4",
+            "b97631ba1427693517d47459a945b7e1943f5d6ed029ee4f179042c50af4be6f",
+            "5aa94b3beeaa1fc7369368b61b0c1db6c71b5c83aaba2e40696fcc0b84b93f93",
+            "6089ed89acb9b0d1f7afb381065e2167a6d6c72fec29178afb84fb9fe118888f",
+            "09e2ce2e55b66717a27d058a78fe569e1b51c14760d71d28f3c5b279599bebb8",
+            "6fb79bdc09fe1764a084a5899861b363929c08261fb00e1655ccb260f32f4f87",
+            "c7bf6f28a363ac1c2320faec506ebce2cea22217f893cdc39e300fe5d9124fec",
+            "1dd2480e709043919cff2dbfdbcbb4a6f7f70c36da5068b8247993205cd7508c",
+            "5597b79e0fd642bb7e92b6068e640e8230901050dc9fae0edd5d7528db3b1306",
+            "2ae0748884e6a3b6076c8eb4e90308daf329a080cfc9171af7c94a1710390175",
+            "dfd145859c054e0e07af96077d2b7dd63ce5fd8f2df3634aedce83075a64f788",
+            "f33bdcba96ac828d3e83c3d509ee2d95c526ef4b24db86a7f69503760c3d54f5",
+            "3a4b5600ea048c7c6798c4cdabb659d7430e0692cebb08ba74869cf0f88ccedc",
+            "b3a41fd32d2afc00c958870f37ce5af853e6f20e4de9419e36279edaaee5ba64",
+            "034cc8ae80439a3ff5d6b57cc0393294c11c31cbf7397d05f19e4daf4d97f6b8",
+            "0052c138948536f7820f7cae1bdbe21c9e0c002753cf2ce86f4eb7ffb9e7cd07",
+            "b768f1f25a7b8fb2684d3aae0ff24397ccafaebacc72ca38567aea4f8c1bd997",
+            "fa94c7c64f645795b151e1b3de9300a5f376b7859a73d1301f4e10398557298d",
+            "996fee6f1e335d4cf25d765eb26df712c8ce4bfe553d9bed4f8d5c8da67e5ba1",
+            "3ea42f66c4feb741317ac570d35c3339db4eb3e7d352663b980fede197c56ff4",
+            "ccd97a9e4649ac665f6bc6553d7da788e70d4c133950d8af16de929f4bad2fae",
+            "0c45359866e7dc81949dc60a9e89da3579b37441f963afa0454019a5b10243b3",
+            "951e5d7c6e211f52cadbf082dd2edb7753fe42e5e3ddeecbbe41ee89383cb2b4",
+            "176e7492669fbf2796212a519e1d6807b8a3dea4828d2c12a8d4760ce5d9b7b2",
+            "d8bebdc41a5b141ad91c47083841270b90508f9a0f39f6a42940c3fb097a4297",
+            "1ed8c27eaa3a720839ede08611c58c82c84e3bbf052abaabfb9a3cef788e4ace",
+            "b8efed71585564f8721a957d9ddceb04459968ae1c30d3bc4a3f3e065bae035e",
+            "8ad537c28a208319932c3b7112e9f614917b5123cc3b04baabfc58c582585ccb"
+          ],
+          "lastTurn": "completed",
+          "toolCalls": 4,
+          "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+          "document": "http://127.0.0.1:53861/api/bidv4/workbench/content?task_id=t_f7803017fb014066b9373af9ee00a6a3&path=analysis%2Fstructure.md",
+          "output": "http://127.0.0.1:53861/api/bidv4/artifacts/art_14080959b208/file",
+          "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+          "modelRequests": 2
+        },
+        "originalHash": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467",
+        "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c"
+      }
+    },
+    {
+      "name": "缺完整dist明确拒绝激活",
+      "passed": true,
+      "milliseconds": 1024,
+      "evidence": {
+        "doctor": {
+          "rejected": true,
+          "exitCode": 1,
+          "diagnostic": "e依赖 busboy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 docx-preview\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 html2canvas\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 mermaid\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 pdfjs-dist\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-markdown\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-gfm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-parse\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 unified\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 micromark-util-decode-string\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-fs-local\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-projection\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-system-prompt\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tools\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-persistence-jsonl\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset-registry\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-user-questions\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-loop\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-checkpoint-policy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-token-meter\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-basic\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-persona\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs-search\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-ask-user\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill-filesystem\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis-plugin-loader\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-llm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-scope\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-ui-layout\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-locale\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-dom\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dsh版本\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Python环境\",\n      \"ok\": true\n    }\n  ],\n  \"errors\": [\n    \"ENOENT: no such file or directory, stat '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/client.js'\",\n    \"ENOENT: no such file or directory, stat '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/renderer/figureRenderer.js'\",\n    \"ENOENT: no such file or directory, stat '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/pdf.worker.min.mjs'\",\n    \"ENOENT: no such file or directory, scandir '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/cmaps'\",\n    \"ENOENT: no such file or directory, scandir '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/standard_fonts'\",\n    \"ENOENT: no such file or directory, scandir '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/wasm'\"\n  ]\n}\n"
+        },
+        "activation": {
+          "rejected": true,
+          "hostStarted": true,
+          "businessRuntimeAbsent": true,
+          "authenticatedApiStatus": 404,
+          "diagnostic": "[{\"name\":\"ooo-bidpliot\",\"args\":[\"Error: 插件目录未准备完成：\\nENOENT: no such file or directory, stat '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/client.js'\\nENOENT: no such file or directory, stat '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/renderer/figureRenderer.js'\\nENOENT: no such file or directory, stat '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/pdf.worker.min.mjs'\\nENOENT: no such file or directory, scandir '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/cmaps'\\nENOENT: no such file or directory, scandir '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/standard_fonts'\\nENOENT: no such file or directory, scandir '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/dist/pdfjs/wasm'\"]}]"
+        }
+      }
+    },
+    {
+      "name": "缺Node依赖明确拒绝激活",
+      "passed": true,
+      "milliseconds": 866,
+      "evidence": {
+        "doctor": {
+          "rejected": true,
+          "exitCode": 1,
+          "diagnostic": "derer/figureRenderer.js\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/pdf.worker.min.mjs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/document-parse/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-analysis/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-outline/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-body/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-qa/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/humanizer-zh/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/cmaps\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/standard_fonts\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/wasm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 busboy\",\n      \"ok\": false\n    },\n    {\n      \"name\": \"Node依赖 docx-preview\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 html2canvas\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 mermaid\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 pdfjs-dist\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-markdown\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-gfm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-parse\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 unified\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 micromark-util-decode-string\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-fs-local\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-projection\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-system-prompt\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tools\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-persistence-jsonl\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset-registry\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-user-questions\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-loop\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-checkpoint-policy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-token-meter\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-basic\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-persona\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs-search\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-ask-user\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill-filesystem\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis-plugin-loader\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-llm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-scope\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-ui-layout\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-locale\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-dom\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dsh版本\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Python环境\",\n      \"ok\": true\n    }\n  ],\n  \"errors\": [\n    \"缺少 Node 依赖 busboy；请执行目录准备（npm run directory:prepare）\"\n  ]\n}\n"
+        },
+        "activation": {
+          "rejected": true,
+          "hostStarted": true,
+          "businessRuntimeAbsent": true,
+          "authenticatedApiStatus": 404,
+          "diagnostic": "[{\"name\":\"include\",\"args\":[\"Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'busboy' imported from /private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/server/plugin.mjs\"]}]"
+        }
+      }
+    },
+    {
+      "name": "缺Python环境明确拒绝激活",
+      "passed": true,
+      "milliseconds": 778,
+      "evidence": {
+        "doctor": {
+          "rejected": true,
+          "exitCode": 1,
+          "diagnostic": "rue\n    },\n    {\n      \"name\": \"business/python/app/skills/document-parse/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-analysis/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-outline/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-body/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-qa/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/humanizer-zh/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/cmaps\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/standard_fonts\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/wasm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 busboy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 docx-preview\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 html2canvas\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 mermaid\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 pdfjs-dist\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-markdown\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-gfm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-parse\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 unified\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 micromark-util-decode-string\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-fs-local\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-projection\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-system-prompt\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tools\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-persistence-jsonl\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset-registry\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-user-questions\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-loop\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-checkpoint-policy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-token-meter\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-basic\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-persona\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs-search\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-ask-user\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill-filesystem\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis-plugin-loader\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-llm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-scope\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-ui-layout\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-locale\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-dom\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dsh版本\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Python环境\",\n      \"ok\": false\n    }\n  ],\n  \"errors\": [\n    \"ENOENT: no such file or directory, access '/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/business/python/.venv/bin/python'\"\n  ]\n}\n"
+        },
+        "activation": {
+          "rejected": true,
+          "hostStarted": true,
+          "businessRuntimeAbsent": true,
+          "authenticatedApiStatus": 404,
+          "diagnostic": "[{\"name\":\"ooo-bidpliot\",\"args\":[\"Error: 插件目录未准备完成：\\nENOENT: no such file or directory, access '/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/business/python/.venv/bin/python'\"]}]"
+        }
+      }
+    },
+    {
+      "name": "缺Python运行依赖明确拒绝激活",
+      "passed": true,
+      "milliseconds": 814,
+      "evidence": {
+        "doctor": {
+          "rejected": true,
+          "exitCode": 1,
+          "diagnostic": "r-outline/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-body/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-qa/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/humanizer-zh/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/cmaps\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/standard_fonts\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/wasm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 busboy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 docx-preview\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 html2canvas\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 mermaid\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 pdfjs-dist\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-markdown\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-gfm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-parse\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 unified\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 micromark-util-decode-string\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-fs-local\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-projection\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-system-prompt\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tools\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-persistence-jsonl\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset-registry\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-user-questions\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-loop\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-checkpoint-policy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-token-meter\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-basic\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-persona\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs-search\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-ask-user\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill-filesystem\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis-plugin-loader\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-llm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-scope\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-ui-layout\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-locale\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-dom\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dsh版本\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Python环境\",\n      \"ok\": false\n    }\n  ],\n  \"errors\": [\n    \"Python 依赖检查失败：Traceback (most recent call last):\\n  File \\\"<string>\\\", line 1, in <module>\\n    import sys,json,docx,pydantic,httpx,trafilatura,jieba,pypdfium2,PIL,markdown_it,fcntl; assert sys.version_info >= (3,12); print(json.dumps({'version':sys.version.split()[0],'prefix':sys.prefix}))\\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nModuleNotFoundError: No module named 'docx'\\n\"\n  ]\n}\n"
+        },
+        "activation": {
+          "rejected": true,
+          "hostStarted": true,
+          "businessRuntimeAbsent": true,
+          "authenticatedApiStatus": 404,
+          "diagnostic": "[{\"name\":\"ooo-bidpliot\",\"args\":[\"Error: 插件目录未准备完成：\\nPython 依赖检查失败：Traceback (most recent call last):\\n  File \\\"<string>\\\", line 1, in <module>\\n    import sys,json,docx,pydantic,httpx,trafilatura,jieba,pypdfium2,PIL,markdown_it,fcntl; assert sys.version_info >= (3,12); print(json.dumps({'version':sys.version.split()[0],'prefix':sys.prefix}))\\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\nModuleNotFoundError: No module named 'docx'\\n\"]}]"
+        }
+      }
+    },
+    {
+      "name": "不支持的宿主版本明确拒绝",
+      "passed": true,
+      "milliseconds": 163,
+      "evidence": {
+        "rejected": true,
+        "diagnostic": "/renderer/figureRenderer.js\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/pdf.worker.min.mjs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/document-parse/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-analysis/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-outline/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-body/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/tender-qa/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"business/python/app/skills/humanizer-zh/SKILL.md\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/cmaps\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/standard_fonts\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dist/pdfjs/wasm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 busboy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 docx-preview\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 html2canvas\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 mermaid\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 pdfjs-dist\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-markdown\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-gfm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 remark-parse\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 unified\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 micromark-util-decode-string\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-fs-local\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-projection\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-system-prompt\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tools\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-persistence-jsonl\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset-registry\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-user-questions\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-loop\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-session-checkpoint-policy\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-token-meter\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-compaction-basic\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-persona\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-fs-search\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-skill\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-tool-ask-user\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-skill-filesystem\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/cordis-plugin-loader\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-llm\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-scope\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-agent-preset\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-ui-layout\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 @deepseek-ai/dsh-client-locale\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"Node依赖 react-dom\",\n      \"ok\": true\n    },\n    {\n      \"name\": \"dsh版本\",\n      \"ok\": false\n    },\n    {\n      \"name\": \"Python环境\",\n      \"ok\": true\n    }\n  ],\n  \"errors\": [\n    \"dsh 版本不匹配：本目录要求 0.2.0-rc.2，当前为 0.1.0；请使用已验证的宿主版本\"\n  ]\n}\n"
+      }
+    },
+    {
+      "name": "全部拒绝检查结束后原件数据库会话完整",
+      "passed": true,
+      "milliseconds": 28,
+      "evidence": {
+        "data": "8a7c309a2ca35251eaab46539005ff3b0c95682f5aa506cdabd03dd8bae1245f",
+        "database": {
+          "sha256": "d08f60548972cd0b4dc9be73494d752cc0fb4c1a609f49496a68d94861562c08",
+          "userVersion": 1,
+          "statements": 36
+        },
+        "sessions": "c6314a30fd47504cea7c4f71a5962f4860b0dcea1ca2c99ab5bcefa3092e769f",
+        "attachments": "9c31b655184b574ea798ab6e806ee26c887f30cdedfece20b6d2f8523c62a7f5",
+        "fileCount": 102
+      }
+    },
+    {
+      "name": "最终重启验证页面与独立Agent",
+      "passed": true,
+      "milliseconds": 1579,
+      "evidence": {
+        "state": {
+          "task": {
+            "id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "title": "本地目录安装与数据保留验收",
+            "progress_note": "",
+            "created_at": "2026-10-13T05:26:50+00:00",
+            "stage": "delivered",
+            "last_activity_at": "2026-10-13T05:27:09+00:00"
+          },
+          "files": [
+            {
+              "path": "analysis/clarifications.md",
+              "content": "# 本地目录验收 clarifications\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4",
+              "modified_at": 1791869213551.092
+            },
+            {
+              "path": "analysis/disqualification.md",
+              "content": "# 本地目录验收 disqualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0",
+              "modified_at": 1791869213542.1616
+            },
+            {
+              "path": "analysis/evaluation.md",
+              "content": "# 本地目录验收 evaluation\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2",
+              "modified_at": 1791869213525.2559
+            },
+            {
+              "path": "analysis/requirements-business.md",
+              "content": "# 本地目录验收 requirements-business\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87",
+              "modified_at": 1791869213506.6116
+            },
+            {
+              "path": "analysis/requirements-format.md",
+              "content": "# 本地目录验收 requirements-format\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3",
+              "modified_at": 1791869213534.447
+            },
+            {
+              "path": "analysis/requirements-qualification.md",
+              "content": "# 本地目录验收 requirements-qualification\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71",
+              "modified_at": 1791869213516.419
+            },
+            {
+              "path": "analysis/requirements-submission.md",
+              "content": "# 本地目录验收 requirements-submission\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c",
+              "modified_at": 1791869213497.1716
+            },
+            {
+              "path": "analysis/structure.md",
+              "content": "# 本地目录验收 structure\n固定目录安装、更新、重装使用的真实业务成果。",
+              "hash": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23",
+              "modified_at": 1791869213489.0215
+            },
+            {
+              "path": "body/关键事实与承诺.md",
+              "content": "# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |",
+              "hash": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c",
+              "modified_at": 1791869220649.7593
+            },
+            {
+              "path": "body/写作指引.md",
+              "content": "# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |",
+              "hash": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db",
+              "modified_at": 1791869218066.597,
+              "registry": {}
+            }
+          ],
+          "directory": {
+            "artifact_id": "art_821051374bc1",
+            "content_seq": 1,
+            "content": {
+              "response_documents": [
+                {
+                  "name": "本地目录验收册",
+                  "directory": [
+                    {
+                      "目录名称": "交付验收章节",
+                      "level": 1,
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "page_target": 120,
+              "numbering": "decimal"
+            }
+          },
+          "source_selection": {
+            "main": "交付验收原件.png",
+            "supplements": [],
+            "excluded": []
+          },
+          "body_files": [
+            "body/交付验收章节.docx",
+            "body/整本-本地目录验收册.docx"
+          ],
+          "build_preparation": {
+            "guide": "ready",
+            "promises": "ready"
+          },
+          "build_preparation_changes": {
+            "guide": [],
+            "promises": []
+          },
+          "body_sections": [
+            {
+              "volume": "本地目录验收册",
+              "title": "交付验收章节",
+              "path": "body/交付验收章节.docx",
+              "status": "ready"
+            }
+          ],
+          "orphan_body_files": [],
+          "volume_states": [
+            {
+              "name": "本地目录验收册",
+              "path": "body/整本-本地目录验收册.docx",
+              "artifact_id": "art_14080959b208",
+              "status": "ready"
+            }
+          ],
+          "bidder": {
+            "task_id": "t_f7803017fb014066b9373af9ee00a6a3",
+            "company_id": "co_d77d36dda45d",
+            "signer_id": "legal",
+            "sign_date": "2026-10-13",
+            "snapshot": {
+              "company": {
+                "id": "co_d77d36dda45d",
+                "name": "交付验收公司",
+                "credit_code": "",
+                "note": "",
+                "profile": {
+                  "legal_name": "验收法人",
+                  "legal_title": "总经理",
+                  "address": "验收地址",
+                  "phone": "123",
+                  "email": "fixture@example.test",
+                  "fax": "无"
+                },
+                "revision": 1,
+                "created_at": "2026-10-13T05:26:50+00:00"
+              },
+              "signer": {
+                "id": "legal",
+                "name": "验收法人",
+                "title": "总经理",
+                "revision": 1
+              },
+              "sign_date": "2026-10-13",
+              "source_versions": {}
+            },
+            "revision": 1,
+            "confirmed": true,
+            "stale": false
+          },
+          "input_versions": {
+            "analyse": "01c435dc698a614f6fb66b0e33d1e03c9bad4aff28a8f5b0aa11ee2b3e4bb36c",
+            "outline": "7a3715b393789a3147c3c4c32e24054b657cf203ee15b5a1f2158e6c430b577c",
+            "guide": "723f696cd430b626527b10cab4810e7d840fc0895230e6d0e5badffc8d179107",
+            "promises": "59714f4fe06cc47fdf48b4d996f771d96ee4a6c064ef7f26ba44ab2873d16b1a",
+            "body": "c7f22b13bf6d0780c894e5456dc8c4aeda567319117a4a33a56837f77ce9a6fe",
+            "revise": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9",
+            "build": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9"
+          },
+          "analysis_progress": [
+            {
+              "key": "basic",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "requirements",
+              "done": 2,
+              "total": 2
+            },
+            {
+              "key": "score",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "format",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "invalid",
+              "done": 1,
+              "total": 1
+            },
+            {
+              "key": "extra",
+              "done": 1,
+              "total": 1
+            }
+          ],
+          "execution": {
+            "session_id": "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe",
+            "kind": "revise",
+            "model": {
+              "provider": "fixture",
+              "model": "fixture"
+            },
+            "sections": [
+              {
+                "volume": "本地目录验收册",
+                "title": "交付验收章节",
+                "path": "body/交付验收章节.docx",
+                "status": "ready"
+              }
+            ],
+            "state": "completed",
+            "questions": []
+          }
+        },
+        "agent": {
+          "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+          "eventCount": 82,
+          "eventHashes": [
+            "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+            "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+            "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+            "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+            "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+            "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+            "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+            "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+            "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+            "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+            "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+            "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+            "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+            "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+            "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+            "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+            "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+            "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+            "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b",
+            "7715b0a06e36604da0a5dc7920ca0d9439dcefed892ce9cb380735dc1466f77c",
+            "ae832598eda50d5821f90653f8aed991df8452afa6674f6f7165be9339470afd",
+            "6aa16f7bbcfe2fde4504cb2994a5f533f3c5c77da8971ff26e5fcab14f80c332",
+            "7cfdf8ae2a5bce11a16ab141ec10ce83bac9f131ac50de1f7e1fbe8b6d273521",
+            "f089d8d2ebe86adb72f737737df79e918c172cbadaf74bc787cce69494f98ab2",
+            "4e04e928c414f1f8e2ff4636e2218e1c0655de40bf86dafe7df9f46aad07c65d",
+            "0078ca98625a8a44dc92234403325bcd2334bc8a15c99b22bc398ed16fc87aa8",
+            "8d74cd8c8972df5637624ef512a510254b2e5f695d5b9d103fcf48584d1f92a6",
+            "3145875cb48832c8d21febe175f7ecce0e60c1e5862ffa59ec00c9e75ca27572",
+            "176b49249e3605003a37d04d82a07515bec542e8857e7d58311f30d357cbd4dc",
+            "234d0a3de5a827e465143feb6721bf7b72e35ecbb78a5fb0e6d8d59689522291",
+            "c9e6f56ba8bf18032832426890816c0a72d2cf5a4be817d244fe1ad7e0d5920b",
+            "e88a3556d3a39e4a7adfcb28052c65ec6ba2735ac18af90d6f98ff10d3eb5164",
+            "a1a5502cb8cce186905411915e306d07eceb22c251f27a12ea1002645cd6e7c6",
+            "3253e7716518628f365977906ab2bfa6c34081c4548d8c4e4d2ae46f9a49340c",
+            "1938ebcfa32c426f61e837c25d3db62e26c4f0dc86ab3756a4370de28a614b53",
+            "33574fb5f4379c005fb2b4718ad1ef58648ca8447fcfa4e921becb482ad100a2",
+            "3ee93ac2568f5e71e2159fb1b857b9c8d6c2820de2a931ffe66d924ef6452868",
+            "c6ec236a76f73fb6349f2f4d545620fba3727b8718efe9573baeb333f10f436f",
+            "a0bd04aa9b3f60f9f69eab0aeca3b422298a13a20152d900713bd6a93b87b7b4",
+            "b97631ba1427693517d47459a945b7e1943f5d6ed029ee4f179042c50af4be6f",
+            "5aa94b3beeaa1fc7369368b61b0c1db6c71b5c83aaba2e40696fcc0b84b93f93",
+            "6089ed89acb9b0d1f7afb381065e2167a6d6c72fec29178afb84fb9fe118888f",
+            "09e2ce2e55b66717a27d058a78fe569e1b51c14760d71d28f3c5b279599bebb8",
+            "6fb79bdc09fe1764a084a5899861b363929c08261fb00e1655ccb260f32f4f87",
+            "c7bf6f28a363ac1c2320faec506ebce2cea22217f893cdc39e300fe5d9124fec",
+            "1dd2480e709043919cff2dbfdbcbb4a6f7f70c36da5068b8247993205cd7508c",
+            "5597b79e0fd642bb7e92b6068e640e8230901050dc9fae0edd5d7528db3b1306",
+            "2ae0748884e6a3b6076c8eb4e90308daf329a080cfc9171af7c94a1710390175",
+            "dfd145859c054e0e07af96077d2b7dd63ce5fd8f2df3634aedce83075a64f788",
+            "f33bdcba96ac828d3e83c3d509ee2d95c526ef4b24db86a7f69503760c3d54f5",
+            "3a4b5600ea048c7c6798c4cdabb659d7430e0692cebb08ba74869cf0f88ccedc",
+            "b3a41fd32d2afc00c958870f37ce5af853e6f20e4de9419e36279edaaee5ba64",
+            "034cc8ae80439a3ff5d6b57cc0393294c11c31cbf7397d05f19e4daf4d97f6b8",
+            "0052c138948536f7820f7cae1bdbe21c9e0c002753cf2ce86f4eb7ffb9e7cd07",
+            "b768f1f25a7b8fb2684d3aae0ff24397ccafaebacc72ca38567aea4f8c1bd997",
+            "fa94c7c64f645795b151e1b3de9300a5f376b7859a73d1301f4e10398557298d",
+            "996fee6f1e335d4cf25d765eb26df712c8ce4bfe553d9bed4f8d5c8da67e5ba1",
+            "3ea42f66c4feb741317ac570d35c3339db4eb3e7d352663b980fede197c56ff4",
+            "ccd97a9e4649ac665f6bc6553d7da788e70d4c133950d8af16de929f4bad2fae",
+            "0c45359866e7dc81949dc60a9e89da3579b37441f963afa0454019a5b10243b3",
+            "951e5d7c6e211f52cadbf082dd2edb7753fe42e5e3ddeecbbe41ee89383cb2b4",
+            "176e7492669fbf2796212a519e1d6807b8a3dea4828d2c12a8d4760ce5d9b7b2",
+            "d8bebdc41a5b141ad91c47083841270b90508f9a0f39f6a42940c3fb097a4297",
+            "1ed8c27eaa3a720839ede08611c58c82c84e3bbf052abaabfb9a3cef788e4ace",
+            "b8efed71585564f8721a957d9ddceb04459968ae1c30d3bc4a3f3e065bae035e",
+            "8ad537c28a208319932c3b7112e9f614917b5123cc3b04baabfc58c582585ccb",
+            "12c143f876a937aafff839a66163385cac1dfab5cc1d62b1dbcc935f0cec7fde",
+            "9247e13200e4de8e76c54aa93659ef73a689dcde641b85e5a468f6d480a98a8d",
+            "5e288af38d53dfa821dea2832a2ebfeef1036ab5094882b4e86492266c034326",
+            "8a26e1c67e3ae33c33bd0566e1100dc63214c55567fb65023cc4a792c8eba34c",
+            "44b014f3e31d2b1c3a5fff14276fd20c27d37b9d34cce7691a0c5ee55b9e068f",
+            "a8346e087917ff1891ba5a582cb682dab62cb00da15fb1aec91cfc061c841495",
+            "a0e144c978b90580263391372d27224b87c5ac132c9f6cb8dc83747a4e3a2e11",
+            "a7a215f23d12d46dc3606601c1c78105ce93bfd5c88df30b431c1932bd970bc3",
+            "e171109ae77863933138e587d3b06ad48090434978eb316859abe322ea9b4b32",
+            "da66d5d76cf689a35fc68c0bf539d89cbfb7cf071ba9fcb399dd731e09826d62",
+            "a67ca638c3a3a9aaf844877b9c7d2cf40b8eb4173975c7b85174bbf82e02d416",
+            "bfe2f94d824cf950feb1849978d8db123e4ba23f1792e903a1f25ef9946f7788",
+            "3de9f56ac593b8f850d079929315de790cad8d63ffe6715113a5248af45cdf3a",
+            "75d8bb97c9d79a063716f9fa4e6e5110e67a1607a6110d8b9aead89c01bf3ec4",
+            "a8806a04a9075971a6a8e71a3da31273642ae019f1cbcf4b739a745d7c1b2b6e",
+            "f5e8faa62dbd5732e61fae61790786ae6f9465ddcbb0c03f96265fb21a20eae5"
+          ],
+          "lastTurn": "completed",
+          "toolCalls": 5,
+          "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+          "document": "http://127.0.0.1:53898/api/bidv4/workbench/content?task_id=t_f7803017fb014066b9373af9ee00a6a3&path=analysis%2Fstructure.md",
+          "output": "http://127.0.0.1:53898/api/bidv4/artifacts/art_14080959b208/file",
+          "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+          "modelRequests": 2
+        },
+        "originalHash": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467",
+        "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c"
+      }
+    },
+    {
+      "name": "页面任务停止会取消子Agent并清理锁",
+      "passed": true,
+      "milliseconds": 2168,
+      "evidence": {
+        "sessionId": "bid-931c7627-2cd6-4236-af7f-1bf5557bc985",
+        "state": "stopped",
+        "childCancelled": true
+      }
+    }
+  ],
+  "passed": true,
+  "business": {
+    "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+    "companyId": "co_d77d36dda45d",
+    "sessions": [
+      "bid-de0e6cb6-5f38-4f4a-b3e6-2ebbb9d2c465",
+      "bid-0228d2ee-ba6c-4e9b-8300-79c585372076",
+      "bid-f950f2fc-ef55-4034-a86d-d775459bd774",
+      "bid-22c98350-a40f-4642-bfc2-98d6355bf066",
+      "bid-e0468aa6-7de0-4477-afed-defc3d23852b",
+      "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe"
+    ],
+    "businessSessions": {
+      "bid-de0e6cb6-5f38-4f4a-b3e6-2ebbb9d2c465": {
+        "eventCount": 37,
+        "eventHashes": [
+          "02a85d2f0c3d4e135b383d75fad91567ad090da8c79e81940fbe368a8a839ec7",
+          "af281b7dadc34143be8222a2b290233ac8e02e809e8aeea1cea56686bb33522b",
+          "1e9c58bb29c7d6647d7473e245200eb98ffab55e9e6b645b5c33400253c2c83b",
+          "f0581f5e9f59dad387a2c50641d4a481cc393ffa3902a7adc4accc3e84d06498",
+          "bc277fcfdd95ade685a6e2d1356b13e5e2eedf265968af6b63a230eb9053c4e1",
+          "476e93a8a88d28ef4386b92a705c34ffd3bec5988c0c52b743ceda25cba8e6b0",
+          "87049d4ab69a20083f65edbe4d0aa616bfebae9aac6ad8f294eb01274846e34f",
+          "686a93da5b21fed06b7b172db214fc814c4eb4b7c8d9d3648d7d231b685cf469",
+          "cf705ec0fc0e270d3d54c25df736087e07977ce98155b2219c2fa3326fd259b0",
+          "e734d69b7806e98a2049d9cac22dd80738cbd6cdfbc89b5d95494db3f874d7ce",
+          "c9d6a7768aa338bfb7b0706322a99f44185633b12a3274a8edfd22ea79f3a5b3",
+          "a7672da74f4f84fe220f359c5784784dfac8ff2ae3f4dc1d1443e1174255d8fb",
+          "5d672f287d53dc9141eddc8f8bdba15ec67ffdd68b1f3da975e159a7577e922b",
+          "251e62114da4222a830e556b75568f94d6c8a70dd51aad2bb07a1f2278ba9d6d",
+          "aeb6f84c9db06584ebbadc186d861e82dc510e9652c4db01ff56f80d4668375b",
+          "d7f9f61f090768a5ee22b2bc15bffa1a7405e6203f71e7f18c9609a59f8fcf81",
+          "6c8a3b17c6b72899a4f7ccf903d0a355f151fe7599166cc2522181dbbc06feab",
+          "00d6bc009d3fa0055c70b5b5ebca4323c4691eee76ddc819deb95448fbe36005",
+          "02cb197ec778f4fca7acafb575e6d187de0aade9bb1f5c48448b28a49fe8677f",
+          "088a0d58831099edee3b1ff41f59893be84e24d06502e9e240ef812cc9205f7c",
+          "95c1a5d4ad0add12e4f33d9b3aebb4dd1d0f3eb0efee8264e85c457ac18eea24",
+          "b6666cbca8e19be3d4f7bc198179af700373ade9bd33729fc39746a12b85fd80",
+          "58c977f9658db7d508c8687b61b049190095e40cc500acc97715382665a8290e",
+          "115e2b6583395a385c91042d5ec7fb0cdbe77e1c61bfeb54d6cbb4f1cf76647b",
+          "52077429b2acb9690709d6cd2fc03414c38121082676454dd182a4d85892953b",
+          "de7eb28ad05af650869b7e3b06ca44c5cae73e805ff32b2389c9a37999458e25",
+          "39fdcad18c33094c32a5445e8b91158622e56c2370d45e9e64354e2be800a75d",
+          "6eb760be052f2386321669b00e975e134cb4206730e8ef0ee4c01c1afe517137",
+          "800490deeef0fa4f8be64ee69ac13448a2a2d3a508172fcbbd064a3a6b11f3c5",
+          "6a5dca2ff6e3ce714f38494842ff6fe4f4ce678004cb6b2a6df7b98ef9a7f901",
+          "603bd91fbb754b027d81702e943cd6c6e680337bc530ede5e505cb0c03cee917",
+          "868d89e699cb4d1cff03d80fea9263cbb1fed28d0d65c25f5dcfd021d658d842",
+          "c3de7f00902514e171f95507225b9c3fdaef16fa5d6ff65de696418f2631fb1e",
+          "b0a2055abb08f59493653101f2404e21a155d155c5452cb9c3fc520b30c49835",
+          "9e88acd4133c5bf01a51f9e128d1628dfe4b6c4491f6173ecd2ecdcbb1e511fd",
+          "00828c62c5c5a4abad1df8e2220cb1e972cf9ed172e6f19f06963675094cdd99",
+          "f2e625d11ef9ebd59e2bb20ee985133fd7ad594117f8d99a83b2d230366520fe"
+        ],
+        "lastTurn": "completed"
+      },
+      "bid-0228d2ee-ba6c-4e9b-8300-79c585372076": {
+        "eventCount": 22,
+        "eventHashes": [
+          "53c5defa78157e216df241866e068766ab784352ea9de8e362b1c019c5dc77d2",
+          "9cda05ac4e3a4cb399de9e766786b29fd8b689ed145e499fc860b13bea16d0b4",
+          "21fef9e692a8d86e1aa5be60ba577a860f783ebf9c75b6efbccb41d8817253ad",
+          "3a9e46f88d55ba4014885b8254023a9a8306f2aca9a2c9a1d61cd944ca5dfba2",
+          "ecb8e477fd75d47e9b2208ba0fb87c08aaeb89670ea30aa36bb8a3d97dfa01f6",
+          "31671e1c911bf6295172e835666acd52c4a2dc3c392fac8e9bfca4541b679b6c",
+          "ad18f3ba1b901e70a7c26777a02db6ee65c9d02f65cc3f93068e24492ce4a124",
+          "03ff0e91a0bc2082b5aaac2c4e0b28a5c4c966b882a6d621bc7bb55898fc716c",
+          "fbb9132f26d5eba01a528b3881bcadcf07daed360094aa27c078ead983167fbc",
+          "471e6fd56e6298d9794527547200082a79763ae2e4ef532211ab88ff599e649a",
+          "f5321f3a6eb28c6807fcee22b80158da978321b9cf5d36ef7764a6e605ac85cb",
+          "1f40d446d8c9fdd40004b68f254bec622142d859560071e011e25a6844f39f48",
+          "d74c571e258f2c4a454d78ab11d9b6e3b2c945f3d799607e55e56f286f518db2",
+          "d418bc655fd802bc7509566e9f20d062352989524fe498f99d914e9cd3bf3821",
+          "2fc8d655db06af4ad811192c3e1f49cbf630e86e33b9adc29e5470cc19277724",
+          "6c5afbedd3477c1fcc5d2f36819156cc8882be9f64e7311d97a555deea79ee7e",
+          "16b54e9c072c2272d22e9665b5cff2fde78cb8054b5a4002e12284f185742861",
+          "2aec61e3f32808cb6dfc85c9da7fa962c5375390ce698c98e889f05e041cecec",
+          "0162600ba293b297bd42494890d03dd5a82f5b9a8b46cc72fd61de01e4c30932",
+          "16b4abf5e4c88bdb9a4821d1b0dfbd349b38f6f9c2cdcb4780f86f4c5ab9c539",
+          "348c47de0f09cb43b93b651cf710a49c80b6e89b5d681cc8e1420011c9b2e075",
+          "3f2265855eb39c55a1108075288306fe0cc6cf4b28dcf4e3c035a0c88cb0454e"
+        ],
+        "lastTurn": "completed"
+      },
+      "bid-f950f2fc-ef55-4034-a86d-d775459bd774": {
+        "eventCount": 17,
+        "eventHashes": [
+          "0b88026dd5a342a134b7de2d334d5e5f7f18d0f3bcbc517ce08986ab23642c53",
+          "09f232bda4d5a1c8e92b7aa84008afa0215747d2554da600c01864a64ae09be0",
+          "3f44709d1a0523ccf3af299d3ed399ed7150f055193f2d1ed35a2fb3aa035f8a",
+          "7d3d6eaa97a0117884f4046b8e08db97a4acc9c22660412e339ec942bc26f00d",
+          "fd8e2fe4bfec4753aee35c5af4ae3b5198949475561464672381a69da18c87c6",
+          "3a6547f344ccb3641a8d849694457b133bda62b184220419416e43444525805e",
+          "9105859be48e300efd5116aefb86cab96d4b26ff383002092c629b97761c8eaa",
+          "91de7b6df51e59b6a5e1ede3c5e11c0df822662853ec14dc910462e0f84b5112",
+          "c8f9eb0d11a060531330cd77152c37b6e297a450f400dada16b7f14ee9e1f936",
+          "ce76d0ed85b5abbd6ada04abc09fd28ca0fd54bbc942616a220f0bce8db43a19",
+          "181bc35d3d6822106df81dda5b8f3f6a4805a50140328ca26f1fb452123f42f7",
+          "e57da7e2252fa887993616b60c5ff23f65a66e5b380237f2da96d6137881d93e",
+          "4fc0f928f08ccf8af200311be49e2779f58a3d1c8d61b9b898b1c8fca0ffa24c",
+          "7c34bbdd8532ffabe1d493190eada23ed80a36d9f4ac7ea7941de99174dbf343",
+          "668246fccbcc353636138a45ac9858acb7028bdb6aecc365684f8ba74c29dcd2",
+          "63922db38b0c4617f63b527f7135091d1bef10cbf6ea2faa5b67fb5b188d7665",
+          "3db921b76f06d8448c8234696cafa796d88aca7227be363c58b4f8c1ec9e6893"
+        ],
+        "lastTurn": "completed"
+      },
+      "bid-22c98350-a40f-4642-bfc2-98d6355bf066": {
+        "eventCount": 17,
+        "eventHashes": [
+          "739cf3716ec74e90a4cb9dacf12cbc526d2ed918baab1c8e5231fb16dd28900b",
+          "60552c91059831c67cded35bb1504ecf7e8dcec39d455e23877c4bebeabcd5aa",
+          "7cc304db09b00a1b1231abc7f20088bb56429451679027d61ca5df20bed60a59",
+          "d765e658a8e8abb0228c6a33196e3e49500924f3fa31caba9f004beb503e4b1f",
+          "ac1bc3ab4f891fefd83f3eb021d1e24c82c7f4b59d58302dbd3749bc8bee128b",
+          "a0bad54babb790041fa5631be14ecbe4a3ec678e0295ca89d7a0854eef202d41",
+          "170ab598a4ed9fb0f05fa9fe5bb0df53c11ba875663da2101ca143387d11058b",
+          "37eb857aedf8ed75c310234c919de8b5dbcb7e0cd93b1716aa933001fe0241cd",
+          "3bfdd2433a832df29e652665c531bc23d2d0431ee51820b35da3ce4506121a73",
+          "9fe91e978c01297e7f687dc80764e3ce9035fe031d50aa861b2e307cef587ce9",
+          "5cb85b10e0d88533719e393dfebc12aa1da00541af4617303b3c749ac29db087",
+          "4802a31a9e01927e8b797e13036c82e12e81c89f7c63228e6fccbe7a7fc49f80",
+          "460cc85f97353afb124a500f054e66cc0ef20be230d23cb6c858deb2d4cdeb36",
+          "058183ccb517da088647c5d035b8bf378b8f764d25f55c3e8a3f5acaf2d0f7cf",
+          "e86470e6755fc2d45c13997511b779ff6c55a288ef8ab998acc3b91dd4c72608",
+          "31d9b94398cde6c41a11fd7964cf5d09754c07ac4e2bfbc57f2136331fa4278c",
+          "b46bc0ceb78478b186481caac946cafe1eae40974e1c62c619315bd358a7417a"
+        ],
+        "lastTurn": "completed"
+      },
+      "bid-e0468aa6-7de0-4477-afed-defc3d23852b": {
+        "eventCount": 25,
+        "eventHashes": [
+          "28d08803c3cce866d4fefdbf35f382a0826feb22dd97f11be8d507b1663c08cb",
+          "b091132d49d6d43e7bc5abbd9459ebc09cb214dc6da2841ec98765291c8deb40",
+          "73931ef933851c588ec7b2aaa90a8829ab306f1518fa15dc352f2ced73b257e0",
+          "0971f3ab96169728342e9433efd6d7a5bfa67bbe4e70e3f0304651d41551e57b",
+          "9cc26f47d94a6ae931b4cf7bd782514e6a849dfdde04e279d34359bc2d480eb8",
+          "c1436771d031d13dab4e9f056df63a8db87dcbef7bd5b3d416a37a359f5fcb18",
+          "37240f2755978e8007d8afb67ba09aec8e79e8d7290249e7f6c1e81484562af2",
+          "f0a362510cf37c98f1af421ce685af8c6f86c3b195869ee5bb19ab3b59ff060a",
+          "ac8578bcb751bd9dd0e36a9b3cac0e843aee73e955b7d58eeaf490c34f220ee6",
+          "16602a3979a94e45fd89ffc8384900dc16292f3c0d441b8cc80e31f750b94782",
+          "44f329845c2547f2b9ed8f600b6d8fbaa491670b8d7232ffd99f59237f770241",
+          "33af986d7e4b9b6c88997e8d6d83e10e035f15d1f10b5cddcbac30957b0f4ca9",
+          "709e13d21fc65f9ec4014c604e7433a0a540573e28db0a10bd9a9ddd1d7aff11",
+          "6da5b5c095fe5634103ec75b1549c3bf495c040cdd9bc525ff40a51bfb78be0c",
+          "07294adc273cb2fdc4ca105923b9326d1fb0c703f8d65dcf31aa09574a494c96",
+          "8af17425ead6cdceb4fc234210266eddd4274d64b7418655f811c73f5808b793",
+          "c0f0988eba721703c6fbf28ac400ecadfe67046a7fda613066273788c78d09ff",
+          "2822ea0fc85e960e871e7f9591f314669f82203285f7105e5ed7f08eb4bbebbc",
+          "33b728afd1e84c60f051a9b202f7b0951b7dbe637cc2d9eca861db9803adca5f",
+          "236dca045993c5fc47955306bfce0253391d6bf5987bf676853b76092d238c69",
+          "846ad4acb49ff9923082852973812c5b85f8ad3a511ff9315470d2116ddb5542",
+          "490cdb389bcd88100e641f1a9c6581c24d3850a0d839c1d81c2d3b7de33a94cf",
+          "2bf9b5d1ac05fe1c787a1246511c9b2872e5d0f547255557631a97f6bc58e6d9",
+          "fc9e4cedb862f138012217af177a30704ddc18d23fa3487a13e8d3485145bccf",
+          "c3fb160fb34caac45b82b76fbd9cde3938dec4440911482d7e8ab71704910752"
+        ],
+        "lastTurn": "completed"
+      },
+      "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe": {
+        "eventCount": 22,
+        "eventHashes": [
+          "13c9cbcab11d376cc0a439cb9292a4af82f2fb3682d25b03023a8d7507b922fb",
+          "f46fdcb15a122c4a491fd96dd01072aed1cdea533e6335ecee35031e10d05e56",
+          "23c206367e831af017daa0561eaee0de40070f3690385d980d9bcccd8581555a",
+          "e2b1e01ca52d13e12e8f7d732bc7e68e720b614734aa6fe05be3b10cabb90add",
+          "2aeff4d0fbe89269417def241c5b1a83aa6fdf1d6466782b9eeb92fe11ee88dc",
+          "4a003d2466f94bee631087fb2b50bf5f6843bca7a2fe15c93eaa2ddb08f73480",
+          "9f7d457e1b4e7c3e9312212236b60252e0e7cf5eca936b91988392b2a032a146",
+          "548b64aeadddf8a615e2c7b7dc56b99c2454a54fdc672838d2e3ab546fbc52f4",
+          "184740348116e3e4b6c255734084052eed9908d27e8023e4bf8c0d53f9ab50e1",
+          "e5f9c56cc1e3ec78ef1adf18b0c3257887ba80ec5bbd010c5dde460fcb524779",
+          "210c7e801462785b050209413397956127252f7176b90ed02459a4152d497037",
+          "79687760c71ac8fe386d418cc99ffb9b645fba7bc3edf8d9d3dd7b2a7ea5c407",
+          "b2b9343a21b495f36b585450495083932a56d94c8fbda9b43826eb85d3fbde51",
+          "2b7116567e7d6bb4f188b4e4dcb6d51de6c6853b18b81b2f8118d7bef6561349",
+          "2c252a17e8fda4a631166dc07f8cf30a6be3194e3dcbbc55b7890517ab39746e",
+          "4f4064f45c28cb1c0236bfe19fda146495a2ff5925b287e0c6dab1c26a3d4f83",
+          "cece1c901b3204f967e6c89dbe23ee5ab8ed62f57e00906634bf6a5946e65996",
+          "8bdee52432d6f2046f78f3681072ee2a872a45b82b33069a1223d42db59b36fd",
+          "d109e4e942679d46a999c0c3d81ffadd0724ce2185b254fb917c6cc79f9750c8",
+          "9e14fd82ce8bb3d158af1a76731fdc585436491ea549c7633c51949a3d9b7d5a",
+          "c397c488c1d17dec8d45a6c6b7fc00d117351fe406e5ff1e79acd32bf1153b5e",
+          "24376f9c1d09857e383477f570454b5c99f573fbe10bd76284e2bca72baecbfd"
+        ],
+        "lastTurn": "completed"
+      }
+    },
+    "agentSession": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+    "agent": {
+      "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+      "eventCount": 19,
+      "eventHashes": [
+        "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+        "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+        "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+        "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+        "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+        "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+        "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+        "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+        "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+        "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+        "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+        "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+        "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+        "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+        "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+        "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+        "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+        "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+        "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b"
+      ],
+      "lastTurn": "completed",
+      "toolCalls": 1,
+      "taskId": "t_f7803017fb014066b9373af9ee00a6a3",
+      "document": "http://127.0.0.1:53275/api/bidv4/workbench/content?task_id=t_f7803017fb014066b9373af9ee00a6a3&path=analysis%2Fstructure.md",
+      "output": "http://127.0.0.1:53275/api/bidv4/artifacts/art_14080959b208/file",
+      "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+      "modelRequests": 2
+    },
+    "switchedAgent": {
+      "sessionId": "delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8",
+      "eventCount": 34,
+      "eventHashes": [
+        "272acc733874e35f1b0d5aa00eee8304cccb582ea2245aa8f1438c987def391c",
+        "8b37608007737fa33f2c6abe9c3c7b5a66545859af1998f2636532622d0e9f29",
+        "4951a8056b59874e13c0bc77109a9c2bfe31268c337b5ee2fcd6c6cb6dd76ea6",
+        "1226a0015373708ad52166e87dbe1002519462aa8b59e01cce3e37102ef137f4",
+        "4093fa185e740bc9e744d1e1f118d35073dfe7c5305a80e1ce0151f64ff86f09",
+        "77e307afa6decba9d1caae665ef4cda50d8d4aaf06b4f9a4e470f3652501a75b",
+        "6a440947a4fdd8035ce1f4f53c350c1d70e886c3493a3ce38273d965396f26f5",
+        "6a8d3c0b529008c7648e6fa0aab89a761126bd4a660c65fef9359c5a494ae301",
+        "076427cc865bc5c1e4690b8a9c7c96a6bb4227eeb6b66f4c39274ff6662a4b47",
+        "32b8bc1dd17af480caf6fde39d4815e714df25bf625a524893b4aa4407ffe7b3",
+        "93c67f9e3a58fe10b994cf3f25cfefd2f5cbc9cbbf50acf9d60a5fdf8921faed",
+        "231c70a2bd9fd32a9cd8d13415cfa712792113c66e7c5bd53ee7b9d0b789815b",
+        "d8ccee81e04ccc58dd941f42e6e19ad60c8f477b1d5bd6dbad817572e119f9c2",
+        "48a3dbb9cf8b7e47fe4c48f9a1b50f53dc2816b59b398fcebf173e2686388b66",
+        "f17ab40558ca3bc26c0f94dcbc71f2da885ed8c8fb2d101917ee50b57c0755d9",
+        "dc4406809981027d10bf8713572aeacd620ecf6dcf4c7eebe3ed4ebb9e7b7ad1",
+        "7edbbb316c209991e9369c8839940981bec60fc83e32ddc5a9c2fb539c620f57",
+        "3d85ba21032d2ad1e23043e88c17046fc6c1bff9dcbfae0a2e2654d8d6dd7875",
+        "3866ec641dd63ccce5829bc89dac32dc8cc3668c71d5da6a99a2d7776b7fb57b",
+        "7715b0a06e36604da0a5dc7920ca0d9439dcefed892ce9cb380735dc1466f77c",
+        "ae832598eda50d5821f90653f8aed991df8452afa6674f6f7165be9339470afd",
+        "6aa16f7bbcfe2fde4504cb2994a5f533f3c5c77da8971ff26e5fcab14f80c332",
+        "7cfdf8ae2a5bce11a16ab141ec10ce83bac9f131ac50de1f7e1fbe8b6d273521",
+        "f089d8d2ebe86adb72f737737df79e918c172cbadaf74bc787cce69494f98ab2",
+        "4e04e928c414f1f8e2ff4636e2218e1c0655de40bf86dafe7df9f46aad07c65d",
+        "0078ca98625a8a44dc92234403325bcd2334bc8a15c99b22bc398ed16fc87aa8",
+        "8d74cd8c8972df5637624ef512a510254b2e5f695d5b9d103fcf48584d1f92a6",
+        "3145875cb48832c8d21febe175f7ecce0e60c1e5862ffa59ec00c9e75ca27572",
+        "176b49249e3605003a37d04d82a07515bec542e8857e7d58311f30d357cbd4dc",
+        "234d0a3de5a827e465143feb6721bf7b72e35ecbb78a5fb0e6d8d59689522291",
+        "c9e6f56ba8bf18032832426890816c0a72d2cf5a4be817d244fe1ad7e0d5920b",
+        "e88a3556d3a39e4a7adfcb28052c65ec6ba2735ac18af90d6f98ff10d3eb5164",
+        "a1a5502cb8cce186905411915e306d07eceb22c251f27a12ea1002645cd6e7c6",
+        "3253e7716518628f365977906ab2bfa6c34081c4548d8c4e4d2ae46f9a49340c"
+      ],
+      "lastTurn": "completed",
+      "toolCalls": 2,
+      "taskId": "t_a9c3a241ae5b4df09a8d523ce2bfb8f8",
+      "document": "http://127.0.0.1:53275/api/bidv4/workbench/content?task_id=t_a9c3a241ae5b4df09a8d523ce2bfb8f8&path=analysis%2Fstructure.md",
+      "output": "http://127.0.0.1:53275/api/bidv4/artifacts/art_b76f967b7f1d/file",
+      "outputHash": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05",
+      "modelRequests": 2
+    },
+    "assets": [
+      {
+        "path": "client.js",
+        "bytes": 1874757,
+        "sha256": "f3a5a5a03f8ee2f12606cb44b8ba488656448c251003716ce3b3ae35d3960ae6"
+      },
+      {
+        "path": "renderer/figureRenderer.js",
+        "bytes": 3473,
+        "sha256": "4aa6d351f32369ba6da5d8b13f28c5d65d81ee0b7ea4cbcc06f95525518bcb00"
+      },
+      {
+        "path": "pdfjs/pdf.worker.min.mjs",
+        "bytes": 1265413,
+        "sha256": "8ab0e5e30031b4a06ecfddd5ae9562f0227f830ee7ec9ed1a968b134243d2386"
+      },
+      {
+        "path": "pdfjs/cmaps/UniGB-UCS2-H.bcmap",
+        "bytes": 43366,
+        "sha256": "9201569b402e81ad8860650bd86350c4fa28e5dd5971f05fcacaf40f51de18ed"
+      },
+      {
+        "path": "pdfjs/standard_fonts/FoxitSerif.pfb",
+        "bytes": 19469,
+        "sha256": "4f57d2b9d884af8f907bf22df6019b52d86cbf6214fdbd02b1ae05472a543f35"
+      },
+      {
+        "path": "pdfjs/wasm/jbig2.wasm",
+        "bytes": 104852,
+        "sha256": "e6bee67724a7b5436fe8162638e3708cfc8d52b6342db69a49715e30ff27cfdc"
+      }
+    ],
+    "outputHash": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c",
+    "originalHash": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467",
+    "artifactId": "art_14080959b208",
+    "state": {
+      "task": {
+        "id": "t_f7803017fb014066b9373af9ee00a6a3",
+        "title": "本地目录安装与数据保留验收",
+        "progress_note": "",
+        "created_at": "2026-10-13T05:26:50+00:00",
+        "stage": "delivered",
+        "last_activity_at": "2026-10-13T05:27:09+00:00"
+      },
+      "files": [
+        {
+          "path": "analysis/clarifications.md",
+          "content": "# 本地目录验收 clarifications\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4",
+          "modified_at": 1791869213551.092
+        },
+        {
+          "path": "analysis/disqualification.md",
+          "content": "# 本地目录验收 disqualification\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0",
+          "modified_at": 1791869213542.1616
+        },
+        {
+          "path": "analysis/evaluation.md",
+          "content": "# 本地目录验收 evaluation\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2",
+          "modified_at": 1791869213525.2559
+        },
+        {
+          "path": "analysis/requirements-business.md",
+          "content": "# 本地目录验收 requirements-business\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87",
+          "modified_at": 1791869213506.6116
+        },
+        {
+          "path": "analysis/requirements-format.md",
+          "content": "# 本地目录验收 requirements-format\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3",
+          "modified_at": 1791869213534.447
+        },
+        {
+          "path": "analysis/requirements-qualification.md",
+          "content": "# 本地目录验收 requirements-qualification\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71",
+          "modified_at": 1791869213516.419
+        },
+        {
+          "path": "analysis/requirements-submission.md",
+          "content": "# 本地目录验收 requirements-submission\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c",
+          "modified_at": 1791869213497.1716
+        },
+        {
+          "path": "analysis/structure.md",
+          "content": "# 本地目录验收 structure\n固定目录安装、更新、重装使用的真实业务成果。",
+          "hash": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23",
+          "modified_at": 1791869213489.0215
+        },
+        {
+          "path": "body/关键事实与承诺.md",
+          "content": "# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |",
+          "hash": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c",
+          "modified_at": 1791869220649.7593
+        },
+        {
+          "path": "body/写作指引.md",
+          "content": "# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |",
+          "hash": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db",
+          "modified_at": 1791869218066.597,
+          "registry": {}
+        }
+      ],
+      "directory": {
+        "artifact_id": "art_821051374bc1",
+        "content_seq": 1,
+        "content": {
+          "response_documents": [
+            {
+              "name": "本地目录验收册",
+              "directory": [
+                {
+                  "目录名称": "交付验收章节",
+                  "level": 1,
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "page_target": 120,
+          "numbering": "decimal"
+        }
+      },
+      "source_selection": {
+        "main": "交付验收原件.png",
+        "supplements": [],
+        "excluded": []
+      },
+      "body_files": [
+        "body/交付验收章节.docx",
+        "body/整本-本地目录验收册.docx"
+      ],
+      "build_preparation": {
+        "guide": "ready",
+        "promises": "ready"
+      },
+      "build_preparation_changes": {
+        "guide": [],
+        "promises": []
+      },
+      "body_sections": [
+        {
+          "volume": "本地目录验收册",
+          "title": "交付验收章节",
+          "path": "body/交付验收章节.docx",
+          "status": "ready"
+        }
+      ],
+      "orphan_body_files": [],
+      "volume_states": [
+        {
+          "name": "本地目录验收册",
+          "path": "body/整本-本地目录验收册.docx",
+          "artifact_id": "art_14080959b208",
+          "status": "ready"
+        }
+      ],
+      "bidder": {
+        "task_id": "t_f7803017fb014066b9373af9ee00a6a3",
+        "company_id": "co_d77d36dda45d",
+        "signer_id": "legal",
+        "sign_date": "2026-10-13",
+        "snapshot": {
+          "company": {
+            "id": "co_d77d36dda45d",
+            "name": "交付验收公司",
+            "credit_code": "",
+            "note": "",
+            "profile": {
+              "legal_name": "验收法人",
+              "legal_title": "总经理",
+              "address": "验收地址",
+              "phone": "123",
+              "email": "fixture@example.test",
+              "fax": "无"
+            },
+            "revision": 1,
+            "created_at": "2026-10-13T05:26:50+00:00"
+          },
+          "signer": {
+            "id": "legal",
+            "name": "验收法人",
+            "title": "总经理",
+            "revision": 1
+          },
+          "sign_date": "2026-10-13",
+          "source_versions": {}
+        },
+        "revision": 1,
+        "confirmed": true,
+        "stale": false
+      },
+      "input_versions": {
+        "analyse": "01c435dc698a614f6fb66b0e33d1e03c9bad4aff28a8f5b0aa11ee2b3e4bb36c",
+        "outline": "7a3715b393789a3147c3c4c32e24054b657cf203ee15b5a1f2158e6c430b577c",
+        "guide": "723f696cd430b626527b10cab4810e7d840fc0895230e6d0e5badffc8d179107",
+        "promises": "59714f4fe06cc47fdf48b4d996f771d96ee4a6c064ef7f26ba44ab2873d16b1a",
+        "body": "c7f22b13bf6d0780c894e5456dc8c4aeda567319117a4a33a56837f77ce9a6fe",
+        "revise": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9",
+        "build": "215d490d786031caffb4ebdf53b3bc447c7acb92436b8fb075f1dbd59de10bf9"
+      },
+      "analysis_progress": [
+        {
+          "key": "basic",
+          "done": 2,
+          "total": 2
+        },
+        {
+          "key": "requirements",
+          "done": 2,
+          "total": 2
+        },
+        {
+          "key": "score",
+          "done": 1,
+          "total": 1
+        },
+        {
+          "key": "format",
+          "done": 1,
+          "total": 1
+        },
+        {
+          "key": "invalid",
+          "done": 1,
+          "total": 1
+        },
+        {
+          "key": "extra",
+          "done": 1,
+          "total": 1
+        }
+      ],
+      "execution": {
+        "session_id": "bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe",
+        "kind": "revise",
+        "model": {
+          "provider": "fixture",
+          "model": "fixture"
+        },
+        "sections": [
+          {
+            "volume": "本地目录验收册",
+            "title": "交付验收章节",
+            "path": "body/交付验收章节.docx",
+            "status": "ready"
+          }
+        ],
+        "state": "completed",
+        "questions": []
+      }
+    },
+    "build": {
+      "taskId": "t_a9c3a241ae5b4df09a8d523ce2bfb8f8",
+      "sessionId": "bid-0a24ff64-3ec1-4b30-a6a7-fb496977c58d",
+      "sameSessionAnswer": true,
+      "state": "completed",
+      "volume": "ready"
+    },
+    "requests": 47
+  },
+  "baseline": {
+    "data": {
+      "files": {
+        "actions/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/0319f3daae8a579959be9bd146132e1a51446460d0ac64202ef6d9e405000e82.json": {
+          "bytes": 658,
+          "sha256": "2c6f6cbc42a178976ed47c683a16c7c865d3614040f19a7db9e28e542bcb3eca"
+        },
+        "actions/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/67b1e32fd4ef94973937b6518ee6cbf656bc31bbecec278fa1f3299d3b856947.json": {
+          "bytes": 423,
+          "sha256": "e40d38e1056ddec05360407cb4949fe3489d7f0511c112cd00fe1707e547c2f1"
+        },
+        "actions/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/8368a7bc7798383cc6ac1fa1e4b7961d80d5205d878e61fa1d3ba8588d734106.json": {
+          "bytes": 395,
+          "sha256": "11f9601d3f8e4bb13bbde111b8f1567fceb4d6be5af13a61b157b41447543773"
+        },
+        "actions/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/latest.json": {
+          "bytes": 423,
+          "sha256": "e40d38e1056ddec05360407cb4949fe3489d7f0511c112cd00fe1707e547c2f1"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/5d4045dc31544860ab6cabebb2de5ef6194cc4df532827238386eece9ba28de5.json": {
+          "bytes": 393,
+          "sha256": "7ef32dcf0331ef5a5369b99ab248510c75bc0449f2c4f4001e5422726682151f"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/7fdf3d74b0da5cdc5f0171291c9425a6b114be446abf9fc2787b925ba346c343.json": {
+          "bytes": 658,
+          "sha256": "593ec9c0c9151d1982bedf5fc6fcdc96eb5655f5df2904d1a42c08ff02fc153b"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/80f85888d79456dd6272cde9a1e3917758ae8dfcee47ab14c02b4ab5aada6f8f.json": {
+          "bytes": 395,
+          "sha256": "ad2e8ccae145461ba9d1f170c84f32e0eb7893df0e25eb0f0a419f812d44a7a7"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/83a4d6873b1c649311e99a0b56544695e8be004cedade5bc9fe3aab1bbf1c71c.json": {
+          "bytes": 396,
+          "sha256": "251791d3c28fe08ffdf47ccf2a1a3bb8fda4c4316776d217716622068dddff74"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/9c34fdc9abcfe238a8e40a5ba99928f336a1ca7bf9ea4c124c180061e226dd73.json": {
+          "bytes": 542,
+          "sha256": "6365efc71c954b77b66217d7e10e1e1688dda49792e1ee6fa408fd0735e84b73"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/9f5f9bc736def6b23b7c5907aebf88cd5fda17a37efe08362b26435dd441743b.json": {
+          "bytes": 542,
+          "sha256": "c6bc5fe812b071955cb4221f02e26ac3c58fc7912988979b07ce5f934d56d148"
+        },
+        "actions/t_f7803017fb014066b9373af9ee00a6a3/latest.json": {
+          "bytes": 542,
+          "sha256": "c6bc5fe812b071955cb4221f02e26ac3c58fc7912988979b07ce5f934d56d148"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/374c2767-ba54-41cf-adc2-a30e410ca4d8/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/374c2767-ba54-41cf-adc2-a30e410ca4d8/session.v4.jsonl": {
+          "bytes": 51767,
+          "sha256": "7d16beb2038c721ca31bb8a228dcb3486015f12351c052f3d10afa8577866f92"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/47a481ac-ea59-4037-8114-451bc082ff5b/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/47a481ac-ea59-4037-8114-451bc082ff5b/session.v4.jsonl": {
+          "bytes": 9993,
+          "sha256": "bc4fcdd1bdbfdf3143ee1e8d30d52c64c37df6a373ec3cb0129b5f0294e93328"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/bid-0a24ff64-3ec1-4b30-a6a7-fb496977c58d/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/bid-0a24ff64-3ec1-4b30-a6a7-fb496977c58d/session.v4.jsonl": {
+          "bytes": 86593,
+          "sha256": "588ab673fca25aec89cbf23c8f9f4ad04261a16f1df0fd031c63dde91a8c4285"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/bid-6befb21b-7dd6-4fe4-aa78-dfc8477764df/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/bid-6befb21b-7dd6-4fe4-aa78-dfc8477764df/session.v4.jsonl": {
+          "bytes": 74286,
+          "sha256": "d490a5b5b743b39a2328255b4b0669796811e6f79fea581deb6926a7fe6de8e5"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/bid-d266d290-132a-4b3d-928f-d954dfb9323f/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_a9c3a241ae5b4df09a8d523ce2bfb8f8--/bid-d266d290-132a-4b3d-928f-d954dfb9323f/session.v4.jsonl": {
+          "bytes": 56442,
+          "sha256": "bc0f1dabf58201556af549b56d020c04e5369e5f0cd102ef55a09da1a5be759a"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/532c7252-82c6-414e-8480-83a4c2e4fe64/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/532c7252-82c6-414e-8480-83a4c2e4fe64/session.v4.jsonl": {
+          "bytes": 9993,
+          "sha256": "9f308b891666c109ebf5385241d3361b3f4bfd30678aa26e2eccaec0725ebe74"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-0228d2ee-ba6c-4e9b-8300-79c585372076/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-0228d2ee-ba6c-4e9b-8300-79c585372076/session.v4.jsonl": {
+          "bytes": 56448,
+          "sha256": "668a8a3c79027ea96279d0780e7e5b94ec9baa5eb0723f63417cb04c28e2511b"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-22c98350-a40f-4642-bfc2-98d6355bf066/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-22c98350-a40f-4642-bfc2-98d6355bf066/session.v4.jsonl": {
+          "bytes": 54952,
+          "sha256": "041a2173859387bc480389e0ce01f8ae017a978f6c4b44f695ba4e622fab517c"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-5ca1018d-fac2-4446-9845-b2a59ddbdefe/session.v4.jsonl": {
+          "bytes": 57575,
+          "sha256": "66abea5ca252b7843f208db01385d4fc93e6fc3a066ca2e74d9a2f8f90c447b2"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-de0e6cb6-5f38-4f4a-b3e6-2ebbb9d2c465/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-de0e6cb6-5f38-4f4a-b3e6-2ebbb9d2c465/session.v4.jsonl": {
+          "bytes": 74286,
+          "sha256": "61a02667bd52fcb6fdb8eb0f81248d48c3007399713a52477b67267209ac1bca"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-e0468aa6-7de0-4477-afed-defc3d23852b/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-e0468aa6-7de0-4477-afed-defc3d23852b/session.v4.jsonl": {
+          "bytes": 59136,
+          "sha256": "672d67eefc5be744c5f5045c142d0ddb6dbfc0ee565651a6c1edb25ca5bf05e2"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-f950f2fc-ef55-4034-a86d-d775459bd774/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/bid-f950f2fc-ef55-4034-a86d-d775459bd774/session.v4.jsonl": {
+          "bytes": 55077,
+          "sha256": "5ea4ccad8f56538d8630f78284bafbf6d3e0c8df507e194d99cd65174d0d0ce1"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/d025c8c4-ef22-476b-901b-9e8c46e20f97/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "dsh/sessions/--private-var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install-data-workspace-t_f7803017fb014066b9373af9ee00a6a3--/d025c8c4-ef22-476b-901b-9e8c46e20f97/session.v4.jsonl": {
+          "bytes": 51767,
+          "sha256": "868028b6cc7c827569f600eeacb77434c0d88503ac612848d34d241ab52efc0d"
+        },
+        "file-locks/3dd784f49f6e31af75ef4ada3ecb4e9375902135d2c953b3334c06d3327b5c68": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "file-locks/51cb62cc46e60c0fee41a383d14712e68ad562af1e32e37da08b0777380b3ee0": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "file-locks/9e284f79d3e10d878a88cf02d2f13d61466db1f001950d9fcb5c79f4918f3452": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "file-locks/a54958a8ba8586431171be59785f5779fc51de0199ca77e1b04cc5d317f8cc34": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "file-locks/d8ca5659e2c614932400c07d3c5c80c95bfee9c866199096a7349c630a628aae": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "tool-receipts/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/7c9d996cce92635fab1b51bf7a93a9ff3c893e0947edf1707baeb862a4c3e4e2.json": {
+          "bytes": 391,
+          "sha256": "c6993e8c6fd8942ac73a7ecabc4a597e4b3586bf87d5f5f8d1df661731f15cd0"
+        },
+        "tool-receipts/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/8d5ba882cb3f84b5f5a4472e8c9874c89c749917be420d2409d7b0f27d985abc.json": {
+          "bytes": 367,
+          "sha256": "dc0cd87e66aa00627a0adcac8506572adf0cf5c327046c9df0a7fdc1c6093fcc"
+        },
+        "tool-receipts/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/ce6a14436c6f24437fecbd71e0a25ebd689573c172552c04d8d4eef302396681.json": {
+          "bytes": 591,
+          "sha256": "d721987f1e267696722b0aadeee89eeb29376b3f457c84241fd8769458eaeff0"
+        },
+        "tool-receipts/t_f7803017fb014066b9373af9ee00a6a3/1ae31ca51c32f98c9cca986880e06a7503635c74089b393992180cb202406931.json": {
+          "bytes": 770,
+          "sha256": "d9f4fa0b173c217cff8ec71296f9b6a71c7c16cb2200df88b20785d430f4be91"
+        },
+        "tool-receipts/t_f7803017fb014066b9373af9ee00a6a3/8b011bd1bdadaee388c547937325ff16bdb80cb0dd547809118615a1f7b2d5cd.json": {
+          "bytes": 367,
+          "sha256": "dc0cd87e66aa00627a0adcac8506572adf0cf5c327046c9df0a7fdc1c6093fcc"
+        },
+        "tool-receipts/t_f7803017fb014066b9373af9ee00a6a3/a3639f81fe6e5ed2dc6115a049a0ec35ba76a8483c9b7196d83de77373407d95.json": {
+          "bytes": 391,
+          "sha256": "40acb790c5751b5a73daf6c25d093c35c657aac20b7d2bcff88d737c492900df"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/skills": {
+          "link": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/business/python/app/skills"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/sources/交付验收原件.png": {
+          "bytes": 79,
+          "sha256": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/clarifications.md": {
+          "bytes": 102,
+          "sha256": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/disqualification.md": {
+          "bytes": 104,
+          "sha256": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/evaluation.md": {
+          "bytes": 98,
+          "sha256": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/requirements-business.md": {
+          "bytes": 109,
+          "sha256": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/requirements-format.md": {
+          "bytes": 107,
+          "sha256": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/requirements-qualification.md": {
+          "bytes": 114,
+          "sha256": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/requirements-submission.md": {
+          "bytes": 111,
+          "sha256": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/analysis/structure.md": {
+          "bytes": 97,
+          "sha256": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/artifacts/art_b76f967b7f1d/content.json": {
+          "bytes": 241,
+          "sha256": "3c3ce43ac3bd82f66cd1b085ea2d239a649a5259ffa96afda754116c0242f3cd"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/artifacts/art_b76f967b7f1d/meta.json": {
+          "bytes": 624,
+          "sha256": "4d02a6dadd96e40cf893c27a1be0c7048fe9c158074b45ff2962bf1c33ea4ed1"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/artifacts/art_b76f967b7f1d/整本-本地目录验收册.docx": {
+          "bytes": 37908,
+          "sha256": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/artifacts/art_dd8ae5e2935d/content.json": {
+          "bytes": 273,
+          "sha256": "b2b5f75a7b5add6273032fa19382e564e74b4e63bc90de7a966c850ff8f8228e"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/artifacts/art_dd8ae5e2935d/meta.json": {
+          "bytes": 561,
+          "sha256": "a30b7e5e3074308b4054cd5be2da9a1e04f04d54f4514e672db5f0ad619ae790"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/body/.build-state.json": {
+          "bytes": 1755,
+          "sha256": "14fd780108048a741cc6ebad8c3f96ee956df6e3794cf85ac4b7a5f31b111717"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/body/交付验收章节.docx": {
+          "bytes": 37883,
+          "sha256": "d7acd92a1a20d6b8e07fede8f2c90cd247868324ed6d0b6b3c4f3752d971b83b"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/body/关键事实与承诺.md": {
+          "bytes": 74,
+          "sha256": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/body/写作指引.md": {
+          "bytes": 144,
+          "sha256": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/body/投标主体信息.json": {
+          "bytes": 560,
+          "sha256": "7431914137754ea116577c9f321a053c88666ff07180f28de5b007b15eb2b3c6"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/body/整本-本地目录验收册.docx": {
+          "bytes": 37908,
+          "sha256": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/parse/sources.json": {
+          "bytes": 77,
+          "sha256": "96d6a2d4cfb4f218f648f12537af79e3c98590237590ce753b59a9e5628e2152"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/parse/交付验收原件.png/images/page-1.png": {
+          "bytes": 79,
+          "sha256": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/parse/交付验收原件.png/plan.json": {
+          "bytes": 772,
+          "sha256": "05446155cd7ddb9db813ecabcc4247b792fde24a33a984b8c61447719fadf78d"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/parse/交付验收原件.png/交付验收原件.png.md": {
+          "bytes": 542,
+          "sha256": "134da08805038926f96ff16dd33f3bb20ea4c5574ee40523fd6523a91bcc11bb"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/parse/交付验收原件.png/交付验收原件.png.meta.json": {
+          "bytes": 298,
+          "sha256": "41d2f489351f59d69798b141d72f6062c02c8485a83bf3917efde5c79307825d"
+        },
+        "workspace/t_a9c3a241ae5b4df09a8d523ce2bfb8f8/work/parse/交付验收原件.png/交付验收原件.png.outline.json": {
+          "bytes": 122,
+          "sha256": "7fb74e3fc798271c9a85e91328e44c8541de9c5d27ba58ca33e384e953f95ed2"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/skills": {
+          "link": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3/fixed-install/business/python/app/skills"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/sources/交付验收原件.png": {
+          "bytes": 79,
+          "sha256": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/clarifications.md": {
+          "bytes": 102,
+          "sha256": "de4dd5f2d864c76f432e8ee0d0968c6f97c1494e421cc6a07f4ea1da84f0f8c4"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/disqualification.md": {
+          "bytes": 104,
+          "sha256": "e90b4558f4a1e18933f4033309cfccb5846b77d6f770ca039a8e63dc2d60b7e0"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/evaluation.md": {
+          "bytes": 98,
+          "sha256": "4b5ace4ab7fcf97674fcdc7c16a00cda27c631092dc7d0d4732268206b08dff2"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/requirements-business.md": {
+          "bytes": 109,
+          "sha256": "5904ad15d64f7e030fc949ffd023a4aa3de91459ded1bd35003d8818198c8f87"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/requirements-format.md": {
+          "bytes": 107,
+          "sha256": "7478332310d56de02374adaca05c0d12b1006762bfb5da9ed6b2f01794a4f0c3"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/requirements-qualification.md": {
+          "bytes": 114,
+          "sha256": "83d1be7493e84b171c5fd213bf334bd5cda2496845a61811a6bc4d86a067bb71"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/requirements-submission.md": {
+          "bytes": 111,
+          "sha256": "0e3905e183bf8fd728e4ec1675b9b464adaa2d4cbdee1d244f3ce1487f35694c"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/analysis/structure.md": {
+          "bytes": 97,
+          "sha256": "aaee090505ab0c17384720bd0f40ee5186d99f68f33e49fde680b6478026ad23"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/artifacts/art_14080959b208/content.json": {
+          "bytes": 241,
+          "sha256": "da605e031423bcf0544407b0ace0ff9b6fe7ce72f86f8615e514843ce7de3404"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/artifacts/art_14080959b208/meta.json": {
+          "bytes": 532,
+          "sha256": "8c278ae5dd31ef4fe9da2f9a30b796c852f83ec491fd655eb0a28ba825fa2a94"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/artifacts/art_14080959b208/整本-本地目录验收册.docx": {
+          "bytes": 37917,
+          "sha256": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/artifacts/art_821051374bc1/content.json": {
+          "bytes": 276,
+          "sha256": "5a1b68b7c2c77180bcf37ccc5f2bc34e9b4e3512d65790df050a36879dfe342b"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/artifacts/art_821051374bc1/meta.json": {
+          "bytes": 561,
+          "sha256": "632cca665f75a1a17f76dd5ef27ed350abed31dffea58500390df925868499ab"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/body/.build-state.json": {
+          "bytes": 1755,
+          "sha256": "ae59a8d0c7de9a2f1c8fd25ac4bebe04f732b71cdaee62615f7320ed134604d7"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/body/交付验收章节.docx": {
+          "bytes": 37987,
+          "sha256": "8e5ec93c5c56942a674d9aceb12d39c87dcf0fb78edafea9b6780af6ca450574"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/body/关键事实与承诺.md": {
+          "bytes": 74,
+          "sha256": "5ee88b03c8a256927bcd861ed42e96ce8866c8ddf900af6fa2bd079c322e099c"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/body/写作指引.md": {
+          "bytes": 144,
+          "sha256": "f5f1b3962519fc4f8e2a44e0f9114d847adeb7cab0c7c5cd62a1249b8dc587db"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/body/投标主体信息.json": {
+          "bytes": 560,
+          "sha256": "7431914137754ea116577c9f321a053c88666ff07180f28de5b007b15eb2b3c6"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/body/整本-本地目录验收册.docx": {
+          "bytes": 37917,
+          "sha256": "f2d9f6c7807e31378a2ef43fe82152fc1596b67af9681f23326260910e88a19c"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/parse/sources.json": {
+          "bytes": 77,
+          "sha256": "96d6a2d4cfb4f218f648f12537af79e3c98590237590ce753b59a9e5628e2152"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/parse/交付验收原件.png/images/page-1.png": {
+          "bytes": 79,
+          "sha256": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/parse/交付验收原件.png/plan.json": {
+          "bytes": 772,
+          "sha256": "c0bfe02fe35d4d8f1307c0dece7cd773116e9f7d6cfeaff15d5970fd05a4e6dc"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/parse/交付验收原件.png/交付验收原件.png.md": {
+          "bytes": 542,
+          "sha256": "134da08805038926f96ff16dd33f3bb20ea4c5574ee40523fd6523a91bcc11bb"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/parse/交付验收原件.png/交付验收原件.png.meta.json": {
+          "bytes": 298,
+          "sha256": "0232cc89b02930cb4e0f7f17f4ca525427ae5b131062c1a21d21575fe5a6ac55"
+        },
+        "workspace/t_f7803017fb014066b9373af9ee00a6a3/work/parse/交付验收原件.png/交付验收原件.png.outline.json": {
+          "bytes": 122,
+          "sha256": "7fb74e3fc798271c9a85e91328e44c8541de9c5d27ba58ca33e384e953f95ed2"
+        }
+      },
+      "fileCount": 102,
+      "sha256": "b0ab6df2a30654653437480321b599bc6aed7e69357559e531314e877c16be38"
+    },
+    "database": {
+      "sha256": "d08f60548972cd0b4dc9be73494d752cc0fb4c1a609f49496a68d94861562c08",
+      "userVersion": 1,
+      "statements": 36
+    },
+    "sessions": {
+      "files": {
+        "--var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install--/3de62736-7b56-49a6-8e64-f917428aba60/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "--var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install--/3de62736-7b56-49a6-8e64-f917428aba60/session.v4.jsonl.zstd": {
+          "bytes": 20965,
+          "sha256": "907610774a9bce3fe61120f301ed0ff67b6df1aeadef7db0295b7eacd7e3d9bb"
+        },
+        "--var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install--/delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8/session.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "--var-folders-9w-wcfhxhtd5nbdtn8v542m_x5w0000gn-T-ooo-bidpliot-delivery-WSqOY3-fixed-install--/delivery-public-agent-3f9ad94e-e848-4666-831d-5f0b12d5ead8/session.v4.jsonl.zstd": {
+          "bytes": 8950,
+          "sha256": "e33cd6b13cfa517fa04f9f6087dee2bb71d5c44808f475a6256e5baa686daba2"
+        }
+      },
+      "fileCount": 4,
+      "sha256": "b7fab8d18698cc0346953750002fca34f445160295111c094fed19af0a3f372f"
+    },
+    "attachments": {
+      "files": {
+        "v1/objects/3a/3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467": {
+          "bytes": 79,
+          "sha256": "3af2ce38a259364810c0356b746ec38efe8681a8966908111c6a194a3cb17467"
+        }
+      },
+      "fileCount": 1,
+      "sha256": "9c31b655184b574ea798ab6e806ee26c887f30cdedfece20b6d2f8523c62a7f5"
+    }
+  },
+  "completedAt": "2026-10-13T05:28:00.170Z",
+  "browser": {
+    "base": "http://127.0.0.1:53898",
+    "loginUrl": "http://127.0.0.1:53897/login"
+  }
+}

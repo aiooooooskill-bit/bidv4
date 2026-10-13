@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-11",
+  "installed_app_version": "0.2.3",
+  "source_commit": "de909f12572b4c469864b12255e26cc185ada7ec",
+  "version_note": "安装包版本与源码commit分别记录；未证明安装包由该commit构建。",
+  "files": [
+    {
+      "path": "frontend/src/lib/errorText.ts",
+      "sha256": "081fb39e9eecc9c5af5138ecc9b61870b153bab9905b86dd89b13d5e85af19c6",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/lib/errorText.ts"
+    },
+    {
+      "path": "frontend/src/components/ErrorCard.tsx",
+      "sha256": "ece0fc37f4c12c4db2699223d2865460b26a5b10836d5295c5badb216a22a04a",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/ErrorCard.tsx"
+    },
+    {
+      "path": "frontend/src/components/SidecarBanner.tsx",
+      "sha256": "adc3eadeab68a3162ae16694c95543f4111fd9071763ac76ade8e02d72e7e861",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/SidecarBanner.tsx"
+    },
+    {
+      "path": "frontend/src/context/Toast.tsx",
+      "sha256": "8b2f96919b2a3969b1b3cbc7dcb9bfe8bd141932f998d267cb394802c0461eb3",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/context/Toast.tsx"
+    },
+    {
+      "path": "frontend/src/lib/retryNotice.ts",
+      "sha256": "8f250f8594c958b18f2ef7793349493db9755541414fef1d5871741336b69036",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/lib/retryNotice.ts"
+    },
+    {
+      "path": "frontend/src/context/FileUpload.tsx",
+      "sha256": "e184fd0e9488052a9456b5211621441fe0a6f3d88696d99c0c44a47f0aea0940",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/context/FileUpload.tsx"
+    },
+    {
+      "path": "frontend/src/components/UploadChips.tsx",
+      "sha256": "75464876f7383fe7e37fd94db83a6a647e7728e13114f3fff9f33eb5b3c729f2",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/UploadChips.tsx"
+    },
+    {
+      "path": "frontend/src/hooks/useRun.ts",
+      "sha256": "8929de3b1dba9b0f789dfa46ea8dff048d576fd29e04f7109d67cf384fc2bedd",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/hooks/useRun.ts"
+    },
+    {
+      "path": "frontend/src/components/ChatView.tsx",
+      "sha256": "7b0a2520fbcbf3b1ef2f69a3470eeae9d28bf67a1d4f23bf8a51597a3d178246",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/ChatView.tsx"
+    },
+    {
+      "path": "frontend/src/components/ai/RunTrace.tsx",
+      "sha256": "24091ea2b20a57f5d4e00dc5ba19ea7430acf6b5f7e4c19ac4a448a7c5e92f56",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/ai/RunTrace.tsx"
+    },
+    {
+      "path": "frontend/src/components/ai/ToolStepRow.tsx",
+      "sha256": "e49c74cb55e74f7635cbbf30ca1458b5ea3ca7393b7bed4e1a5e3d5da314a7fe",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/ai/ToolStepRow.tsx"
+    },
+    {
+      "path": "frontend/src/components/ai/InterruptCard.tsx",
+      "sha256": "c849f72ce4acb6eefb55f5c786e19d08768eb62502c6eaf664704aa3422c4ce0",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/ai/InterruptCard.tsx"
+    },
+    {
+      "path": "frontend/src/hooks/useAutoSave.ts",
+      "sha256": "29f8c4caaf330d448352954c5fd3520848f8b16d1a1292737f119960d7e79204",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/hooks/useAutoSave.ts"
+    },
+    {
+      "path": "frontend/src/components/editors/SaveStateBar.tsx",
+      "sha256": "9b907c8f9065219b1fc646ea1537cf26cb4f163d330f1b8530c1b69a5c0b6520",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/editors/SaveStateBar.tsx"
+    },
+    {
+      "path": "frontend/src/components/WorkbenchViewer.tsx",
+      "sha256": "21752476b0a936b687d16b44af56eccb133012920829f3dd508001abe64a61fb",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/WorkbenchViewer.tsx"
+    },
+    {
+      "path": "frontend/src/components/processors/DirectoryProcessor.tsx",
+      "sha256": "8f0dd863a5ef1a62d442a54bfb05955d2cc0b5217f836728ea1ae387e1cbad70",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/processors/DirectoryProcessor.tsx"
+    },
+    {
+      "path": "frontend/src/components/processors/DirectoryEditor.tsx",
+      "sha256": "5213673cb9201b3afae78a82b6997a4b9ca734cef547ffd1b45c0d0a398c752c",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/processors/DirectoryEditor.tsx"
+    },
+    {
+      "path": "frontend/src/components/SourceView.tsx",
+      "sha256": "e93490c09a8570fa882f9e531f003516f9659de3c00eab3864b3540d14746b79",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/SourceView.tsx"
+    },
+    {
+      "path": "frontend/src/components/ArtifactPanel.tsx",
+      "sha256": "61b53e6e203d81f02fb5f459603c62982f6a5317b26dfe9c7580268fb56cb7be",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/ArtifactPanel.tsx"
+    },
+    {
+      "path": "frontend/src/components/kb/DetailHeader.tsx",
+      "sha256": "c9c2f99b35696e50da436cdf0407bfa1013f6d97c42cbd5bd6ac15f441284b49",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/kb/DetailHeader.tsx"
+    },
+    {
+      "path": "frontend/src/components/workbench/useTableFile.ts",
+      "sha256": "0f2db0c510dbc78ef0f6f53f3af13af99ec62d9132080d68cecda29a993e0a1d",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/frontend/src/components/workbench/useTableFile.ts"
+    },
+    {
+      "path": "sidecar/app/api/files.py",
+      "sha256": "eebce48adaddd1f7cf559049a12ee491c0c54dbbca396bb807567113b2502342",
+      "url": "https://github.com/joychin/LingYan-Bid-Agent/blob/de909f12572b4c469864b12255e26cc185ada7ec/sidecar/app/api/files.py"
+    }
+  ]
+}

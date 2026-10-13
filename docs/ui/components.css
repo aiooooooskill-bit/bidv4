@@ -1,0 +1,72 @@
+/* Executable component samples for docs/ui/style-guide.html.
+ * The formal UI should implement the same rules in its existing bp-/ly- components.
+ * This scoped sheet is not an override layer for the old application styles.
+ */
+.bid-ui { font: var(--bid-font-body)/var(--bid-line-ui) var(--bid-font-sans); color: var(--bid-color-text); background: var(--bid-color-page); }
+.bid-ui *, .bid-ui *::before, .bid-ui *::after { box-sizing: border-box; }
+.bid-ui button, .bid-ui input, .bid-ui select, .bid-ui textarea { font: inherit; }
+.bid-ui h1, .bid-ui h2, .bid-ui h3, .bid-ui p { margin: 0; }
+.bid-ui h1 { font-size: var(--bid-font-page-title); font-weight: var(--bid-weight-strong); line-height: 1.4; }
+.bid-ui h2 { font-size: var(--bid-font-detail-title); font-weight: var(--bid-weight-strong); }
+.bid-ui h3 { font-size: var(--bid-font-section-title); font-weight: var(--bid-weight-strong); }
+.bid-ui a { color: var(--bid-color-primary); text-underline-offset: 3px; }
+.bid-ui .ui-header { min-height: var(--bid-header-height); padding: var(--bid-space-4) var(--bid-space-8); background: var(--bid-color-surface); border-bottom: 1px solid var(--bid-color-border); display: flex; gap: var(--bid-space-4); align-items: center; justify-content: space-between; }
+.bid-ui .ui-page { max-width: var(--bid-page-width); margin: auto; padding: var(--bid-space-6) var(--bid-space-8) var(--bid-space-8); }
+.bid-ui .ui-muted { color: var(--bid-color-text-muted); font-size: var(--bid-font-caption); }
+.bid-ui .ui-page-title { display: flex; gap: var(--bid-space-4); align-items: center; justify-content: space-between; margin-bottom: var(--bid-space-6); }
+.bid-ui .ui-page-title p { margin-top: var(--bid-space-2); }
+.bid-ui .ui-panel { padding: var(--bid-space-6); border: 1px solid var(--bid-color-border); border-radius: var(--bid-radius-panel); background: var(--bid-color-surface); box-shadow: var(--bid-shadow-panel); }
+.bid-ui .ui-stack { display: grid; gap: var(--bid-space-4); }
+.bid-ui .ui-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--bid-space-6); }
+.bid-ui .ui-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--bid-space-2); }
+.bid-ui .ui-button { min-height: var(--bid-control-height); display: inline-flex; align-items: center; justify-content: center; gap: var(--bid-space-2); border: 1px solid var(--bid-color-control-border); border-radius: var(--bid-radius-control); padding: 7px 13px; font-size: var(--bid-font-control); color: var(--bid-color-text-secondary); background: var(--bid-color-surface); cursor: pointer; white-space: nowrap; text-decoration: none; }
+.bid-ui .ui-button:hover:not(:disabled) { background: var(--bid-color-hover); border-color: var(--bid-color-border-hover); }
+.bid-ui .ui-button[data-kind="primary"] { color: var(--bid-color-on-primary); background: var(--bid-color-primary); border-color: var(--bid-color-primary); }
+.bid-ui .ui-button[data-kind="primary"]:hover:not(:disabled) { background: var(--bid-color-primary-hover); border-color: var(--bid-color-primary-hover); }
+.bid-ui .ui-button[data-kind="text"] { color: var(--bid-color-primary); background: transparent; border-color: transparent; }
+.bid-ui .ui-button[data-kind="danger"] { color: var(--bid-color-error-text); border-color: var(--bid-color-error-border); }
+.bid-ui .ui-button[data-size="small"] { min-height: var(--bid-control-height-small); padding: 4px 9px; font-size: var(--bid-font-caption); }
+.bid-ui button:disabled { opacity: .45; cursor: default; }
+.bid-ui button:focus-visible, .bid-ui a:focus-visible, .bid-ui summary:focus-visible { outline: 2px solid var(--bid-color-focus); outline-offset: 2px; }
+.bid-ui .ui-label { display: flex; flex-direction: column; gap: var(--bid-space-2); color: var(--bid-color-text-secondary); font-size: var(--bid-font-control); }
+.bid-ui .ui-input { width: 100%; min-width: 0; min-height: var(--bid-control-height); padding: 8px 10px; border: 1px solid var(--bid-color-control-border); border-radius: var(--bid-radius-control); background: var(--bid-color-surface); color: var(--bid-color-text); font-size: var(--bid-font-control); }
+.bid-ui .ui-input::placeholder { color: var(--bid-color-text-muted); }
+.bid-ui .ui-input:hover:not(:disabled) { border-color: var(--bid-color-border-hover); }
+.bid-ui .ui-input:focus-visible { outline: 2px solid var(--bid-color-focus); outline-offset: 1px; }
+.bid-ui .ui-input[aria-invalid="true"] { border-color: var(--bid-color-error-text); }
+.bid-ui .ui-input:disabled { background: var(--bid-color-surface-soft); color: var(--bid-color-text-disabled); }
+.bid-ui textarea.ui-input { resize: vertical; line-height: 1.75; }
+.bid-ui .ui-tabs { display: flex; gap: var(--bid-space-6); border-bottom: 1px solid var(--bid-color-border); overflow-x: auto; }
+.bid-ui .ui-tab { flex: none; padding: 10px 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--bid-color-text-muted); font-size: var(--bid-font-body); cursor: pointer; }
+.bid-ui .ui-tab[aria-selected="true"] { color: var(--bid-color-primary); border-bottom-color: var(--bid-color-primary); font-weight: var(--bid-weight-strong); }
+.bid-ui .ui-tag { display: inline-flex; align-items: center; border: 1px solid var(--bid-color-border); border-radius: var(--bid-radius-tag); padding: 1px 6px; color: var(--bid-color-text-muted); background: var(--bid-color-surface-soft); font-size: var(--bid-font-caption); }
+.bid-ui [data-tone="info"] { --tone-text: var(--bid-color-info-text); --tone-bg: var(--bid-color-info-bg); --tone-border: var(--bid-color-info-border); }
+.bid-ui [data-tone="success"] { --tone-text: var(--bid-color-success-text); --tone-bg: var(--bid-color-success-bg); --tone-border: var(--bid-color-success-border); }
+.bid-ui [data-tone="warning"] { --tone-text: var(--bid-color-warning-text); --tone-bg: var(--bid-color-warning-bg); --tone-border: var(--bid-color-warning-border); }
+.bid-ui [data-tone="error"] { --tone-text: var(--bid-color-error-text); --tone-bg: var(--bid-color-error-bg); --tone-border: var(--bid-color-error-border); }
+.bid-ui .ui-tag[data-tone], .bid-ui .ui-notice[data-tone] { color: var(--tone-text); background: var(--tone-bg); border-color: var(--tone-border); }
+.bid-ui .ui-notice { padding: 10px 12px; border: 1px solid var(--bid-color-border); border-radius: var(--bid-radius-control); font-size: var(--bid-font-caption); }
+.bid-ui .ui-split { display: grid; grid-template-columns: var(--bid-list-width) minmax(0,1fr); border: 1px solid var(--bid-color-border); border-radius: var(--bid-radius-panel); overflow: hidden; background: var(--bid-color-surface); }
+.bid-ui .ui-list-pane { display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--bid-color-border); background: var(--bid-color-list); }
+.bid-ui .ui-list-header { padding: var(--bid-space-4); border-bottom: 1px solid var(--bid-color-border); font-size: var(--bid-font-control); font-weight: var(--bid-weight-strong); }
+.bid-ui .ui-list-items { flex: 1; min-height: 0; overflow: auto; }
+.bid-ui .ui-record { display: grid; gap: var(--bid-space-2); width: 100%; padding: var(--bid-space-4) var(--bid-space-5); text-align: left; border: 0; border-bottom: 1px solid var(--bid-color-border); border-left: 3px solid transparent; color: var(--bid-color-text); background: transparent; cursor: pointer; }
+.bid-ui .ui-record[aria-pressed="true"] { background: var(--bid-color-selected); border-left-color: var(--bid-color-primary); }
+.bid-ui .ui-record:hover { background: var(--bid-color-hover); }
+.bid-ui .ui-detail { padding: var(--bid-space-6); min-width: 0; }
+.bid-ui .ui-pager { flex: none; display: grid; gap: var(--bid-space-2); padding: var(--bid-space-3) var(--bid-space-4); border-top: 1px solid var(--bid-color-border); background: var(--bid-color-surface); font-size: var(--bid-font-caption); }
+.bid-ui .ui-pager .ui-row { flex-wrap: nowrap; justify-content: space-between; }
+.bid-ui .ui-pager .ui-input { width: auto; min-height: var(--bid-control-height-small); padding: 4px; font-size: var(--bid-font-caption); }
+.bid-ui .ui-save-bar { display: flex; align-items: center; justify-content: flex-end; gap: var(--bid-space-2); padding: var(--bid-space-4) var(--bid-space-6); border-top: 1px solid var(--bid-color-border); background: var(--bid-color-surface); }
+.bid-ui .ui-save-bar .ui-muted { margin-right: auto; }
+.bid-ui .ui-swatches { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: var(--bid-space-3); }
+.bid-ui .ui-swatch { border: 1px solid var(--bid-color-border); border-radius: var(--bid-radius-section); overflow: hidden; }
+.bid-ui .ui-swatch-color { height: 56px; }
+.bid-ui .ui-swatch p { padding: var(--bid-space-2) var(--bid-space-3); font-size: var(--bid-font-caption); }
+.bid-ui .ui-table { width: 100%; border-collapse: collapse; font-size: var(--bid-font-control); }
+.bid-ui .ui-table th, .bid-ui .ui-table td { text-align: left; padding: var(--bid-space-3); border-bottom: 1px solid var(--bid-color-border); }
+.bid-ui .ui-table th { background: var(--bid-color-surface-soft); color: var(--bid-color-text-muted); }
+.bid-ui .ui-table-wrap { overflow-x: auto; }
+@media (max-width: 1100px) { .bid-ui .ui-page { padding: var(--bid-space-6) var(--bid-space-5); } .bid-ui .ui-header { padding-inline: var(--bid-space-5); } .bid-ui .ui-split { grid-template-columns: 310px minmax(0,1fr); } }
+@media (max-width: 760px) { .bid-ui .ui-grid, .bid-ui .ui-split { grid-template-columns: 1fr; } .bid-ui .ui-list-pane { border-right: 0; border-bottom: 1px solid var(--bid-color-border); } .bid-ui .ui-tabs { gap: var(--bid-space-4); } .bid-ui .ui-panel, .bid-ui .ui-detail { padding: var(--bid-space-5); } .bid-ui h1 { font-size: 22px; } .bid-ui .ui-page-title { align-items: flex-start; flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { .bid-ui *, .bid-ui *::before, .bid-ui *::after { animation-duration: 0.01ms; transition-duration: 0.01ms; scroll-behavior: auto; } }

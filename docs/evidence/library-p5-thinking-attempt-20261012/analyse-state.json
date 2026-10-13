@@ -1,0 +1,123 @@
+{
+  "task": {
+    "id": "t_ee609e0d0f94447f8f1d61ee31781007",
+    "title": "P5 验收演示 · 真实赣州银行招标文件 · 非正式投标",
+    "progress_note": "",
+    "created_at": "2026-10-12T15:30:29+00:00",
+    "stage": "parsed",
+    "last_activity_at": "2026-10-12T15:30:29+00:00"
+  },
+  "files": [],
+  "directory": null,
+  "source_selection": {
+    "main": "招标文件-（定稿）JXYJ2026-GZYH-G005-1赣州银行2026年度外部数据供应商入围采购项目.docx",
+    "supplements": [],
+    "excluded": []
+  },
+  "body_files": [],
+  "build_preparation": {
+    "guide": "missing",
+    "promises": "missing"
+  },
+  "build_preparation_changes": {
+    "guide": [],
+    "promises": []
+  },
+  "body_sections": [],
+  "orphan_body_files": [],
+  "volume_states": [],
+  "bidder": {
+    "task_id": "t_ee609e0d0f94447f8f1d61ee31781007",
+    "company_id": "co_01bc94250fb8",
+    "signer_id": "rep_493f4b87a484",
+    "sign_date": "2026-08-19",
+    "snapshot": {
+      "company": {
+        "id": "co_01bc94250fb8",
+        "name": "杭州研数科技有限公司（验收演示）",
+        "credit_code": "DEMO-ONLY-20261012",
+        "note": "用户授权编造的验收演示主体与承诺；不作为真实企业事实，不进入正式库",
+        "profile": {
+          "registered_address": "杭州市滨江区演示路100号（验收演示）",
+          "address": "杭州市滨江区演示路100号（验收演示）",
+          "phone": "0571-00000000（验收演示）",
+          "fax": "无",
+          "email": "bid@example.test",
+          "legal_name": "陈演示",
+          "legal_title": "总经理",
+          "bank_name": "演示银行",
+          "bank_account": "DEMO-0001"
+        },
+        "revision": 1,
+        "created_at": "2026-10-12T15:30:29+00:00"
+      },
+      "signer": {
+        "id": "rep_493f4b87a484",
+        "company_id": "co_01bc94250fb8",
+        "name": "王验收",
+        "title": "投标负责人",
+        "phone": "0571-00000001（验收演示）",
+        "email": "representative@example.test",
+        "note": "仅用于软件流程验收，非真实授权",
+        "revision": 1
+      },
+      "sign_date": "2026-08-19",
+      "source_versions": {}
+    },
+    "revision": 1,
+    "confirmed": true,
+    "stale": false
+  },
+  "input_versions": {
+    "analyse": "02646a0382b3fed528d3f85a7bc6e8ceba012da2e463cc2552c0b138d777b323",
+    "outline": "94804eea962cf622bac99aacd3d4553b27bb71e3043917998e142b0d8e787e54",
+    "guide": "7b2ca0649f69ca2de8b7a69e66c6db93df77eb0d4a1c96208228d91077288613",
+    "promises": "538e3addaed28d4e2f10f1b4f25f5c284e95000ca1a98fd24676eb6ce771a6a6",
+    "body": "11cd342b159cd19ee7712dc70d756559321b9f314db8e0ce6f14f68c18a2af33",
+    "revise": "78604ad7ac82e249f6851bd04dadad2e2f096386f34264e22c1351803fc942e5",
+    "build": "78604ad7ac82e249f6851bd04dadad2e2f096386f34264e22c1351803fc942e5"
+  },
+  "analysis_progress": [
+    {
+      "key": "basic",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "key": "requirements",
+      "done": 0,
+      "total": 2
+    },
+    {
+      "key": "score",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "key": "format",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "key": "invalid",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "key": "extra",
+      "done": 0,
+      "total": 1
+    }
+  ],
+  "execution": {
+    "session_id": "bid-9299dd32-bd08-4d63-ad65-d5ccdbefc1f2",
+    "kind": "analyse",
+    "model": {
+      "provider": "p5-local",
+      "model": "mlx-community/Qwen3.8-27B-4bit"
+    },
+    "sections": [],
+    "state": "stopped",
+    "questions": []
+  }
+}

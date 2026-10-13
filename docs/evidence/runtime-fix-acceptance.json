@@ -1,0 +1,366 @@
+{
+  "date": "2026-10-12",
+  "status": "completed",
+  "checks": {
+    "nodeRegression": 25,
+    "pythonRegression": 295,
+    "typescript": "passed",
+    "build": "passed",
+    "cleanInstall": "passed",
+    "fullTemporaryWebProfile": "passed; retained in npm test",
+    "officialScopeSha256": "2829df71d76e08941457d4dd173eac60783e55354921137c8b75e8b5c0d2ecca",
+    "pluginLifecycle": "passed; active child cancellation, route removal, host survival and reload",
+    "nodeDurationMs": 16188.799583,
+    "pythonDurationSeconds": 9.23,
+    "verify": "passed"
+  },
+  "taskId": "t_4d085c62c1884b5594cd69c99ca006ab",
+  "requestId": "2ab597f9-100a-4f14-826b-e115e4f4561f",
+  "sessionId": "bid-28a794ba-394e-4313-bed3-c1bdb230e8ec",
+  "model": {
+    "provider": "lmstudio",
+    "model": "mlx-community/Qwen3.8-27B-4bit"
+  },
+  "sourceHashBefore": "ba04aacd006dfeeed761cd965d18921b7d96897ee0375fb6bf167410b60357e8",
+  "execution": {
+    "session_id": "bid-28a794ba-394e-4313-bed3-c1bdb230e8ec",
+    "kind": "analyse",
+    "model": {
+      "provider": "lmstudio",
+      "model": "mlx-community/Qwen3.8-27B-4bit"
+    },
+    "state": "completed",
+    "questions": []
+  },
+  "analysisFiles": [
+    "analysis/clarifications.md",
+    "analysis/disqualification.md",
+    "analysis/evaluation.md",
+    "analysis/requirements-business.md",
+    "analysis/requirements-format.md",
+    "analysis/requirements-qualification.md",
+    "analysis/requirements-submission.md",
+    "analysis/structure.md"
+  ],
+  "sourceHashAfter": "ba04aacd006dfeeed761cd965d18921b7d96897ee0375fb6bf167410b60357e8",
+  "sourceUnchanged": true,
+  "eventTypes": {
+    "session": 1,
+    "agent/inbox/spliced": 2,
+    "turn/start": 1,
+    "step/start": 26,
+    "system/message": 1,
+    "user/message": 2,
+    "request/header": 1,
+    "request/context": 1,
+    "assistant/message": 26,
+    "tool/call": 59,
+    "tool/result": 59,
+    "step/end": 26,
+    "turn/end": 1
+  },
+  "toolErrors": [],
+  "analysisFileBytes": {
+    "analysis/clarifications.md": 341,
+    "analysis/disqualification.md": 5134,
+    "analysis/evaluation.md": 3922,
+    "analysis/requirements-business.md": 8578,
+    "analysis/requirements-format.md": 4729,
+    "analysis/requirements-qualification.md": 3720,
+    "analysis/requirements-submission.md": 3586,
+    "analysis/structure.md": 2482
+  },
+  "executionLocksAfter": [],
+  "officialSourcesModified": false,
+  "vendorOverrideRemoved": true,
+  "serverPort": 3080,
+  "recordType": "dated-engineering-acceptance-snapshot",
+  "reproduce": "npm run verify",
+  "automaticCoverage": {
+    "tests/plugin-lifecycle.test.mjs": [
+      "official base/web and project bundle startup with declared dependencies",
+      "authenticated HTTP upload and six action stages: analyse, outline, guide, promises, body, revise",
+      "real official pi-ai HTTP requests to a local deterministic SSE fixture",
+      "eight analysis files, published directory, guide, promises, body DOCX and actual revised text",
+      "empty-result action correctly fails",
+      "running plugin unload cancels child request, removes API route and service, clears handles and write locks",
+      "host model still executes after plugin unload",
+      "plugin reload reads persisted tasks and body; interrupted action reads stopped"
+    ],
+    "tests/runtime-isolation.test.mjs": [
+      "official scope bytes and dependency declarations",
+      "same session ID concurrency and separate JSONL logs",
+      "model and tool dispatch blocked by durable-write rejection",
+      "original local child diagnostic retained",
+      "host attachment image bytes sent through official pi-ai"
+    ],
+    "tests/native-runtime.test.mjs": [
+      "main/child model inheritance, image OCR and knowledge ingestion",
+      "specific questions, answers, cold recovery and interrupted knowledge job",
+      "stop, action replay, stale input rejection and analysis progress",
+      "business teardown cancels child without host event leakage"
+    ]
+  },
+  "automaticTestBoundary": {
+    "data": "temporary application, DSH_HOME and database; user tasks are not written",
+    "model": "local deterministic HTTP fixture; no real generation-model request",
+    "quality": "engineering contracts and fixture outcomes only; no bidding content quality audit"
+  },
+  "implementation": {
+    "runtimeFiles": [
+      "server/native/scope.mjs",
+      "server/plugin.mjs",
+      "cordis.patch.yml",
+      "server/native/tools.mjs",
+      "server/native/runtime.mjs"
+    ],
+    "dependencyFiles": [
+      "package.json",
+      "package-lock.json"
+    ],
+    "regressionFiles": [
+      "tests/native-runtime.test.mjs",
+      "tests/runtime-isolation.test.mjs",
+      "tests/plugin-lifecycle.test.mjs",
+      "tests/helpers/isolated-app.mjs"
+    ],
+    "removed": [
+      "vendor/dsh-scope/",
+      "scripts/validate-runtime-isolation.mjs",
+      "scripts/validate-plugin-only-runtime.mjs",
+      "docs/evidence/runtime-modification-plan.json",
+      "docs/evidence/web-runtime-acceptance.json"
+    ],
+    "documentationFiles": [
+      "README.md",
+      "docs/dsh-contracts.md",
+      "docs/MERGE-ACCEPTANCE.md",
+      "docs/UPSTREAM.md",
+      "docs/REPAIR-ACCEPTANCE.md",
+      "docs/evidence/runtime-fix-acceptance.json"
+    ]
+  },
+  "verifiedRisks": [
+    {
+      "risk": "事件隔离后宿主落盘检查不会自动加入业务运行时",
+      "experiment": "未挂业务检查插件时：0次检查、2次模型调用、1次工具执行；挂官方检查插件并注入flush拒绝后：0次模型请求、0次工具执行。",
+      "treatment": "业务运行时挂载未修改的官方session-checkpoint-policy；同时覆盖请求和顶层工具两个边界。"
+    },
+    {
+      "risk": "切换附件库后旧私有图片引用不能解析",
+      "experiment": "原私有库可读取；宿主附件库读取同一引用失败。当前data/dsh检查到2份历史会话，0个图片块、0个私有附件对象。",
+      "treatment": "当前无需历史图片转换；共用模型适配器所属宿主附件库；按项目原则不增加迁移或旧库fallback。切换前重新检查这项存量。"
+    },
+    {
+      "risk": "本地子Agent错误可能被泛化提示覆盖",
+      "experiment": "注入fixture exact child failure：result.diagnostic为空，终态日志仍有原始错误，现有包装显示子Agent未完成或图片识别未完成。",
+      "treatment": "在插件tools/runtime错误包装处读取公开localAgent终态错误并保留具体原因。"
+    }
+  ],
+  "oneOffWebAcceptance": {
+    "mode": "clean npm ci + official base/web + project plugin; temporary data only",
+    "checks": [
+      {
+        "name": "Full official web profile starts; authenticated plugin route ready",
+        "passed": true
+      },
+      {
+        "name": "Real HTTP action dispatches through official pi-ai; missing fixture artifacts detected",
+        "passed": true,
+        "providerRequests": 1,
+        "state": "failed",
+        "error": "本轮未产出所需文件：analysis/structure.md、analysis/requirements-submission.md、analysis/requirements-business.md、analysis/requirements-qualification.md、analysis/evaluation.md、analysis/requirements-format.md、analysis/disqualification.md、analysis/clarifications.md。已有成果保留，请重新发起该阶段。"
+      }
+    ],
+    "status": "passed",
+    "recordType": "historical one-off fixture; superseded by retained automatic regression"
+  },
+  "historicalRootCauseEvidence": [
+    "docs/evidence/runtime-isolation-validation.json",
+    "docs/evidence/plugin-only-runtime-validation.json"
+  ],
+  "notYetVerified": [
+    "真实模型的目录、写作指引、关键事实与承诺、正文及修订没有逐项运行；本次只重试解读。",
+    "宿主其余扩展插件的业务侧行为没有逐项验收，不宣称它们自动继承。",
+    "招投标结论、资格条件、评分点及正文内容的准确性和完整性；工程执行成功不能作为标书提交依据。"
+  ],
+  "buildVerificationGapValidation": {
+    "date": "2026-10-12",
+    "mode": "temporary application copies and complete official Web profile; production source not modified",
+    "reviewCorrection": "Absent dist does not make the current npm run verify fail. The original Web regression checks API flow and permits a missing client module and unavailable assets.",
+    "currentVerifyWithoutDist": {
+      "exitCode": 0,
+      "nodeTestsPassed": 25,
+      "pythonTestsPassed": 295,
+      "buildRunsAfterTests": true
+    },
+    "missingAssetsDuringPassingRegression": {
+      "exitCode": 0,
+      "clientRegistered": false,
+      "clientAssetHTTP": 500,
+      "rendererAssetHTTP": 500
+    },
+    "buildFailureInjection": {
+      "temporaryRendererSourceRemoved": true,
+      "exitCode": 1,
+      "clientReplacedBeforeFailure": true,
+      "rendererAssetHTTP": 500
+    },
+    "successfulRebuild": {
+      "exitCode": 0,
+      "rendererAssetHTTP": 200
+    },
+    "candidateBuildBeforeTests": {
+      "exitCode": 0,
+      "nodeTestsPassed": 25,
+      "pythonTestsPassed": 295
+    },
+    "candidateResourceAssertions": {
+      "missingAssetsRejected": true,
+      "afterBuildPassed": true,
+      "clientRegistered": true,
+      "clientAssetHTTP": 200,
+      "rendererAssetHTTP": 200
+    },
+    "productionDistUnchanged": true,
+    "productionDistFiles": 309,
+    "productionDistFingerprint": "b43666b8a22bd718c800357917c16499220e2e4a426e2dccb73122467b201043",
+    "productionSourceUnchanged": true,
+    "generationModelRequests": 0,
+    "decision": "Repair is justified: check and build before full Web tests in an isolated copy, and assert the client module and required assets are available.",
+    "implementationStatus": "not implemented; isolated validation only"
+  },
+  "localDirectoryDeliveryAudit": {
+    "date": "2026-10-12",
+    "target": "official Add Plugin using an absolute local directory; npm/GitHub publication deferred by user",
+    "host": "@deepseek-ai/dsh 0.2.0-rc.2, complete official base/web profile, temporary DSH_HOME",
+    "mode": "read-only code audit and candidate changes confined to temporary directories",
+    "implementationStatus": "delivery changes not implemented; assessment and evidence updated only",
+    "officialDirectoryInstall": {
+      "exitCode": 0,
+      "dependencySpec": "link:<absolute local directory>",
+      "resolvesToSourceDirectory": true,
+      "automaticallyPreparedLinkedDirectory": false
+    },
+    "unpreparedDirectory": {
+      "installExitCode": 0,
+      "assetsPresent": true,
+      "nodeMissing": {
+        "importError": {
+          "code": "ERR_MODULE_NOT_FOUND",
+          "message": "Cannot find package 'busboy' imported from /private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-plugin-audit-DpJqqU/cold-directory/server/plugin.mjs"
+        },
+        "runtime": false,
+        "clientPath": null
+      },
+      "pythonMissingAfterProvidingNode": {
+        "runtime": false,
+        "entryState": 3,
+        "clientPath": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-plugin-audit-DpJqqU/cold-directory/dist/client.js"
+      }
+    },
+    "preparedDirectoryRegression": {
+      "exitCode": 0,
+      "officialInstallUsed": true,
+      "sixStagesPassed": true,
+      "unloadCancelsChildPassed": true,
+      "hostSurvivesUnloadPassed": true,
+      "reloadFilesAndStoppedStatePassed": true,
+      "sourceHashPreserved": true,
+      "requiredResourceHTTP": {
+        "client.js": 200,
+        "renderer/figureRenderer.js": 200,
+        "pdfjs/pdf.worker.min.mjs": 200
+      },
+      "fixtureEnvironment": "Node dependencies and Python environment reused from current machine; app code, dist copy, business data and profile are temporary",
+      "modelEndpoint": "loopback deterministic fixture only"
+    },
+    "directoryReplacement": {
+      "sameProfile": true,
+      "beforeTaskCount": 2,
+      "afterTaskCount": 0,
+      "beforeHTTP": 200,
+      "afterHTTP": 200,
+      "oldDatabaseUnchangedDuringReplacement": true,
+      "explanation": "Current dataRoot derives from the plugin code directory. Replacement directory opens its own database; experiment did not delete the previous database."
+    },
+    "versionCompatibility": {
+      "current": null,
+      "otherRuntime": null,
+      "declaredPeerOtherRuntime": {
+        "name": "@local/dsh-bidv4",
+        "version": "0.1.0",
+        "runtimeVersion": "0.3.0",
+        "peers": {
+          "@deepseek-ai/dsh-llm": "0.2.0-rc.2"
+        },
+        "exempted": false
+      }
+    },
+    "dependencyCandidate": {
+      "directOfficialPackageReferences": 24,
+      "currentRuntimeDependencyOrPeerDeclarations": 0,
+      "all24AsPeersWithOnlyBusboyLocal": {
+        "passed": false,
+        "executionPresetBrokenRows": [
+          "@deepseek-ai/dsh-persona",
+          "@deepseek-ai/dsh-tool-fs",
+          "@deepseek-ai/dsh-tool-fs-search",
+          "@deepseek-ai/dsh-tool-skill",
+          "@deepseek-ai/dsh-tool-ask-user"
+        ],
+        "diagnostic": "never started",
+        "rootCauseNotEstablished": true
+      },
+      "all24AsPeersWithFullNodeEnvironment": {
+        "exitCode": 0,
+        "sixStageAndLifecycleRegressionPassed": true
+      },
+      "decision": "Keep the prepared dependency environment. Classify and validate host peers versus owned business component dependencies separately; do not adopt the failed dependency reduction."
+    },
+    "observedLifecycleWarning": {
+      "message": "flush on a closed handle",
+      "observedInPassingPreparedAndPeerCandidates": true,
+      "reloadAssertionsPassed": true,
+      "dataLossNotEstablished": true,
+      "allSessionTailEventsNotAudited": true
+    },
+    "futureNpmPackOnly": {
+      "entryCount": 197,
+      "distIncluded": false,
+      "venvIncluded": false,
+      "dataIncluded": false,
+      "notCurrentLocalDirectoryBlocker": true
+    },
+    "recommendation": "Retain plugin-only runtime fixes. Prepare the local directory, build and officially install it in an isolated profile before regression; assert assets and backend activation. Separate the stable data root from code, validate directory replacement, then refine dependency/version contracts. Do not edit official dsh sources.",
+    "formalHost": {
+      "pid": 6749,
+      "restartedByAudit": false,
+      "profileChangedByAudit": false,
+      "scopeSourceSha256": "2829df71d76e08941457d4dd173eac60783e55354921137c8b75e8b5c0d2ecca"
+    },
+    "remainingVerification": [
+      "From-zero dependency preparation on a fresh machine",
+      "Actual installation through the screenshot desktop host",
+      "Other operating systems",
+      "Root cause of failed all-peer dependency reduction",
+      "Lifecycle closed-handle warning and complete session tail",
+      "Stable data-root candidate and handling of existing formal data"
+    ],
+    "planDocument": "docs/DSH-OFFICIAL-PLUGIN-ASSESSMENT.md",
+    "temporaryFixturesRemoved": true,
+    "latestStorageDecision": {
+      "date": "2026-10-12",
+      "source": "User explicitly prefers database and generated files inside the same directory as the plugin package",
+      "dataRoot": "<fixed local plugin directory>/data",
+      "retainExistingCodePath": true,
+      "previousHostHomeStorageRecommendationSuperseded": true,
+      "updateRule": "Use the same installation root; update payload excludes user data; preservation during in-place updates still requires verification",
+      "separateUserAccountSystemRequired": false,
+      "currentScope": "One shared business database per plugin directory; tasks separated by task_id",
+      "attachmentException": "OCR model image attachments remain in the host DSH_HOME/attachments/v1",
+      "verifiedDirectoryReplacementResultUnchanged": true,
+      "runtimeCodeModified": false
+    }
+  }
+}

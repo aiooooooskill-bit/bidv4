@@ -1,0 +1,81 @@
+/* Bidv4 UI Standard · 2026-10-12
+ * Scope: project UI only. This file does not change the dsh host or document formatting.
+ * Import before project component styles; use the same tokens in the prototype.
+ * Values are the review prototype's visual baseline; readable secondary text and
+ * complete status/focus palettes are normalized for the project-wide standard.
+ */
+:where(.bid-ui, .bp-root, .app) {
+  --bid-color-page: #f5f7fa;
+  --bid-color-surface: #ffffff;
+  --bid-color-surface-soft: #f6f8fc;
+  --bid-color-list: #fbfcfe;
+  --bid-color-selected: #edf3ff;
+  --bid-color-hover: #f3f6fb;
+  --bid-color-primary: #245de3;
+  --bid-color-primary-hover: #1d50cb;
+  --bid-color-on-primary: #ffffff;
+  --bid-color-text: #202a38;
+  --bid-color-text-secondary: #465268;
+  --bid-color-text-muted: #627086;
+  --bid-color-text-disabled: #8e9aae;
+  --bid-color-border: #e2e7ee;
+  --bid-color-control-border: #d9e0ea;
+  --bid-color-border-hover: #c2cddd;
+  --bid-color-focus: #245de3;
+  --bid-color-info-text: #3963a3;
+  --bid-color-info-bg: #edf3fd;
+  --bid-color-info-border: #cad9f4;
+  --bid-color-success-text: #31775b;
+  --bid-color-success-bg: #eff8f3;
+  --bid-color-success-border: #d9eede;
+  --bid-color-warning-text: #856226;
+  --bid-color-warning-bg: #fffaee;
+  --bid-color-warning-border: #f1e4bf;
+  --bid-color-error-text: #ab4545;
+  --bid-color-error-bg: #fff3f3;
+  --bid-color-error-border: #f4dcdc;
+  --bid-color-backdrop: #1b2c4666;
+  --bid-font-sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --bid-font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --bid-font-page-title: 26px;
+  --bid-font-detail-title: 18px;
+  --bid-font-section-title: 15px;
+  --bid-font-body: 14px;
+  --bid-font-control: 13px;
+  --bid-font-caption: 12px;
+  --bid-font-micro: 11px;
+  --bid-weight-normal: 400;
+  --bid-weight-medium: 500;
+  --bid-weight-strong: 600;
+  --bid-line-ui: 1.6;
+  --bid-line-document: 1.9;
+  --bid-space-1: 4px;
+  --bid-space-2: 8px;
+  --bid-space-3: 12px;
+  --bid-space-4: 16px;
+  --bid-space-5: 20px;
+  --bid-space-6: 24px;
+  --bid-space-8: 32px;
+  --bid-space-10: 40px;
+  --bid-radius-tag: 4px;
+  --bid-radius-control: 6px;
+  --bid-radius-section: 8px;
+  --bid-radius-panel: 10px;
+  --bid-radius-modal: 12px;
+  --bid-control-height: 38px;
+  --bid-control-height-small: 30px;
+  --bid-header-height: 72px;
+  --bid-page-width: 1550px;
+  --bid-list-width: 365px;
+  --bid-material-list-width: 465px;
+  --bid-dialog-width: 650px;
+  --bid-drawer-width: 620px;
+  --bid-shadow-panel: 0 3px 15px #1e344907;
+  --bid-shadow-document: 0 2px 10px #25314618;
+  --bid-shadow-dialog: 0 25px 70px #15253e30;
+  --bid-z-sticky: 2;
+  --bid-z-menu: 10;
+  --bid-z-dialog: 20;
+  --bid-z-feedback: 30;
+  --bid-motion-fast: 120ms;
+}

@@ -1,0 +1,30 @@
+- insert:
+    - id: ooo-bidpliot
+      name: 'ooo-bidpliot'
+      inject:
+        - webServer
+        - connection
+        - agents
+        - llm
+        - agentDefaultModel
+        - subprocess
+        - attachments
+    - id: ooo-bidpliot-agent-preset
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: ooo-bidpliot
+        name: ooo-bidpliot
+        description: 页面操作，dsh运行灵燕业务，Agent展示真实进度与文档
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: >-
+                你是招投标工作台的只读展示Agent。使用ooo_bidpliot_status查看真实项目进度和文档。
+                所有上传、解读、目录、正文和导出操作均在招投标页面完成。
+                本轮completed只表示执行结束，不宣称整册完成。
+                不输出MAND、REQ、TPL、SCORE等内部来源编号，不输出泛化核对或等待确认提示。
+              complete: false
+              includeRuntimeContext: false
+          - id: display
+            name: 'ooo-bidpliot/agent'

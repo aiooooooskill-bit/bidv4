@@ -1,0 +1,272 @@
+{
+  "date": "2026-10-12",
+  "mode": "technical validation; production unchanged",
+  "audit": {
+    "modelPaths": [
+      {
+        "entry": "BusinessRuntime.action",
+        "file": "server/native/runtime.mjs",
+        "features": [
+          "analyse",
+          "outline",
+          "guide",
+          "promises",
+          "body",
+          "revise"
+        ],
+        "coverage": "shared execution path reproduced; each content-generation workflow not individually run"
+      },
+      {
+        "entry": "task",
+        "file": "server/native/tools.mjs",
+        "features": [
+          "tender-outline-writer",
+          "tender-body-writer"
+        ],
+        "coverage": "official child execution reproduced; candidate native suite passed"
+      },
+      {
+        "entry": "transcribe",
+        "file": "server/native/tools.mjs",
+        "features": [
+          "source OCR",
+          "knowledge OCR"
+        ],
+        "coverage": "child execution and official image adapter verified"
+      },
+      {
+        "entry": "BusinessRuntime.runKnowledge",
+        "file": "server/native/runtime.mjs",
+        "features": [
+          "knowledge metadata extraction"
+        ],
+        "coverage": "child execution reproduced; candidate knowledge suite passed"
+      },
+      {
+        "entry": "BusinessRuntime.answer/handle",
+        "file": "server/native/runtime.mjs",
+        "features": [
+          "answer continuation",
+          "cold recovery"
+        ],
+        "coverage": "candidate native suite passed"
+      }
+    ],
+    "confirmedIssues": [
+      {
+        "issue": "Session stores are isolated but host lifecycle events remain visible",
+        "effect": "Main and child agents fail before model dispatch"
+      },
+      {
+        "issue": "Business images use a different attachment store from the host-owned pi-ai adapter",
+        "effect": "Official adapter reports missing attachment before HTTP dispatch"
+      },
+      {
+        "issue": "Business scope lacks its own semantic checkpoint policy",
+        "effect": "Removing host interference alone would leave request/tool durability weaker"
+      },
+      {
+        "issue": "Current engineering host does not mount production checkpoint policy or read image bytes through the real adapter",
+        "effect": "Existing fixtures do not expose the production integration failure"
+      },
+      {
+        "issue": "In-process child failures can omit SubagentResult.diagnostic",
+        "effect": "Current business wrappers replace the cause with generic child/OCR/knowledge failure text"
+      }
+    ],
+    "requiredRuntimeChanges": [
+      {
+        "file": "server/native/scope.mjs",
+        "change": "Own Cordis Context and event bus; reuse host llm/default selection/subprocess/attachment objects; mount official business checkpoint policy; dispose owned context after execution drains"
+      },
+      {
+        "file": "server/plugin.mjs",
+        "change": "Declare attachments as a required host dependency so startup waits for the adapter-compatible store"
+      },
+      {
+        "file": "cordis.patch.yml",
+        "change": "Add attachments to explicit bidv4 injection list; Loader row must match plugin dependency declaration"
+      }
+    ],
+    "requiredTestChanges": [
+      {
+        "file": "tests/native-runtime.test.mjs",
+        "change": "Mount host checkpoint/title/token meter and global observers; verify attachment bytes and zero host leakage; update expected attachment storage owner"
+      },
+      {
+        "file": "tests/runtime-isolation.test.mjs",
+        "change": "Add regression for identical IDs across runtimes, durable-write rejection, official adapter image dispatch, host survival after business teardown and plugin bootstrap"
+      }
+    ],
+    "diagnosticImprovements": [
+      {
+        "file": "server/native/tools.mjs",
+        "change": "For local child failure, preserve the terminal session error when diagnostic is absent; apply to task and transcribe"
+      },
+      {
+        "file": "server/native/runtime.mjs",
+        "change": "Preserve local knowledge child failure rather than only the generic extraction failure"
+      }
+    ],
+    "documentationChanges": [
+      "README.md",
+      "docs/dsh-contracts.md",
+      "docs/MERGE-ACCEPTANCE.md"
+    ],
+    "unchangedAreas": [
+      "model/provider credentials and endpoints",
+      "Python model clients (none exist)",
+      "upload/preview/download UI",
+      "business document parsing and writing logic"
+    ],
+    "candidate": "Independent business event runtime using existing official components; shared host model registry, selection, subprocess and attachment service; business sessions stay private",
+    "limitations": [
+      "Temporary hosts mount real checkpoint/title/token-meter plugins and global observers, but do not boot the complete production web profile",
+      "Official dsh-scope is checksum-verified and loaded with a temporary Node resolver; a fresh dependency install without the override has not yet been tested",
+      "No external model request or tender content quality assessment",
+      "No live service restart or real project retry",
+      "Candidate and fixture data are deleted after execution; only validator and evidence remain"
+    ],
+    "requiredDependencyChanges": [
+      {
+        "file": "package.json",
+        "change": "Remove file:vendor/dsh-scope and its override; resolve the exact official dsh-scope 0.2.0-rc.2 through normal package dependencies"
+      },
+      {
+        "file": "package-lock.json",
+        "change": "Regenerate lockfile without the vendor link; verify a clean install uses the official package"
+      }
+    ],
+    "requiredDeletions": [
+      "vendor/dsh-scope/"
+    ],
+    "integrationBoundary": "Modify only project-owned plugin sources, dependency/configuration declarations, tests and documentation; never edit or replace official runtime source; temporary resolver mapping is validation-only"
+  },
+  "checks": [
+    {
+      "name": "Candidate runs with registry-original dsh-scope; no official source patch or local override",
+      "result": "passed",
+      "officialVersion": "0.2.0-rc.2",
+      "registryIntegrityVerified": true,
+      "officialRuntimeSha256": "2829df71d76e08941457d4dd173eac60783e55354921137c8b75e8b5c0d2ecca",
+      "officialSourceChanged": false,
+      "checks": [
+        {
+          "name": "Candidate passes existing main/child/OCR/knowledge/question/resume/cancel/action suite with host checkpoint, title, token meter and global event observers",
+          "result": "passed",
+          "output": "✔ 正式预设与官方dsh会话、子Agent、页面具体问题协议及冷恢复 (8844.062ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 8953.4395\n",
+          "fixtureDataOnly": true,
+          "activeChildCancelledByRuntimeClose": true,
+          "hostCompletedAfterActiveBusinessClose": true
+        },
+        {
+          "name": "Official pi-ai adapter rejects current private image references before HTTP dispatch",
+          "result": "passed",
+          "error": "Attachment object is missing.",
+          "loopbackRequests": 0
+        },
+        {
+          "name": "Official pi-ai adapter consumes candidate image attachments and sends image bytes through loopback HTTP",
+          "result": "passed",
+          "requests": 1,
+          "imageBytesReachedProvider": true,
+          "hostEventLeaks": 0,
+          "sessionPersisted": true,
+          "externalModelRequests": 0
+        },
+        {
+          "name": "Disposing the candidate leaves the shared provider and host execution usable",
+          "result": "passed",
+          "hostCompleted": true,
+          "totalLoopbackRequests": 2
+        },
+        {
+          "name": "Host and candidate concurrently execute identical session IDs without crossing stores or logs",
+          "result": "passed",
+          "concurrentCompleted": 2,
+          "sameIdAllowed": true,
+          "foreignLogContent": false
+        },
+        {
+          "name": "Candidate checkpoint rejection blocks model dispatch and retains the exact failure",
+          "result": "passed",
+          "additionalModelRequests": 0,
+          "checkpointEnforced": true
+        },
+        {
+          "name": "Old private image references do not resolve after switching; actual history inspected read-only",
+          "result": "passed",
+          "syntheticOldPrivateImageRead": "rejected",
+          "productionSessionFiles": 2,
+          "productionImageBlocks": 0,
+          "productionPrivateAttachmentObjects": 0,
+          "productionDataReadOnly": true
+        },
+        {
+          "name": "Official request checkpoint rejects after the request header and before adapter dispatch",
+          "result": "passed",
+          "failureInjection": "session/flush rejected only after request/header",
+          "additionalModelRequests": 0
+        },
+        {
+          "name": "Official tool checkpoint rejection prevents the tool body from running",
+          "result": "passed",
+          "failureInjection": "session/flush rejected only after tool/call",
+          "toolBodyExecutions": 0
+        },
+        {
+          "name": "Omitting the business checkpoint lets the model and tool run without the required durability check",
+          "result": "passed",
+          "checkpointAttempts": 0,
+          "modelRequests": 2,
+          "toolBodyExecutions": 1,
+          "observedRisk": "Isolation alone omits the host durability policy; the business runtime must mount the official policy"
+        },
+        {
+          "name": "Local child failure has a terminal session error even when result diagnostic is absent",
+          "result": "passed",
+          "diagnostic": null,
+          "terminalError": "fixture exact child failure",
+          "currentTaskWrapperMessage": "子Agent未完成",
+          "currentOcrWrapperMessage": "图片识别未完成"
+        },
+        {
+          "name": "Candidate plugin boots with an explicit host attachment dependency and closes cleanly",
+          "result": "passed",
+          "routeRegistered": true,
+          "attachmentDependencyDeclared": true,
+          "hostModelSelectionReused": true
+        },
+        {
+          "name": "Production source unchanged; business operations target only temporary databases",
+          "result": "passed",
+          "files": [
+            "server/native/scope.mjs",
+            "server/native/runtime.mjs",
+            "server/native/tools.mjs",
+            "server/plugin.mjs",
+            "package.json",
+            "package-lock.json",
+            "cordis.patch.yml",
+            "vendor/dsh-scope/lib/index.js"
+          ],
+          "temporaryBusinessOperations": 41
+        }
+      ],
+      "output": "PASS Candidate passes existing main/child/OCR/knowledge/question/resume/cancel/action suite with host checkpoint, title, token meter and global event observers\nPASS Official pi-ai adapter rejects current private image references before HTTP dispatch\nPASS Official pi-ai adapter consumes candidate image attachments and sends image bytes through loopback HTTP\nPASS Disposing the candidate leaves the shared provider and host execution usable\nPASS Host and candidate concurrently execute identical session IDs without crossing stores or logs\nPASS Candidate checkpoint rejection blocks model dispatch and retains the exact failure\nPASS Old private image references do not resolve after switching; actual history inspected read-only\nPASS Official request checkpoint rejects after the request header and before adapter dispatch\nPASS Official tool checkpoint rejection prevents the tool body from running\nPASS Omitting the business checkpoint lets the model and tool run without the required durability check\nPASS Local child failure has a terminal session error even when result diagnostic is absent\nPASS Candidate plugin boots with an explicit host attachment dependency and closes cleanly\nPASS Production source unchanged; business operations target only temporary databases\n"
+    }
+  ],
+  "status": "passed",
+  "counts": {
+    "passedChecks": 1,
+    "requiredRuntimeFiles": 3,
+    "requiredTestFiles": 2,
+    "diagnosticFiles": 2,
+    "documentationFiles": 3,
+    "passedCandidateChecks": 13,
+    "requiredDependencyFiles": 2,
+    "deletedDirectories": 1
+  },
+  "recordType": "historical-isolated-experiment; not current implementation status",
+  "currentAcceptance": "docs/evidence/runtime-fix-acceptance.json"
+}

@@ -1,0 +1,20 @@
+{
+  "manifest_version": 1,
+  "artifact_id": "art_701166befc78",
+  "task_id": "t_d971f5fe4150491ab5c93a1171f1ab53",
+  "conversation_id": "bid-b66b97ef-3e4a-4876-9a23-1b2ae194c07a",
+  "display_name": "投标文件",
+  "kind": "tender.volume",
+  "schema": {
+    "id": "tender-volume-docx",
+    "version": 1
+  },
+  "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "cardinality": "task-multi",
+  "source": {
+    "skill": "tender-body",
+    "thread_id": "bid-b66b97ef-3e4a-4876-9a23-1b2ae194c07a",
+    "run_id": "call_3974567e7910d14c7a4c4c3da4bf87a7_0"
+  },
+  "created_at": "2026-10-12T17:50:06+00:00"
+}

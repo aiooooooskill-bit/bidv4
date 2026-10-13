@@ -1,0 +1,20 @@
+[project]
+name = "bidv4-business-tools"
+version = "0.1.0"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "python-docx",
+    "pydantic",
+    "httpx",
+    "trafilatura>=2.0",
+    "jieba>=0.42.1",
+    "pypdfium2>=4.30,<5",
+    "pillow>=12.3.0",
+    "markdown-it-py>=4,<5",
+]
+[dependency-groups]
+dev = ["pytest", "reportlab>=5.0.1"]
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true

@@ -1,0 +1,20 @@
+import {useEffect,useState} from 'react';
+import {request,json,type Flow} from '../api';
+import {useNavigationGuard} from './NavigationGuard';
+import {Modal} from './Modal';
+import {api,CompanySelect,type Company,type Representative} from './library/shared';
+import {PROFILE_FIELDS} from './library/Companies';
+export function BidderSetup({tid,flow,onChanged}:{tid:string;flow:Flow;onChanged:()=>Promise<void>}){
+ const [open,setOpen]=useState(false);
+ const state=flow.bidder,guard=useNavigationGuard(),running=['running','needs_input'].includes(flow.execution?.state??'');
+ return <><div className="bidder-summary"><div><strong>投标主体</strong><span>{state?.snapshot?.company.name??'制作前请选择主体与签字代表'}</span>{state?.confirmed?<span>{state.snapshot?.signer.name} · {state.sign_date}</span>:null}{running&&!state?.confirmed?<span>{flow.execution?.state==='needs_input'?'本次制作正在等待答复；请先停止，再确认制作信息。':'本次制作正在运行；请先停止，再确认制作信息。'}</span>:null}{state?.stale?<span className="bp-badge" data-tone="pending">资料已变化，需重新确认</span>:null}</div><button className="bp-btn" disabled={running||guard.hasDirty} title={running?'请先停止当前执行，再核对制作信息':undefined} onClick={()=>setOpen(true)}>{state?.confirmed?'核对制作信息':'确认制作信息'}</button></div><Modal open={open} onClose={()=>guard.navigate(()=>setOpen(false))} label="确认制作信息" width="760px">{open?<BidderForm tid={tid} state={state} onClose={()=>setOpen(false)} onSaved={async()=>{setOpen(false);await onChanged()}}/>:null}</Modal></>
+}
+function BidderForm({tid,state,onClose,onSaved}:{tid:string;state:Flow['bidder'];onClose:()=>void;onSaved:()=>Promise<void>}){
+ const [companies,setCompanies]=useState<Company[]>([]),[reps,setReps]=useState<Representative[]>([]),[company,setCompany]=useState(state?.company_id??''),[signer,setSigner]=useState(state?.signer_id??''),[signDate,setSignDate]=useState(state?.sign_date??''),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ const {mark}=useNavigationGuard();
+ const dirty=company!==(state?.company_id??'')||signer!==(state?.signer_id??'')||signDate!==(state?.sign_date??'');
+ useEffect(()=>{mark('bidder',dirty);return()=>mark('bidder',false)},[dirty,mark]);
+ useEffect(()=>{let alive=true;api('/library/overview').then(r=>{if(alive){setCompanies(r.companies);setReps(r.representatives)}}).catch(e=>setError(e.message));return()=>{alive=false}},[]);
+ const selected=companies.find(c=>c.id===company);
+ return <div className="library-ui bidder-form"><div className="modal-head"><h2>确认本项目制作信息</h2></div><div className="modal-body"><p className="hint">公司常用信息来自资料库；签字代表与日期按本次项目确认。</p><div className="form-grid"><label>投标主体<CompanySelect value={company} onChange={v=>{setCompany(v);setSigner('')}} companies={companies} unassigned disabled={busy}/></label><label>本次签字代表<select aria-label="本次签字代表" value={signer} onChange={e=>setSigner(e.target.value)} disabled={busy||!company}><option value="">请选择签字代表</option>{selected?.profile.legal_name?<option value="legal">法定代表人 · {selected.profile.legal_name}</option>:null}{reps.filter(r=>r.company_id===company).map(r=><option key={r.id} value={r.id}>{r.name} · {r.title||'职务待补充'}</option>)}</select></label><label>本次签署日期<input type="date" aria-label="本次签署日期" value={signDate} onChange={e=>setSignDate(e.target.value)} disabled={busy}/></label></div><div className="identity-grid">{PROFILE_FIELDS.map(([key,label])=><div key={key}><span>{label}</span><b>{selected?.profile[key]||'资料库尚未维护'}</b></div>)}</div><p className="hint">缺失常用信息可在资料库维护。选择主体后仅检索该公司的资料，写作素材全库共用。更新制作信息后，已有写作准备和正文会标记为待核对。</p>{error?<div className="error" role="alert">{error}</div>:null}</div><div className="modal-actions"><button disabled={busy} onClick={()=>{mark('bidder',false);onClose()}}>取消</button><button className="primary" disabled={!company||!signer||!signDate||busy} onClick={async()=>{setBusy(true);try{await request('/projects/'+tid+'/bidder',json('PUT',{company_id:company,signer_id:signer,sign_date:signDate,revision:state?.revision??0}));mark('bidder',false);await onSaved()}catch(e){setError(e instanceof Error?e.message:String(e))}finally{setBusy(false)}}}>确认并用于制作</button></div></div>
+}

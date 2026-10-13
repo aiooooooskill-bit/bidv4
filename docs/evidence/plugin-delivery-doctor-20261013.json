@@ -1,0 +1,290 @@
+{
+  "ok": true,
+  "directory": "/private/tmp/ooo-bidpliot-final-SxK94W/application",
+  "name": "ooo-bidpliot",
+  "version": null,
+  "node": "24.15.0",
+  "python": {
+    "version": "3.13.13",
+    "prefix": "/private/tmp/ooo-bidpliot-final-SxK94W/application/business/python/.venv"
+  },
+  "checks": [
+    {
+      "name": "Node.js",
+      "ok": true
+    },
+    {
+      "name": "操作系统",
+      "ok": true
+    },
+    {
+      "name": "插件清单",
+      "ok": true
+    },
+    {
+      "name": "package.json",
+      "ok": true
+    },
+    {
+      "name": "package-lock.json",
+      "ok": true
+    },
+    {
+      "name": "cordis.patch.yml",
+      "ok": true
+    },
+    {
+      "name": "server/agent.mjs",
+      "ok": true
+    },
+    {
+      "name": "server/native/roles.json",
+      "ok": true
+    },
+    {
+      "name": "business/python/runner.py",
+      "ok": true
+    },
+    {
+      "name": "business/python/pyproject.toml",
+      "ok": true
+    },
+    {
+      "name": "business/python/uv.lock",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/resources/tender_base_template.docx",
+      "ok": true
+    },
+    {
+      "name": "dist/client.js",
+      "ok": true
+    },
+    {
+      "name": "dist/renderer/figureRenderer.js",
+      "ok": true
+    },
+    {
+      "name": "dist/pdfjs/pdf.worker.min.mjs",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/skills/document-parse/SKILL.md",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/skills/tender-analysis/SKILL.md",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/skills/tender-outline/SKILL.md",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/skills/tender-body/SKILL.md",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/skills/tender-qa/SKILL.md",
+      "ok": true
+    },
+    {
+      "name": "business/python/app/skills/humanizer-zh/SKILL.md",
+      "ok": true
+    },
+    {
+      "name": "dist/pdfjs/cmaps",
+      "ok": true
+    },
+    {
+      "name": "dist/pdfjs/standard_fonts",
+      "ok": true
+    },
+    {
+      "name": "dist/pdfjs/wasm",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 busboy",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 docx-preview",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 html2canvas",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 mermaid",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 pdfjs-dist",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 react-markdown",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 remark-gfm",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 remark-parse",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 unified",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 micromark-util-decode-string",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-fs-local",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-session-projection",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-session",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-system-prompt",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-tools",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-skill",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-agent",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-session-persistence-jsonl",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-agent-preset-registry",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-subagent",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-user-questions",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-agent-loop",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-session-checkpoint-policy",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-token-meter",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-compaction-basic",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-persona",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-tool-fs",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-tool-fs-search",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-tool-skill",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-tool-ask-user",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-skill-filesystem",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/cordis",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/cordis-plugin-loader",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-llm",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-scope",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-agent-preset",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-client-ui-layout",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 @deepseek-ai/dsh-client-locale",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 react",
+      "ok": true
+    },
+    {
+      "name": "Node依赖 react-dom",
+      "ok": true
+    },
+    {
+      "name": "dsh版本",
+      "ok": true
+    },
+    {
+      "name": "Python环境",
+      "ok": true
+    }
+  ],
+  "errors": []
+}

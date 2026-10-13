@@ -1,0 +1,98 @@
+{
+  "scope": "项目生产源码中的 Markdown 结构解析与消费，含前端、Node 编排和 Python 业务",
+  "python": {
+    "library": "markdown-it-py 4.2.0",
+    "entry": "business/python/app/markdown.py",
+    "features": [
+      "CommonMark",
+      "table",
+      "strikethrough",
+      "original source line maps",
+      "reference definitions from complete source"
+    ],
+    "consumers": {
+      "analysis citations and coverage": "business/python/app/tools/validate_analysis.py",
+      "registry, response documents, directory and metadata": "business/python/app/tools/assemble_tender.py",
+      "guide, figure plans, material comparison and promise validation": "business/python/app/tools/validate_body.py",
+      "pipeline guide state": "business/python/app/tools/check_pipeline.py",
+      "writer dispatch guide and promises": "business/python/app/dispatch_enrich.py",
+      "promise schema and write guards": "business/python/app/promises.py -> business/python/app/services/build_state.py",
+      "source, knowledge and material outlines": "business/python/app/parse/outline.py -> document.py / knowledge ingestion / knowledge.segmenter",
+      "knowledge and material snippets": "business/python/app/tools/search_knowledge.py",
+      "PDF heading recovery excludes parsed Markdown blocks": "business/python/app/parse/pdf.py"
+    }
+  },
+  "javascript": {
+    "libraries": [
+      "unified 11.0.5",
+      "remark-parse 11.0.0",
+      "remark-gfm 4.0.1",
+      "react-markdown 10.1.0"
+    ],
+    "entry": "shared/markdown.js",
+    "consumers": [
+      "src/components/MarkdownDocument.tsx",
+      "src/lib/businessDraft.ts",
+      "server/native/markdown.mjs -> server/native/runtime.mjs"
+    ]
+  },
+  "producers": {
+    "table cell escaping": [
+      "business/python/app/parse/docx.py",
+      "business/python/app/parse/pdf.py"
+    ],
+    "standard Markdown contract": [
+      "business/python/app/skills/tender-analysis/SKILL.md",
+      "business/python/app/skills/tender-outline/SKILL.md",
+      "business/python/app/skills/tender-body/SKILL.md"
+    ]
+  },
+  "removed": [
+    "manual pipe splitting",
+    "regex Markdown heading identification",
+    "indent-width directory parser",
+    "regex code-fence stripping",
+    "PDF Markdown-prefix filtering"
+  ],
+  "retained": [
+    "source line-range reads and counts",
+    "revision and page-anchor metadata",
+    "original DOCX/PDF converters and Chinese printed numbering detection",
+    "domain-specific source IDs and note fields",
+    "literal Markdown residue detection inside DOCX output"
+  ],
+  "verification": {
+    "shared_corpus": "tests/fixtures/markdown-contract.json",
+    "python": {
+      "command": "npm run test:business",
+      "passed": 388
+    },
+    "typecheck": {
+      "command": "npm run check",
+      "passed": true
+    },
+    "build": {
+      "command": "npm run build",
+      "passed": true
+    },
+    "model": "确定性工程夹具；本轮未新增真实模型调用",
+    "javascript": {
+      "command": "npm test",
+      "passed": 52,
+      "includes": "真实 HTTP 工具链、Windows 相对路径生成/校验/保存、停止恢复、同会话问答、写入守卫、前端编辑与插件生命周期"
+    },
+    "shared_samples": 6
+  },
+  "status": "complete",
+  "review_repairs": {
+    "path_entries": [
+      "business/python/app/work_paths.py",
+      "server/native/work-paths.mjs"
+    ],
+    "path_contract": "工作树相对路径接受两种分隔符及点路径别名，业务键使用POSIX路径；只读/准备文件保护按实际文件身份判定",
+    "shared_path_corpus": "tests/fixtures/work-paths.json",
+    "analysis_contract": "八种分析产物按AST结果检查必需表格完整表头；格式产物同时保留章节/模板表；无条目可空表，缺表/错误表头/代码示例不能代替",
+    "host": "macOS，未在Windows主机运行；Windows路径写法已通过跨端样本及真实HTTP链路验证",
+    "source_data": "全部测试使用临时数据，正式任务未修改"
+  }
+}

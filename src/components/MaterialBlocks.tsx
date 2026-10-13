@@ -1,0 +1,13 @@
+import {useEffect,useState} from 'react';
+import {request,json} from '../api';
+import {MarkdownDocument} from './MarkdownDocument';
+import {reportError,clearNotice} from './NoticeCenter';
+interface Node {标题:string;start_line:number;end_line:number;children?:Node[]}
+export function MaterialBlocks({fid,onChanged}:{fid:string;onChanged:()=>Promise<void>}){
+ const [nodes,setNodes]=useState<Node[]>([]),[selected,setSelected]=useState<Record<string,[number,number]>>({}),[title,setTitle]=useState(''),[note,setNote]=useState(''),[preview,setPreview]=useState(''),[busy,setBusy]=useState(false);
+ useEffect(()=>{let active=true;request<{outline:Node[];parse_status:string;error?:string}>(`/materials/files/${fid}/outline`).then(r=>{if(active)setNodes(r.outline);if(r.error)reportError(new Error(r.error),{id:'materials-parse',scope:'library',title:'素材解析未完成'})}).catch(e=>reportError(e,{scope:'library',id:'materials-outline',title:'素材目录读取未完成'}));return()=>{active=false}},[fid]);
+ const view=async(n:Node)=>{try{const p=await request<{sections:Array<{text:string}>}>(`/materials/files/${fid}/content?start=${n.start_line}&end=${n.end_line}`);setPreview(p.sections.map(s=>s.text).join('\n\n'))}catch(e){reportError(e,{scope:'library',id:'material-preview',title:'章节读取未完成'})}};
+ const create=async()=>{if(busy)return;setBusy(true);try{await request(`/materials/files/${fid}/blocks`,json('POST',{title,note,ranges:Object.values(selected)}));setSelected({});setTitle('');setNote('');clearNotice('material-create');await onChanged()}catch(e){reportError(e,{scope:'library',id:'material-create',title:'素材保存未完成'})}finally{setBusy(false)}};
+ const tree=(list:Node[])=>list.map(n=>{const key=n.start_line+':'+n.end_line;return <div className="material-node" key={key}><label><input type="checkbox" checked={!!selected[key]} onChange={e=>setSelected(old=>{const next={...old};if(e.target.checked)next[key]=[n.start_line,n.end_line];else delete next[key];return next})}/>{n.标题}</label><button className="bp-btn" onClick={()=>void view(n)}>查看内容</button>{n.children?.length?<div className="directory-children">{tree(n.children)}</div>:null}</div>});
+ return <section className="work-document"><h3>从章节建立素材</h3>{nodes.length?tree(nodes):<p>解析目录尚未就绪，可关闭后重新读取。</p>}<div className="settings-form"><label>素材名称<input value={title} onChange={e=>setTitle(e.target.value)}/></label><label>用途说明<input value={note} onChange={e=>setNote(e.target.value)}/></label><button className="bp-btn" disabled={busy||!title.trim()||!Object.keys(selected).length} onClick={()=>void create()}>保存所选素材</button></div>{preview?<MarkdownDocument content={preview}/>:null}</section>
+}

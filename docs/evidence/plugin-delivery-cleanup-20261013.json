@@ -1,0 +1,162 @@
+{
+  "completedAt": "2026-10-13T06:02:15.555111+00:00",
+  "removed": [
+    {
+      "path": "/private/tmp/bidv4-final-verify.log",
+      "bytes": 4258
+    },
+    {
+      "path": "/private/tmp/bidv4-library-verify-final.log",
+      "bytes": 5942
+    },
+    {
+      "path": "/private/tmp/bidv4-library-verify.log",
+      "bytes": 6929
+    },
+    {
+      "path": "/private/tmp/bidv4-npm-audit-cache",
+      "bytes": 1590
+    },
+    {
+      "path": "/private/tmp/bidv4-pack-audit-cache",
+      "bytes": 19625815
+    },
+    {
+      "path": "/private/tmp/bidv4-pack-audit.json",
+      "bytes": 113401
+    },
+    {
+      "path": "/private/tmp/bidv4-precheck.json",
+      "bytes": 49
+    },
+    {
+      "path": "/private/tmp/bidv4-preparation-host.log",
+      "bytes": 164
+    },
+    {
+      "path": "/private/tmp/bidv4-seven-final-verify.log",
+      "bytes": 4721
+    },
+    {
+      "path": "/private/tmp/bidv4-seven-python.log",
+      "bytes": 1576
+    },
+    {
+      "path": "/private/tmp/bidv4-seven-ui-check.log",
+      "bytes": 1662
+    },
+    {
+      "path": "/private/tmp/bidv4-seven-verify.log",
+      "bytes": 4723
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-agent-final.log",
+      "bytes": 300
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-agent-regression.log",
+      "bytes": 11799
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-clean-initial-20261013",
+      "bytes": 919693212
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-dist-before-2OoYLU",
+      "bytes": 12023651
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-final-links.log",
+      "bytes": 11628
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-final-path.txt",
+      "bytes": 50
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-final-prepare.log",
+      "bytes": 1187
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-final-regression.log",
+      "bytes": 11930
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-final-zpO6uY",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-initial-host-20261013",
+      "bytes": 2949
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-verify-kNsB5E",
+      "bytes": 13757466
+    },
+    {
+      "path": "/private/tmp/ooo-bidpliot-verify-path.txt",
+      "bytes": 39
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-docx-contract-gfysp4",
+      "bytes": 123419
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-isolation-test-JkxPJ7",
+      "bytes": 3799
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-isolation-test-NO4aNg",
+      "bytes": 3799
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-isolation-test-cO1iCK",
+      "bytes": 0
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-live-dsh-check-zwy9fl_l",
+      "bytes": 355196
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-3VBa4A",
+      "bytes": 31404334
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-4e6n7n",
+      "bytes": 921786743
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-Bv6Jdc",
+      "bytes": 937179343
+    },
+    {
+      "path": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-delivery-WSqOY3",
+      "bytes": 31455547
+    },
+    {
+      "path": "/Users/ooo/Downloads/本地目录验收册.docx",
+      "bytes": 37908,
+      "verifiedSha256": "bc1cd6111c679a304c37a3af6c5e415afff3843f8e2dff48a1a960abc3d4ef26"
+    },
+    {
+      "path": "/Users/ooo/Downloads/本地目录验收册 (1).docx",
+      "bytes": 37908,
+      "verifiedSha256": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05"
+    },
+    {
+      "path": "/Users/ooo/Downloads/本地目录验收册 (2).docx",
+      "bytes": 37908,
+      "verifiedSha256": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05"
+    },
+    {
+      "path": "/private/tmp/bidv4-build-ui",
+      "bytes": 2872982
+    }
+  ],
+  "removedCount": 37,
+  "reclaimedLogicalBytes": 2890583927,
+  "productionHostRestarted": false,
+  "productionDataModified": false,
+  "deliveryAndEvidencePreserved": true,
+  "deliveryArchiveUnchanged": true
+}

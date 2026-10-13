@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "model": "mlx-community/Qwen3.8-27B-4bit",
+  "requests": 21,
+  "elapsedMs": 749203,
+  "sessionId": "bid-8efae3b9-3529-47f0-9c5e-5d14a155d73f",
+  "checks": {
+    "guideGeneratedAndValidated": true,
+    "questionAskedBeforePromisesAndBody": true,
+    "sameSessionContinuation": true,
+    "bothPreparationFilesReady": true,
+    "selectedDocxGeneratedAndValidated": true,
+    "userThreeYearValueInPromisesAndDocx": true,
+    "nonselectedDocxBytesUnchanged": true
+  },
+  "otherDocxSha256": "55a40065e2b634c72105d74999641a4e1fbb5c1cdff2e63317a2a2969966e7ff",
+  "originalHarnessIssue": "The model run completed; original assertion rejected 3 年 solely due to whitespace. Assertion corrected and retained actual outputs reverified without rewriting them.",
+  "limits": "One synthetic two-chapter sample; no full tender/content-quality or adversarial protection validation."
+}

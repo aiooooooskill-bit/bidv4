@@ -1,0 +1,3 @@
+{"type":"session","version":4,"id":"kb-7cd8f8e1-cc01-413e-9f6b-676462a14484","createdAt":1791820263940,"cwd":"/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-library-p5-NLh4qt/data/workspace/knowledge","isSeeded":false,"delegationDepth":0,"agentPreset":"bidv4-execution"}
+{"type":"subagent/catalog","seq":0,"time":1791820264513,"data":{"version":0,"childId":"15f785ec-cc96-4c5a-beef-bc8814a8baaa","childCreatedAt":1791820264510,"mode":"one-shot","label":"第1页文字识别"}}
+{"type":"subagent/catalog","seq":1,"time":1791820278211,"data":{"version":0,"childId":"d5cebeda-749e-417c-bf2c-a9e58d3d2726","childCreatedAt":1791820278209,"mode":"one-shot"}}

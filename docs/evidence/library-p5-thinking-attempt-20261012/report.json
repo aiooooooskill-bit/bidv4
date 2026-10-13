@@ -1,0 +1,69 @@
+{
+  "started": "2026-10-12T15:30:28.472Z",
+  "isolatedRoot": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-library-p5-02CGoM/",
+  "identityMode": "用户授权编造的验收演示主体与承诺；不作为真实企业事实，不进入正式库",
+  "model": "mlx-community/Qwen3.8-27B-4bit",
+  "stages": [
+    {
+      "name": "维护主体与授权代表",
+      "time": "2026-10-12T15:30:30.019Z",
+      "companyId": "co_01bc94250fb8",
+      "representativeId": "rep_493f4b87a484"
+    },
+    {
+      "name": "真实图片OCR与结构化识别、核对保存",
+      "time": "2026-10-12T15:31:18.267Z",
+      "assetId": "kb_e5bc6662eab1",
+      "fields": [
+        "核准号",
+        "编号",
+        "持证单位",
+        "法定代表人",
+        "开户银行",
+        "账号",
+        "发证机关",
+        "账户类型",
+        "issue_date"
+      ]
+    },
+    {
+      "name": "真实写作素材上传、建块、全文检索与分页",
+      "time": "2026-10-12T15:31:19.677Z",
+      "fileId": "mt_5596d8f9580b",
+      "blockId": "blk_3880a04e1754",
+      "total": 1
+    },
+    {
+      "name": "analyse开始",
+      "time": "2026-10-12T15:31:22.215Z",
+      "sessionId": "bid-9299dd32-bd08-4d63-ad65-d5ccdbefc1f2"
+    },
+    {
+      "name": "analyse结束",
+      "time": "2026-10-12T15:48:19.975Z",
+      "state": "stopped",
+      "sections": [],
+      "volumes": []
+    }
+  ],
+  "url": "http://127.0.0.1:3096",
+  "taskId": "t_ee609e0d0f94447f8f1d61ee31781007",
+  "progress": {
+    "time": "2026-10-12T15:48:06.678Z",
+    "execution": {
+      "session_id": "bid-9299dd32-bd08-4d63-ad65-d5ccdbefc1f2",
+      "kind": "analyse",
+      "model": {
+        "provider": "p5-local",
+        "model": "mlx-community/Qwen3.8-27B-4bit"
+      },
+      "sections": [],
+      "state": "running",
+      "questions": []
+    },
+    "sections": [],
+    "volumes": []
+  },
+  "completed": false,
+  "error": "Error: analyse未完成：undefined\n    at phase (file:///private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-library-p5-02CGoM/scripts/verify-library-p5.mjs:75:50)\n    at async file:///private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bidv4-library-p5-02CGoM/scripts/verify-library-p5.mjs:78:3"
+}

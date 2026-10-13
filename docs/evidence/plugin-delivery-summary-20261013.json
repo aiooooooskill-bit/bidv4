@@ -1,0 +1,84 @@
+{
+  "name": "ooo-bidpliot",
+  "description": "招投标工作台：AI + 招投标平台。",
+  "releaseVersion": null,
+  "passed": true,
+  "system": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "v24.15.0",
+    "dsh": "0.2.0-rc.2"
+  },
+  "validation": {
+    "directoryLifecycle": {
+      "passed": 23,
+      "total": 23,
+      "report": "plugin-delivery-final-validation-20261013.json"
+    },
+    "node": {
+      "passed": 119,
+      "failed": 0,
+      "skipped": 0,
+      "log": "plugin-delivery-links-regression-20261013.log"
+    },
+    "python": {
+      "passed": 448,
+      "failed": 0,
+      "log": "plugin-delivery-regression-20261013.log"
+    },
+    "typeCheck": true,
+    "completeBuild": true,
+    "verifiedSourceMatchesCurrentCode": true
+  },
+  "browser": {
+    "page": {
+      "preservedProjects": 2,
+      "chaptersReady": "1/1",
+      "volumesReady": "1/1",
+      "docxPreviewPages": "1/1",
+      "screenshot": "delivery-page-20261013.jpg"
+    },
+    "agent": {
+      "preset": "ooo-bidpliot",
+      "taskId": "t_a9c3a241ae5b4df09a8d523ce2bfb8f8",
+      "state": "completed",
+      "tool": "ooo_bidpliot_status",
+      "documentOpened": true,
+      "documentResponseFormat": "existing content JSON",
+      "documentScreenshot": "delivery-agent-document-20261013.jpg",
+      "screenshot": "delivery-agent-20261013.jpg"
+    },
+    "downloads": [
+      {
+        "path": "/Users/ooo/Downloads/本地目录验收册 (1).docx",
+        "bytes": 37908,
+        "sha256": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05",
+        "downloadedAt": "2026-10-13T05:32:03.527Z"
+      },
+      {
+        "path": "/Users/ooo/Downloads/本地目录验收册 (2).docx",
+        "bytes": 37908,
+        "sha256": "ce85d3a82f661dcc4997e727858f0ead6a0245eee73ece6cb013417e3a380d05",
+        "downloadedAt": "2026-10-13T05:33:25.952Z"
+      }
+    ],
+    "shutdown": {
+      "exitCode": 0,
+      "diagnostics": [],
+      "hostClaims": []
+    }
+  },
+  "delivery": {
+    "directory": "../../deliveries/ooo-bidpliot",
+    "archive": "../../deliveries/ooo-bidpliot-local.zip",
+    "includesUserData": false,
+    "preparedEnvironmentIncluded": false
+  },
+  "limits": {
+    "model": "deterministic local fixture, not model content quality",
+    "linux": "not tested",
+    "windows": "unsupported",
+    "productionHostRestarted": false
+  },
+  "completedAt": "2026-10-13T05:36:30.271Z"
+}

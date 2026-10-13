@@ -1,0 +1,12 @@
+{
+  "name": "ooo-bidpliot",
+  "releaseVersion": null,
+  "archive": "/Users/ooo/Documents/AIwork/bidv4/deliveries/ooo-bidpliot-local.zip",
+  "archiveBytes": 5565691,
+  "archiveSha256": "5695bc19a9f06b193015078994f9cfff014ca171ed983422d66849c096b99609",
+  "files": 558,
+  "archiveIntegrity": true,
+  "manifestAndArchiveIdentical": true,
+  "containsUserData": false,
+  "containsPreparedEnvironment": false
+}

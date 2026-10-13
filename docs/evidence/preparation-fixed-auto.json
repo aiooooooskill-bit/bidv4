@@ -1,0 +1,56 @@
+{
+  "candidate": "auto",
+  "model": "deterministic engineering fixture",
+  "results": [
+    {
+      "name": "auto-preparation-and-question",
+      "pass": true,
+      "actionSubmissions": 1,
+      "questionSubmissions": 1,
+      "sameSession": true,
+      "otherUnchanged": true,
+      "nonselectedStatus": "stale"
+    },
+    {
+      "name": "ready-planning-reuse",
+      "pass": true,
+      "planningWrites": 0
+    },
+    {
+      "name": "stop-and-resume",
+      "pass": true,
+      "guideReused": true
+    },
+    {
+      "name": "user-edit-and-stale-planning",
+      "pass": true,
+      "staleAdmissionRejected": true,
+      "userReviewed": true,
+      "valuePreserved": "五年"
+    },
+    {
+      "name": "nonselected-chapter-write-guard",
+      "protected": true
+    },
+    {
+      "name": "plain-write-and-edit-guard",
+      "protected": true
+    },
+    {
+      "name": "confirmed-value-write-guard",
+      "protected": true,
+      "differenceVisible": true
+    },
+    {
+      "name": "confirmed-value-edit-guard",
+      "protected": true
+    },
+    {
+      "name": "guide-validation-before-ready-guard",
+      "protected": true
+    }
+  ],
+  "requestCount": 64,
+  "realCount": 0,
+  "modelRequests": []
+}

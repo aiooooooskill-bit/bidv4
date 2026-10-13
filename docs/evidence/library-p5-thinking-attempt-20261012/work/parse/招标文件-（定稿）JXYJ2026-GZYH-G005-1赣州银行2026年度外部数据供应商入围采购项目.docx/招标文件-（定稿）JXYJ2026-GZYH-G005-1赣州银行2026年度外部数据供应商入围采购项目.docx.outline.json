@@ -1,0 +1,384 @@
+[
+  {
+    "标题": "第一章 招标文件",
+    "level": 2,
+    "start_line": 56,
+    "end_line": 531,
+    "children": [
+      {
+        "标题": "一、招标邀请",
+        "level": 3,
+        "start_line": 57,
+        "end_line": 98,
+        "children": [
+          {
+            "标题": "1、具有独立承担民事责任能力的法人或其他组织或自然人；",
+            "level": 6,
+            "start_line": 72,
+            "end_line": 83,
+            "children": []
+          },
+          {
+            "标题": "（十二）付款方式：详见采购项目需求。",
+            "level": 6,
+            "start_line": 84,
+            "end_line": 84,
+            "children": []
+          },
+          {
+            "标题": "（十三）联系方法：",
+            "level": 6,
+            "start_line": 85,
+            "end_line": 98,
+            "children": []
+          }
+        ]
+      },
+      {
+        "标题": "二、投标供应商须知",
+        "level": 3,
+        "start_line": 99,
+        "end_line": 99,
+        "children": []
+      },
+      {
+        "标题": "（一）总则",
+        "level": 3,
+        "start_line": 100,
+        "end_line": 126,
+        "children": []
+      },
+      {
+        "标题": "（二）招标文件",
+        "level": 3,
+        "start_line": 127,
+        "end_line": 138,
+        "children": []
+      },
+      {
+        "标题": "（三）投标文件的编制",
+        "level": 3,
+        "start_line": 139,
+        "end_line": 174,
+        "children": []
+      },
+      {
+        "标题": "（四）投标文件的递交",
+        "level": 3,
+        "start_line": 175,
+        "end_line": 188,
+        "children": []
+      },
+      {
+        "标题": "（五）开标与评标",
+        "level": 3,
+        "start_line": 189,
+        "end_line": 304,
+        "children": [
+          {
+            "标题": "注：以上评分标准提供的证明材料在签订合同前，采购人有权检查其原件，如后期发现与中标供应商投标文件不一致的，将取消其中标资格，纳入赣州银行股份有限公司黑名单内，追究其以虚假材料谋取中标的法律责任。",
+            "level": 6,
+            "start_line": 278,
+            "end_line": 304,
+            "children": []
+          }
+        ]
+      },
+      {
+        "标题": "（六）授予合同",
+        "level": 3,
+        "start_line": 305,
+        "end_line": 317,
+        "children": []
+      },
+      {
+        "标题": "三、采购项目需求",
+        "level": 3,
+        "start_line": 318,
+        "end_line": 318,
+        "children": []
+      },
+      {
+        "标题": "（一）主要服务内容及要求",
+        "level": 3,
+        "start_line": 319,
+        "end_line": 378,
+        "children": [
+          {
+            "标题": "6、合同签订定价原则及机制",
+            "level": 6,
+            "start_line": 354,
+            "end_line": 356,
+            "children": []
+          },
+          {
+            "标题": "7、保密条款",
+            "level": 6,
+            "start_line": 357,
+            "end_line": 362,
+            "children": []
+          },
+          {
+            "标题": "8、沟通管理要求",
+            "level": 6,
+            "start_line": 363,
+            "end_line": 364,
+            "children": []
+          },
+          {
+            "标题": "9、入围供应商考核",
+            "level": 6,
+            "start_line": 365,
+            "end_line": 366,
+            "children": []
+          },
+          {
+            "标题": "10、投标供应商响应",
+            "level": 6,
+            "start_line": 367,
+            "end_line": 371,
+            "children": []
+          },
+          {
+            "标题": "11、知识产权要求",
+            "level": 6,
+            "start_line": 372,
+            "end_line": 375,
+            "children": []
+          },
+          {
+            "标题": "12、其它要求",
+            "level": 6,
+            "start_line": 376,
+            "end_line": 378,
+            "children": []
+          }
+        ]
+      },
+      {
+        "标题": "（二）商务要求",
+        "level": 3,
+        "start_line": 379,
+        "end_line": 382,
+        "children": []
+      },
+      {
+        "标题": "四、合同条款",
+        "level": 3,
+        "start_line": 383,
+        "end_line": 531,
+        "children": [
+          {
+            "标题": "（1）为保障甲方信息资产安全，防范因供应链环节引发的信息安全风险，包括但不限于信息泄露、数据篡改、服务中断等，双方共同制定本章。",
+            "level": 6,
+            "start_line": 499,
+            "end_line": 499,
+            "children": []
+          },
+          {
+            "标题": "（2）本章适用于乙方为甲方提供信息科技服务的全部过程，包括但不限于数据提供、软件开发、系统集成、技术支持和运营维护等。",
+            "level": 6,
+            "start_line": 500,
+            "end_line": 500,
+            "children": []
+          },
+          {
+            "标题": "（3）乙方确认，其下级分公司（如有）为甲方提供服务时，同样适用本章之要求，乙方有义务确保其下级分公司的合规性。",
+            "level": 6,
+            "start_line": 501,
+            "end_line": 531,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "标题": "第二章 附件（投标文件格式）",
+    "level": 2,
+    "start_line": 532,
+    "end_line": 592,
+    "children": [
+      {
+        "标题": "1．投标函",
+        "level": 3,
+        "start_line": 550,
+        "end_line": 575,
+        "children": []
+      },
+      {
+        "标题": "2．投标文件资料清单（格式）",
+        "level": 3,
+        "start_line": 576,
+        "end_line": 592,
+        "children": []
+      }
+    ]
+  },
+  {
+    "标题": "",
+    "level": 2,
+    "start_line": 593,
+    "end_line": 747,
+    "children": [
+      {
+        "标题": "3．投标供应商关于响应合同签订价规则的声明函",
+        "level": 3,
+        "start_line": 594,
+        "end_line": 603,
+        "children": []
+      },
+      {
+        "标题": "4．技术规格响应/偏离表",
+        "level": 3,
+        "start_line": 604,
+        "end_line": 620,
+        "children": []
+      },
+      {
+        "标题": "5．商务条款响应/偏离表",
+        "level": 3,
+        "start_line": 621,
+        "end_line": 637,
+        "children": []
+      },
+      {
+        "标题": "6．技术文件",
+        "level": 3,
+        "start_line": 638,
+        "end_line": 747,
+        "children": [
+          {
+            "标题": "6-1外部数据采购实施案例清单",
+            "level": 4,
+            "start_line": 643,
+            "end_line": 669,
+            "children": []
+          },
+          {
+            "标题": "6-2投标供应商数据更新承诺函",
+            "level": 4,
+            "start_line": 670,
+            "end_line": 681,
+            "children": []
+          },
+          {
+            "标题": "6-3投标供应商数据问题处置时效承诺函",
+            "level": 4,
+            "start_line": 682,
+            "end_line": 693,
+            "children": []
+          },
+          {
+            "标题": "6-4 投标供应商数据服务响应时效承诺函",
+            "level": 4,
+            "start_line": 694,
+            "end_line": 705,
+            "children": []
+          },
+          {
+            "标题": "6-5服务团队清单模板",
+            "level": 4,
+            "start_line": 706,
+            "end_line": 747,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "标题": "",
+    "level": 2,
+    "start_line": 748,
+    "end_line": 898,
+    "children": [
+      {
+        "标题": "6-6 合规承诺函",
+        "level": 4,
+        "start_line": 749,
+        "end_line": 761,
+        "children": []
+      },
+      {
+        "标题": "6-7 数据源授权承诺函",
+        "level": 4,
+        "start_line": 762,
+        "end_line": 773,
+        "children": []
+      },
+      {
+        "标题": "7．资格证明文件",
+        "level": 3,
+        "start_line": 774,
+        "end_line": 898,
+        "children": [
+          {
+            "标题": "7-1具有独立承担民事责任能力的法人或其他组织或自然人的证明材料",
+            "level": 4,
+            "start_line": 780,
+            "end_line": 788,
+            "children": []
+          },
+          {
+            "标题": "7-2供应商资格信用承诺",
+            "level": 4,
+            "start_line": 789,
+            "end_line": 816,
+            "children": []
+          },
+          {
+            "标题": "7-3特定资格要求证明材料",
+            "level": 4,
+            "start_line": 817,
+            "end_line": 819,
+            "children": []
+          },
+          {
+            "标题": "7-4法定代表人授权书（格式）",
+            "level": 4,
+            "start_line": 820,
+            "end_line": 838,
+            "children": []
+          },
+          {
+            "标题": "7-5法定代表人身份证明书（格式）",
+            "level": 4,
+            "start_line": 839,
+            "end_line": 862,
+            "children": []
+          },
+          {
+            "标题": "7-6交纳投标保证金的银行凭证（格式）",
+            "level": 4,
+            "start_line": 863,
+            "end_line": 877,
+            "children": []
+          },
+          {
+            "标题": "7-7投标供应商在投标截止时间前在“信用中国”（www.creditchina.gov.cn）及中国政府采购网（www.ccgp.gov.cn）上无不良信用记录的承诺函",
+            "level": 4,
+            "start_line": 878,
+            "end_line": 888,
+            "children": [
+              {
+                "标题": "年   月   日",
+                "level": 6,
+                "start_line": 888,
+                "end_line": 888,
+                "children": []
+              }
+            ]
+          },
+          {
+            "标题": "7-8在经营活动中没有违法违纪或不良记录（未被列入黑名单）的承诺函（格式）",
+            "level": 4,
+            "start_line": 889,
+            "end_line": 898,
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+]

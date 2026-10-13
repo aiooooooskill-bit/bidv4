@@ -1,0 +1,17 @@
+node_modules/
+dist/
+data/
+__pycache__/
+.pytest_cache/
+.venv/
+.DS_Store
+
+# Local credentials
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Local backups and generated delivery packages
+/backups/
+/deliveries/

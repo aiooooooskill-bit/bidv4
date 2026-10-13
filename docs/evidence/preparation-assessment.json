@@ -1,0 +1,90 @@
+{
+  "date": "2026-10-12",
+  "scope": "Production implementation updated and local service reloaded. Model tests ran in disposable copies with synthetic two-chapter data. Original user tender body was not generated or rewritten.",
+  "deterministic": {
+    "staged": "passed: guide, promises question/reply, selected DOCX; three action submissions",
+    "auto": "passed: missing preparation, same-session question/reply, ready reuse, stop/resume, fixture-preserved edits"
+  },
+  "realModel": {
+    "model": "mlx-community/Qwen3.8-27B-4bit",
+    "result": "Production-path real-model sample passed: preparation, question/reply in one session, selected DOCX generation and validation, confirmed three-year value preserved, nonselected DOCX bytes unchanged.",
+    "elapsedMs": 1170755,
+    "requests": 23,
+    "acceptance": "preparation-fixed-real-acceptance.json",
+    "inferenceBoundary": "One synthetic sample demonstrates feasibility. Does not establish general model reliability, full tender quality, or mechanical adversarial protections.",
+    "priorAttempt": "Previous six-minute attempt was incomplete; latest attempt supplied parsed DOCX and a longer test window.",
+    "initialFeasibilityAttempt": {
+      "elapsedMs": 749203,
+      "requests": 21,
+      "acceptance": "preparation-real-acceptance.json"
+    }
+  },
+  "recommendation": {
+    "missing": "Allow selected-chapter action to prepare missing shared files, with explicit phase display.",
+    "ready": "Reuse preparation without rewrite, generate selected chapter only.",
+    "stale": "Surface changed basis and preserve user-set values; do not silently regenerate shared files.",
+    "adoptionGate": [
+      "Successful guide validation must mechanically precede ready stamp",
+      "Enforce selected chapter scope on write tools",
+      "Protect confirmed values and user edits"
+    ]
+  },
+  "evidence": [
+    "preparation-fixed-auto.json",
+    "preparation-fixed-real.json",
+    "preparation-fixed-real-acceptance.json",
+    "preparation-page-fixed.jpg"
+  ],
+  "reproduce": [
+    "node scripts/verify-preparation-flow.mjs auto",
+    "node scripts/verify-preparation-flow.mjs real",
+    "business/python/.venv/bin/python tests/experiments/verify-real-evidence.py"
+  ],
+  "phase": "review-findings-fixed-and-verified",
+  "initialNegativeProbes": [
+    "Nonselected DOCX writes accepted",
+    "Confirmed five-year promise can be overwritten with one year and turn still completed",
+    "Invalid guide can be stamped ready despite failed validation",
+    "Shared preparation changes make other sections stale even if DOCX bytes are unchanged"
+  ],
+  "implementationVerification": {
+    "javascriptTestsPassed": 42,
+    "pythonTestsPassed": 324,
+    "typecheck": "passed",
+    "frontendBuild": "passed",
+    "deterministicProtectionReport": "preparation-fixed-auto.json",
+    "adoptionGates": "implemented and verified by deterministic tests",
+    "formalPage": {
+      "generateCurrentChapterEnabled": true,
+      "screenshot": "preparation-page-fixed.jpg"
+    },
+    "localService": "listening on 127.0.0.1:3080 after reload"
+  },
+  "reviewFixes": {
+    "findingsFixed": [
+      "escaped pipe values truncated by table splitting",
+      "duplicate intermediate table unable to be repaired",
+      "empty item or missing value rows accepted as ready"
+    ],
+    "sharedParser": "markdown-it-py 4.2.0, commonmark plus table rule",
+    "paths": [
+      "business/python/app/promises.py",
+      "business/python/app/services/build_state.py",
+      "business/python/app/dispatch_enrich.py",
+      "business/python/app/tools/validate_body.py"
+    ],
+    "verification": {
+      "javascriptTestsPassed": 42,
+      "pythonTestsPassed": 324,
+      "typecheck": "passed",
+      "httpFixture": [
+        "escaped-pipe-value-write-guard",
+        "duplicate-intermediate-repair",
+        "invalid-promise-row-save-guard"
+      ]
+    },
+    "realModelRerun": false,
+    "service": "Existing host remains listening; business subprocesses load current Python implementation on each call.",
+    "scope": "Original user tender files were not rewritten by this repair."
+  }
+}

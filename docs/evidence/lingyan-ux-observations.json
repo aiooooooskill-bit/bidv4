@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-11",
+  "scope": "本地灵燕智能0.2.3，现有任务阅读与无改动进入/退出编辑；没有模型请求或故障注入",
+  "observed": [
+    {
+      "id": "parse-obstacle",
+      "result": "既有.doc解析遇障说明原因和转换/配置两种办法；执行摘要显示已完成8步",
+      "screenshot": "docs/previews/lingyan-ux/parse-obstacle.png"
+    },
+    {
+      "id": "question-history",
+      "result": "已询问1个问题默认折叠；展开显示问题与用户原回答",
+      "screenshot": "docs/previews/lingyan-ux/question-history.png"
+    },
+    {
+      "id": "directory-read",
+      "result": "浦发目录显示搜索、章节编号、交付形态、概述、编制说明及来源标签；3项未挂目录提示不阻塞阅读",
+      "screenshot": "docs/previews/lingyan-ux/directory-read.png"
+    },
+    {
+      "id": "directory-edit",
+      "result": "进入编辑显示完成编辑、已保存、撤销/重做和拖拽说明；没有改动节点",
+      "screenshot": "docs/previews/lingyan-ux/directory-edit.png"
+    },
+    {
+      "id": "analysis-read",
+      "result": "解读MD显示业务列、出处、标题层级；进入编辑显示源码/分屏/预览及保存状态；未改动内容",
+      "screenshots": [
+        "docs/previews/lingyan-ux/analysis-read.png",
+        "docs/previews/lingyan-ux/analysis-edit.png"
+      ]
+    },
+    {
+      "id": "original-load-failure",
+      "result": "点击既有.doc原件出现加载失败：工作文件不存在，未观察到重试入口；根因未确定",
+      "screenshot": "docs/previews/lingyan-ux/original-load-failure.png"
+    },
+    {
+      "id": "knowledge",
+      "result": "资料详情分内容/信息及文本/原件；重新识别为显式操作，未触发"
+    }
+  ],
+  "source_only": [
+    "自动重试计数/倒计时",
+    "服务断线/恢复",
+    "运行停止及停止失败",
+    "保存失败/409冲突",
+    "上传失败重试类型",
+    "断点恢复"
+  ],
+  "user_data_edits": false,
+  "model_calls": false,
+  "final_app_state": "测试doc任务；退出编辑，收起失败预览"
+}

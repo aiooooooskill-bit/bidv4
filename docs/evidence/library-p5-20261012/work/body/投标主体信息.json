@@ -1,0 +1,33 @@
+{
+  "company": {
+    "id": "co_7361bc009870",
+    "name": "杭州研数科技有限公司（验收演示）",
+    "credit_code": "DEMO-ONLY-20261012",
+    "note": "用户授权编造的验收演示主体与承诺；不作为真实企业事实，不进入正式库",
+    "profile": {
+      "registered_address": "杭州市滨江区演示路100号（验收演示）",
+      "address": "杭州市滨江区演示路100号（验收演示）",
+      "phone": "0571-00000000（验收演示）",
+      "fax": "无",
+      "email": "bid@example.test",
+      "legal_name": "陈演示",
+      "legal_title": "总经理",
+      "bank_name": "演示银行",
+      "bank_account": "DEMO-0001"
+    },
+    "revision": 1,
+    "created_at": "2026-10-12T15:51:03+00:00"
+  },
+  "signer": {
+    "id": "rep_4486149cf12e",
+    "company_id": "co_7361bc009870",
+    "name": "王验收",
+    "title": "投标负责人",
+    "phone": "0571-00000001（验收演示）",
+    "email": "representative@example.test",
+    "note": "仅用于软件流程验收，非真实授权",
+    "revision": 1
+  },
+  "sign_date": "2026-08-19",
+  "source_versions": {}
+}

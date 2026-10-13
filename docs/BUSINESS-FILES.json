@@ -1,0 +1,615 @@
+{
+  "description": "当前合入源码交付摘要；previous_delivery_sha256来自旧交付记录，并非未经修改的上游commit摘要",
+  "upstream_reference": "docs/UPSTREAM.md",
+  "files": [
+    {
+      "path": "business/LICENSE",
+      "sha256": "9e26b7423776aab5f66edf9aadd9674462f4f52959aaaaf8df59e2894d14aa12",
+      "previous_delivery_sha256": "9e26b7423776aab5f66edf9aadd9674462f4f52959aaaaf8df59e2894d14aa12"
+    },
+    {
+      "path": "business/python/app/__init__.py",
+      "sha256": "ff111a9a8917ed4e6083d74500cb7fbe23c220515d08807b990fba89dc42f155",
+      "previous_delivery_sha256": "ff111a9a8917ed4e6083d74500cb7fbe23c220515d08807b990fba89dc42f155"
+    },
+    {
+      "path": "business/python/app/artifact_store.py",
+      "sha256": "14ac11ab174a18cad7c1bfd5a2188d7b2c37cd41b64a64890111ca9ca563246c",
+      "previous_delivery_sha256": "8550c6d0311c9030b77b804b70c9490e3ef95cd5aa696657ee97c0146d8c5d36"
+    },
+    {
+      "path": "business/python/app/config.py",
+      "sha256": "4cb138ef1a11c755880f9dc033e8c7dd0f1d983e30e288c102fba248624430e8",
+      "previous_delivery_sha256": "d4247bd1acfea939374b8d392a62d16ae0e569aab66b14b9569f5eed62f442b0"
+    },
+    {
+      "path": "business/python/app/contracts/__init__.py",
+      "sha256": "008f988ed2bc4ab434391097cb60d2571f597c8214249421363b3b93e3101ffb",
+      "previous_delivery_sha256": "008f988ed2bc4ab434391097cb60d2571f597c8214249421363b3b93e3101ffb"
+    },
+    {
+      "path": "business/python/app/contracts/note.py",
+      "sha256": "48139dbc4218f41f286c016b8ef0be824bce0f8b43adfc05db892a0456bf2555",
+      "previous_delivery_sha256": "48139dbc4218f41f286c016b8ef0be824bce0f8b43adfc05db892a0456bf2555"
+    },
+    {
+      "path": "business/python/app/contracts/tender_directory.py",
+      "sha256": "29ba144584acdd349ef7bb44333314063cf54c0e4abc8107f245fe7d2e4075e7",
+      "previous_delivery_sha256": "29ba144584acdd349ef7bb44333314063cf54c0e4abc8107f245fe7d2e4075e7"
+    },
+    {
+      "path": "business/python/app/contracts/tender_volume.py",
+      "sha256": "79990b3ac4c85b288e7a4254d71fba769e81452140e8f46953af50ab66480753",
+      "previous_delivery_sha256": "79990b3ac4c85b288e7a4254d71fba769e81452140e8f46953af50ab66480753"
+    },
+    {
+      "path": "business/python/app/db.py",
+      "sha256": "4643cb739b3a54ca0efcb3df4117bfa18e1cc5f368bbcb052acedf635140e415",
+      "previous_delivery_sha256": "dc71b1b6a4751d0dace9bce1b6a550ffeddf9a40017d8c85f1de77541db98c73"
+    },
+    {
+      "path": "business/python/app/dispatch_enrich.py",
+      "sha256": "71d351b5a40dc08222cd700f27a76bed3632de88f661fd211b28863ef2e47063",
+      "previous_delivery_sha256": "08d9efca067f1cdf027f5518fcb15d5d3ec0a340765c6675f2b4f139340bba35"
+    },
+    {
+      "path": "business/python/app/document.py",
+      "sha256": "6cae5f2359a668b626332458d9cd662c83bf8dfcac682b36d244f346c1d7d7fa"
+    },
+    {
+      "path": "business/python/app/file_lock.py",
+      "sha256": "ee1bcb3e3ad30c22ef3b7fbf9a02c0647af38235666b80b098d14998feaf04fa"
+    },
+    {
+      "path": "business/python/app/knowledge/__init__.py",
+      "sha256": "f2ed9ed688907496120c2e6a0df90c4fa41d04944900398343b9446af413bf42",
+      "previous_delivery_sha256": "f2ed9ed688907496120c2e6a0df90c4fa41d04944900398343b9446af413bf42"
+    },
+    {
+      "path": "business/python/app/knowledge/autocheck.py",
+      "sha256": "d2a96f48084db9d9a79b19c78c74c915288b1c8fab980d939e0336074a8106f1",
+      "previous_delivery_sha256": "d2a96f48084db9d9a79b19c78c74c915288b1c8fab980d939e0336074a8106f1"
+    },
+    {
+      "path": "business/python/app/knowledge/extract.py",
+      "sha256": "7ef2fc552c6124b62acfa539239c8bdd6e7aa76b6144d9fd8c8fa6c3f39a310e",
+      "previous_delivery_sha256": "719f05e4f25eaa8b6e6730d2c9c713792977c11ab18af5350d7fa722f233721a"
+    },
+    {
+      "path": "business/python/app/knowledge/freshness.py",
+      "sha256": "536e1c2f4333a48bea5539b1e33446235c4871094f3ba5b5eaad56906335b42c",
+      "previous_delivery_sha256": "536e1c2f4333a48bea5539b1e33446235c4871094f3ba5b5eaad56906335b42c"
+    },
+    {
+      "path": "business/python/app/knowledge/fts.py",
+      "sha256": "e4580807a377edffe22c690dbdc5ae9a432991b16b42dbd9ccc18a47494eb7ed",
+      "previous_delivery_sha256": "e4580807a377edffe22c690dbdc5ae9a432991b16b42dbd9ccc18a47494eb7ed"
+    },
+    {
+      "path": "business/python/app/knowledge/images.py",
+      "sha256": "572f7c05db033c1cb0ed06102379e8dfdca6bb183797d0dc83a80bf541adeb8f",
+      "previous_delivery_sha256": "572f7c05db033c1cb0ed06102379e8dfdca6bb183797d0dc83a80bf541adeb8f"
+    },
+    {
+      "path": "business/python/app/knowledge/ingest.py",
+      "sha256": "05d5b6eaa3dfaa1c4616eb9103cb8c95b1ef76331042d4eb6f79feb2c34dddb4",
+      "previous_delivery_sha256": "b1fc5e0eea93726f1f3bc7a94cbba33aa47596e25f676a53476d5440ed62d99c"
+    },
+    {
+      "path": "business/python/app/knowledge/materials_lib.py",
+      "sha256": "6f4952ff37dc70bc50fc825d35e1ec1fc9bd5305ef44e37d87e4473b44836a06",
+      "previous_delivery_sha256": "9c6100ba7504f67854e51a4bf3352fa46c65783875863208357ec4f26fd8bc3e"
+    },
+    {
+      "path": "business/python/app/knowledge/roles.py",
+      "sha256": "93b55d3102279a170ba5adf2064df0938ef533850f472a65e8992bd12f373f6b",
+      "previous_delivery_sha256": "93b55d3102279a170ba5adf2064df0938ef533850f472a65e8992bd12f373f6b"
+    },
+    {
+      "path": "business/python/app/knowledge/segmenter.py",
+      "sha256": "9d4e418669eee86d02ee5efcfda990a9c5fa7817f21ede20504a9d9f160a8256",
+      "previous_delivery_sha256": "9d4e418669eee86d02ee5efcfda990a9c5fa7817f21ede20504a9d9f160a8256"
+    },
+    {
+      "path": "business/python/app/knowledge/store.py",
+      "sha256": "68538baeab325913783001259d56cbb95dc458cafa1f46a0a1b62c3c1cf3e90b",
+      "previous_delivery_sha256": "68538baeab325913783001259d56cbb95dc458cafa1f46a0a1b62c3c1cf3e90b"
+    },
+    {
+      "path": "business/python/app/knowledge/types.py",
+      "sha256": "2759d72211b1f29047610ccd7761a0cfb711961b39aba624ba2577125979a274",
+      "previous_delivery_sha256": "2759d72211b1f29047610ccd7761a0cfb711961b39aba624ba2577125979a274"
+    },
+    {
+      "path": "business/python/app/parse/__init__.py",
+      "sha256": "e3cdcc55920339cdf4a790704a1b756f2cc11af58c084cb2f1e574c0499d142e",
+      "previous_delivery_sha256": "81bab0b87c808ce5e7e33f596cd20e875a3b47e4a990d09115c6a6ef5eb7f512"
+    },
+    {
+      "path": "business/python/app/parse/docx.py",
+      "sha256": "1127bad14678b5f6b4e3092916d0d56b0aa73ed5ef86eaba8f956361f60409ae",
+      "previous_delivery_sha256": "1127bad14678b5f6b4e3092916d0d56b0aa73ed5ef86eaba8f956361f60409ae"
+    },
+    {
+      "path": "business/python/app/parse/image.py",
+      "sha256": "444681938d5095ac1e1e9e22aa3abc6bf9ade6d1abeb68be642bebcca38844a2",
+      "previous_delivery_sha256": "f682f9aeab021964298c54333216b33de33a9ea5b5f54ea9e9d9a91b4688abef"
+    },
+    {
+      "path": "business/python/app/parse/numbering.py",
+      "sha256": "32fc57503a3add05bb65eff0f73726e800b585b6d1a8d13988e6407312895b79",
+      "previous_delivery_sha256": "32fc57503a3add05bb65eff0f73726e800b585b6d1a8d13988e6407312895b79"
+    },
+    {
+      "path": "business/python/app/parse/outline.py",
+      "sha256": "ce313e9b8fe834ca2755dd4123445a957ec80211eb5ae6765fe46b367bcb00b9",
+      "previous_delivery_sha256": "ce313e9b8fe834ca2755dd4123445a957ec80211eb5ae6765fe46b367bcb00b9"
+    },
+    {
+      "path": "business/python/app/parse/pdf.py",
+      "sha256": "df32468057104e796c8b074a452c743091f1cee01d83887a2c99e1dace4a592b",
+      "previous_delivery_sha256": "df32468057104e796c8b074a452c743091f1cee01d83887a2c99e1dace4a592b"
+    },
+    {
+      "path": "business/python/app/parse/pdf_pdfium.py",
+      "sha256": "8ad784ea6253f3ecba6bec720172e08ecc12e04e5c25e604e26b16f8d9231765",
+      "previous_delivery_sha256": "8ad784ea6253f3ecba6bec720172e08ecc12e04e5c25e604e26b16f8d9231765"
+    },
+    {
+      "path": "business/python/app/parse/pdf_tables.py",
+      "sha256": "c987721d2dd10005c93a48cc7241e945bfc6eddb1400600be548da67f5632e85",
+      "previous_delivery_sha256": "c987721d2dd10005c93a48cc7241e945bfc6eddb1400600be548da67f5632e85"
+    },
+    {
+      "path": "business/python/app/parse/pdf_text.py",
+      "sha256": "466ab9eb6f570a1e8694186a6461449af458ada21049ad0780c2c338018e329c",
+      "previous_delivery_sha256": "466ab9eb6f570a1e8694186a6461449af458ada21049ad0780c2c338018e329c"
+    },
+    {
+      "path": "business/python/app/parse/pdfium_kit.py",
+      "sha256": "a9386df167e628f410a0de0b5f0d6a55faa4891198214ed021f2cdd351701ff8",
+      "previous_delivery_sha256": "a9386df167e628f410a0de0b5f0d6a55faa4891198214ed021f2cdd351701ff8"
+    },
+    {
+      "path": "business/python/app/parse/text.py",
+      "sha256": "2cecbebcbc58f05869317b531d04968033f3ef298485f5037c81312b36476428",
+      "previous_delivery_sha256": "2cecbebcbc58f05869317b531d04968033f3ef298485f5037c81312b36476428"
+    },
+    {
+      "path": "business/python/app/publish.py",
+      "sha256": "6819479efdd56742d48388fb0481bc3181724d46a114b311af0764043c03c9a1",
+      "previous_delivery_sha256": "12fe07742d712ab9e8f69113244c2ebd0943adfd79f4da3336d8167ec4400530"
+    },
+    {
+      "path": "business/python/app/render_queue.py",
+      "sha256": "37fbc870490d9dc1a3c5fd171366134057774eb0fbd4ffafc74daba6a8a8de08",
+      "previous_delivery_sha256": "4b174cbfa1ca6ff9d6ca6aa2a2c2fc081d23892e1adb270b2e90820296f50ef2"
+    },
+    {
+      "path": "business/python/app/resources/tender_base_template.docx",
+      "sha256": "dae21ef8fa703ab28fff9fd2da66266f243f562d0378e7afef67d31effea874a",
+      "previous_delivery_sha256": "dae21ef8fa703ab28fff9fd2da66266f243f562d0378e7afef67d31effea874a"
+    },
+    {
+      "path": "business/python/app/runctx.py",
+      "sha256": "4e049d004bc62037ec319a3aabe29d8e5c3a8aaeca0bbf1f9ae96f63698c3fc8",
+      "previous_delivery_sha256": "3576313c447589fae20dfb2fdc142855d67c7b32644c221f50f8149d4d5e2122"
+    },
+    {
+      "path": "business/python/app/services/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "business/python/app/services/artifacts.py",
+      "sha256": "e56ad876291667332620b9dce5d29de2e107b2594ae550eda83acdb0ced438c9"
+    },
+    {
+      "path": "business/python/app/services/edit_guard.py",
+      "sha256": "ca8bdba985c5d356e64a356035c11869e8e9f534b635d4420ef10bfb08ccede0"
+    },
+    {
+      "path": "business/python/app/services/errors.py",
+      "sha256": "cd1841271593aee8f07a6405d1119cd767a54124df238332a49d3b0610f7e4eb"
+    },
+    {
+      "path": "business/python/app/services/files.py",
+      "sha256": "943c0873166484e902ee46877ef67165a7e29f65ac3c59486c04d4b05c9447ea"
+    },
+    {
+      "path": "business/python/app/services/knowledge.py",
+      "sha256": "80f37d4a983bf3261a30e300e2fe52b48d2fc21391dd32ef3b49ef34882bba79"
+    },
+    {
+      "path": "business/python/app/services/materials.py",
+      "sha256": "94b31c9c1dfc8b030d5fd75b39249de40469e387c49d9d07393b59f14d94df18"
+    },
+    {
+      "path": "business/python/app/services/page_flow.py",
+      "sha256": "562cdf1c33e98c70e3f8eddabfc4c50f091fdd842439e571a0e9b2833406fc6a"
+    },
+    {
+      "path": "business/python/app/services/routes.json",
+      "sha256": "6f08d08fb3ad482814aff0e2132f96cf94b57ad8fbe0a85a5d22f8f13689b061"
+    },
+    {
+      "path": "business/python/app/services/templates.py",
+      "sha256": "a8cf0d2d8f1b0ed66506f723f467bda970fb24acfe4b506553caa54f507d6b59"
+    },
+    {
+      "path": "business/python/app/services/workbench.py",
+      "sha256": "bc9a3ad0581ef9736fb20ce982031635c2b8a986628cd3532a7fd45adb428f00"
+    },
+    {
+      "path": "business/python/app/skills/_shared/evidence-rules.md",
+      "sha256": "ae3fba78127b9f3bd7be522ff4b8db80ff1c7bcb1b3ea96923d3ff38e5a3d8cd",
+      "previous_delivery_sha256": "ae3fba78127b9f3bd7be522ff4b8db80ff1c7bcb1b3ea96923d3ff38e5a3d8cd"
+    },
+    {
+      "path": "business/python/app/skills/_shared/response-guidelines.md",
+      "sha256": "c52c68f1a3056f2ab653a3139beb85f049619a9066cea7dec42ea66f04b7e45a",
+      "previous_delivery_sha256": "a7747e0597f36d6f8e7ed0d78211bb4870bcec78413543b8d7b1481f644d9d66"
+    },
+    {
+      "path": "business/python/app/skills/document-parse/SKILL.md",
+      "sha256": "15e79dd42ea14680e87856209262b9511ff750acf61cbc297bace5467b1dbccc",
+      "previous_delivery_sha256": "13c118b18c7bdb47f09a769e80dc6381afb949a5e1d931bd7302e38b9c30d269"
+    },
+    {
+      "path": "business/python/app/skills/humanizer-zh/SKILL.md",
+      "sha256": "d3dcd5ce69a99069e651a39e116779bc807de712d96935b66ed0713257819680",
+      "previous_delivery_sha256": "d3dcd5ce69a99069e651a39e116779bc807de712d96935b66ed0713257819680"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/SKILL.md",
+      "sha256": "d66ea910ab678f37462f5533844da5ff322870167733d57aa99c4e08bd29e96a",
+      "previous_delivery_sha256": "5cc661e9540440561d4a52885ab12323517fc87671d8359feeb04a2b15228c4d"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/clarifications.md",
+      "sha256": "e31e41d0b0794e0f779c27a85da3a1e011c0e4b0a98535d3a1e57eb70339353b",
+      "previous_delivery_sha256": "c30703b9bb27ae515185705626064001df08be2f960b7b580c75093f0f3a4c31"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/disqualification.md",
+      "sha256": "55bf87b39f3f4d498285c29692110153173d146c44de1e8416cbf9ef8d28575c",
+      "previous_delivery_sha256": "55bf87b39f3f4d498285c29692110153173d146c44de1e8416cbf9ef8d28575c"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/evaluation.md",
+      "sha256": "28432dfa92f1f7a4022014001aadf3a270a900cf9514324baee5bee1212f3aa0",
+      "previous_delivery_sha256": "28432dfa92f1f7a4022014001aadf3a270a900cf9514324baee5bee1212f3aa0"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/requirements-business.md",
+      "sha256": "b41af9c91f6ff1d59a3d94ea68010c835e0bb907f9660967b9c684a959b75710",
+      "previous_delivery_sha256": "b41af9c91f6ff1d59a3d94ea68010c835e0bb907f9660967b9c684a959b75710"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/requirements-format.md",
+      "sha256": "e419522ec74c607bf9cc0b4c000ed7b473a5324e0f03b7f7b488a0ed9c65b283",
+      "previous_delivery_sha256": "e419522ec74c607bf9cc0b4c000ed7b473a5324e0f03b7f7b488a0ed9c65b283"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/requirements-qualification.md",
+      "sha256": "d77c59472b271f3072c691ba45f6af36d5a5a32105f1ebcedffb59e1528068cd",
+      "previous_delivery_sha256": "d77c59472b271f3072c691ba45f6af36d5a5a32105f1ebcedffb59e1528068cd"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/requirements-submission.md",
+      "sha256": "19df2db393a2caa69467989c90385f35a311b5763b16b0ca845e59c4ea5f88f1",
+      "previous_delivery_sha256": "19df2db393a2caa69467989c90385f35a311b5763b16b0ca845e59c4ea5f88f1"
+    },
+    {
+      "path": "business/python/app/skills/tender-analysis/references/structure.md",
+      "sha256": "e5489709e7d34d052e41fe2874c7a867b7329db95474d6793289042c840a8208",
+      "previous_delivery_sha256": "e5489709e7d34d052e41fe2874c7a867b7329db95474d6793289042c840a8208"
+    },
+    {
+      "path": "business/python/app/skills/tender-body/SKILL.md",
+      "sha256": "95945e57e49c822aad60b9450f4f4c4571d29b92e0e49099c24925b2372b2873",
+      "previous_delivery_sha256": "96dec682b2b8a71ec839cfb683b35fdf9659982aa1cbe3e2d059a6710eae984d"
+    },
+    {
+      "path": "business/python/app/skills/tender-body/references/guide-format.md",
+      "sha256": "a675a8a94a0cc4efcae7d21d9648941abf00048864a9c54dec06e194cda21551",
+      "previous_delivery_sha256": "a675a8a94a0cc4efcae7d21d9648941abf00048864a9c54dec06e194cda21551"
+    },
+    {
+      "path": "business/python/app/skills/tender-body/references/section-writing.md",
+      "sha256": "6c953eb7d9e528e5839f5b215e242480e66162cc45d41c412a8b4a0a56a4d91d",
+      "previous_delivery_sha256": "54d3096a09f18a14e692196aa577feaefa316d9567f40747eb11a570ea146ac5"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/SKILL.md",
+      "sha256": "6b356a47c49aa1864d19fe3eef8bb0458fd0ce968d6b7a4c063f255385babc90",
+      "previous_delivery_sha256": "0c164158e43425a8c477a923447bf7ae462f0f521d13da22ea4c76dbc1c0e129"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/references/annotation.md",
+      "sha256": "e4c8f92966c945f2853f77b7f4b5709859a2a6308c3c5fca8538c00338c47950",
+      "previous_delivery_sha256": "e4c8f92966c945f2853f77b7f4b5709859a2a6308c3c5fca8538c00338c47950"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/references/generate.md",
+      "sha256": "9e77bee568eeb5b35009cb7d6c755b0023c679a7a7d62da095cb8f4675227316",
+      "previous_delivery_sha256": "9e77bee568eeb5b35009cb7d6c755b0023c679a7a7d62da095cb8f4675227316"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/references/response-files.md",
+      "sha256": "9648715088580e37a34bab905dd616da7207464d6653c8bbb882355ea60e21e7",
+      "previous_delivery_sha256": "d8fc7d1cb5f31d0956a90477afdf377e7d2bb9cd48cbcff54cdb7a2760f2368c"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/references/revise-gapfill.md",
+      "sha256": "2f624aee6dbef782d5e9422146543c8e607ede47412a9ad862bb99279266298a",
+      "previous_delivery_sha256": "2f624aee6dbef782d5e9422146543c8e607ede47412a9ad862bb99279266298a"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/references/revise-scoring.md",
+      "sha256": "7310eb8f543919fe5cb5c3d85099efa8f2bc2dbf4767c13f4670fe38b3312622",
+      "previous_delivery_sha256": "7310eb8f543919fe5cb5c3d85099efa8f2bc2dbf4767c13f4670fe38b3312622"
+    },
+    {
+      "path": "business/python/app/skills/tender-outline/references/revise-walkthrough.md",
+      "sha256": "20a08d46f96aad0015ab650f18cfb3ee00ddd400d312ade7fb418b2a07e1f3ee",
+      "previous_delivery_sha256": "20a08d46f96aad0015ab650f18cfb3ee00ddd400d312ade7fb418b2a07e1f3ee"
+    },
+    {
+      "path": "business/python/app/skills/tender-qa/SKILL.md",
+      "sha256": "9da993eeca55d467ac5dc8d989265c84fa53a2f50e15c654edf71fe02aa6e1af",
+      "previous_delivery_sha256": "df78503f83544b275ddbc251a39d0fdb75bead3fa08ae98de567e4db60e94127"
+    },
+    {
+      "path": "business/python/app/task_stage.py",
+      "sha256": "08b4d8afb3562a2bcd8b2fc574dc90ecb47b551e182e0c33b58ca553a2171ab8",
+      "previous_delivery_sha256": "64177d640f877705fbf59c0e9d744b89cf4708df24466158141e63abc498842f"
+    },
+    {
+      "path": "business/python/app/tools/__init__.py",
+      "sha256": "8cd8198edac925a8e8186832b888f5f8510cddddc38ec7d2ade07cf86016e841",
+      "previous_delivery_sha256": "6018a4b374359313f5a1f12accf4a9c4675cab78da736e9040028426eea83233"
+    },
+    {
+      "path": "business/python/app/tools/assemble_tender.py",
+      "sha256": "f34e460a3eb78944c3610c90b369271a065b21759425f886dedc7996b427f25d",
+      "previous_delivery_sha256": "69ee85db45d0d8e0c41f37a19819bb3e3f0247ac39fb15d6f50f60f9a657bcac"
+    },
+    {
+      "path": "business/python/app/tools/body_contract.py",
+      "sha256": "688270bf8372fd719dde56e3fa5726890db4ed60b02b5580cc96557bd610e58b",
+      "previous_delivery_sha256": "ae153c4b37a83f49c5ac0e4cf2ac403106c3a4d84c2366b171416627183cfc95"
+    },
+    {
+      "path": "business/python/app/tools/check_pipeline.py",
+      "sha256": "22c351d316ed172577daa31f4bc05e4e2f526cb54c5c23ecae2fa46f814b2b39",
+      "previous_delivery_sha256": "f2c94118aec77df56479cbca22faa3864b3e96c6048ef068d85a68e34ef5ce1c"
+    },
+    {
+      "path": "business/python/app/tools/check_residue.py",
+      "sha256": "80cd4618a026268ecf202f9b4ff92d09063d73449a7a6d57f2d5f1ac66d974a5",
+      "previous_delivery_sha256": "aebeced422e9e88255678beb9314dc270d6cbbcf46e183c54dcb63774709fc06"
+    },
+    {
+      "path": "business/python/app/tools/docx_ops.py",
+      "sha256": "746f0c1ea35f3b82840caf66561523f5df6e2a15c8f13a0cedec393638486840",
+      "previous_delivery_sha256": "97d2b30a7cec0ddc9fbe4f366be93191c52b7bef0700a15a433cdbc562fa11dd"
+    },
+    {
+      "path": "business/python/app/tools/publish.py",
+      "sha256": "f8d62acdd73d9d6a3a83b6137d13ef78bfa24e2ed3b113aa6b6a1a9f541d1a20",
+      "previous_delivery_sha256": "3430be9915915038587f4a34d11032d086dd28cee1d6ebb4a0daf6c40bd16c7c"
+    },
+    {
+      "path": "business/python/app/tools/read.py",
+      "sha256": "9d02fa67e72e0edd62ef0c0a8b413615ef9abf41cc682a40b1d30142b3373f52",
+      "previous_delivery_sha256": "12eb4b11a713e637a5950f527e975c1761293d53205fe84ba460df067c5d2ae3"
+    },
+    {
+      "path": "business/python/app/tools/search_knowledge.py",
+      "sha256": "5bd3f375e9c58c80bd9d825ffd976c6d0188f42a23d73f78415e5101fbfad44a",
+      "previous_delivery_sha256": "8ec3bb93a28f34d6a3227292bffcae1b695ec077b6f200cacea923be01c736ac"
+    },
+    {
+      "path": "business/python/app/tools/task_progress.py",
+      "sha256": "d437fb24df11efa864e20ae422280bf8d45fc8fb9758e293e8495f1c8049379e",
+      "previous_delivery_sha256": "d77c3211202b35dbd76e7252325f78142aafcef6ff4cff6181bb38853d7812bf"
+    },
+    {
+      "path": "business/python/app/tools/templates.py",
+      "sha256": "d95e929b3993657679653b0315308b8e4611f8b1d584e139d0eb6a3c7590ad6d",
+      "previous_delivery_sha256": "1bc2fc769d8569c5634d142a921bcdb2df900c0af4e5d8b3708321370165c5ce"
+    },
+    {
+      "path": "business/python/app/tools/validate_analysis.py",
+      "sha256": "94e9296b88324ec9935d894d5248eb8240de13daab6a3c9b92a67bb151e057d5",
+      "previous_delivery_sha256": "a682efe90b5afb7e75052c7f736712c91ddf5247bdd07d03a8572674e215c924"
+    },
+    {
+      "path": "business/python/app/tools/validate_body.py",
+      "sha256": "c7d676a4a27562d8205545535d8bf1981806ee99ea9fe3aece61f8f7dc7692cf",
+      "previous_delivery_sha256": "8de1885dd400ff6b87490202ceb8e47a3c1b1330f1d4d71a02cdb7b3814bf3ac"
+    },
+    {
+      "path": "business/python/app/tools/web_fetch.py",
+      "sha256": "e8335dfc03a9eb4f4f0c47af73a35a006734fa369747588a08e3dc624867fe5c",
+      "previous_delivery_sha256": "e9a7798303ee59652d7f188e11311d95176e6cc4f3e39506627dab0dd3f59cf0"
+    },
+    {
+      "path": "business/python/pyproject.toml",
+      "sha256": "54fe19d59cfbbec5eac9db575a821904108015f1eb49f9bfffdfd80ccc01f956"
+    },
+    {
+      "path": "business/python/scripts/make_base_template.py",
+      "sha256": "71e1ab3253bde736f743128255123b33ca8b1f13aa730d679e96df3ec07bc468",
+      "previous_delivery_sha256": "1e802d46b5cc461c51f66ab00262ac40dd1ec7274eb6f3f0a45d2ad852d91064"
+    },
+    {
+      "path": "business/python/uv.lock",
+      "sha256": "e9d2a7167434bd29889d2869d13bf873707a62f425475e596625511e011edefa"
+    },
+    {
+      "path": "cordis.patch.yml",
+      "sha256": "2800d74350ead345343ca8dbbf94ebd50311fa23ea8d8c2c2c00ca7231cf985e"
+    },
+    {
+      "path": "server/agent.mjs",
+      "sha256": "361dd0f36b147a60941947136208cbbef4538289009ba5545b09b55a0f5ead4e"
+    },
+    {
+      "path": "server/native/business.mjs",
+      "sha256": "7fd8e5053fc1e42ae12ef87760da6d3aeb570205af4eee07580a1ecc2f780c1e"
+    },
+    {
+      "path": "server/native/roles.json",
+      "sha256": "bfae9fb0f57cbbf55ddb58e6f4580216b59a7e58f3560ff4dab2a11e2eb8b068"
+    },
+    {
+      "path": "server/native/runtime.mjs",
+      "sha256": "aae27632d7e4007cd455c4d659aa301ecb37c0fbbe3d80a5c8d80b0135a98490"
+    },
+    {
+      "path": "server/native/scope.mjs",
+      "sha256": "6532bac18fe7f34bba177fdb32cedae5d8c276c8e01b57ef26dcc4adfa8bf051"
+    },
+    {
+      "path": "server/native/tools.mjs",
+      "sha256": "0f67c75129c4ff2bb9781995803c83f58899243ea8bdfe548e9652dc25927bda"
+    },
+    {
+      "path": "server/plugin.mjs",
+      "sha256": "cdcb7dd3c3da0dbc0ba967da8f9edf22f4b911e9bb81d5c61264c2fa58033f0c"
+    },
+    {
+      "path": "shared/analysis-progress.d.ts",
+      "sha256": "72a08681f5c156c9c1290eadbd4543115e4cc8f57788fd503f513b7f4a801979"
+    },
+    {
+      "path": "shared/analysis-progress.js",
+      "sha256": "8645fd09e675201f1095f80dd76e6b544ac5f12aaefb20f5670f523455324251"
+    },
+    {
+      "path": "shared/preview-numbering.d.ts",
+      "sha256": "848ea25934df37164f24f86060dbd71568a776308a60edf0e9d80dc5fb4bcb19"
+    },
+    {
+      "path": "shared/preview-numbering.js",
+      "sha256": "34df0e4c9969ce0e0a221e72b19b6681455bf4281d4dfd5cb9f7c1eb57409d29"
+    },
+    {
+      "path": "shared/quote.d.ts",
+      "sha256": "e8a0c09e5350156db34409479e090b599a03936a989d62d13ef3622a1c7606ca"
+    },
+    {
+      "path": "shared/quote.js",
+      "sha256": "e89aae99638fc4f23ac21c26ceebe69eb5491580de25fcb89d10140bc8b73bbe"
+    },
+    {
+      "path": "src/App.tsx",
+      "sha256": "232a4fd031298456a78eef145d0ef67af91ae8fadb4343182ca9cb809cdf7e3d"
+    },
+    {
+      "path": "src/api.ts",
+      "sha256": "59c9d41e4baa5ac4bd8a68589e34a0b19a830f9b279af044ef38062378fd4a32"
+    },
+    {
+      "path": "src/components/AnalysisProgress.tsx",
+      "sha256": "69197ced2663f71400fa9f6586ff5b20d18e3c6046bb37beffa389ce66a3ab8c"
+    },
+    {
+      "path": "src/components/DirectoryPanel.tsx",
+      "sha256": "98bb012de57f1c89021225cff8ae4eee0bba3b5f3ca660277a2ea8d02e263c6c"
+    },
+    {
+      "path": "src/components/DocumentEditor.tsx",
+      "sha256": "c946b19b68ebc341d8ad69f6b9c55276856742e07e0e2c3d57f5e6bb6b34fc5b"
+    },
+    {
+      "path": "src/components/DocxViewer.tsx",
+      "sha256": "1afc1088b66c1f165fe325bbd8025dcc291413bd0a3245b2bee6d2998621d298"
+    },
+    {
+      "path": "src/components/ExecutionControls.tsx",
+      "sha256": "0807ad9e54a216da6b9ee6db0f3d6a674e36ed0498d37340f485b8a44bc55208"
+    },
+    {
+      "path": "src/components/MarkdownDocument.tsx",
+      "sha256": "dfbd80b768d23391dfec1a866c58ae3b67a2f316031d18e593385b77bf3382b5"
+    },
+    {
+      "path": "src/components/MaterialBlocks.tsx",
+      "sha256": "cfbaa0f5b3e65d43228a015d55d1aeb7c814e8d1d6e03551ebc7dd317885589a"
+    },
+    {
+      "path": "src/components/Modal.tsx",
+      "sha256": "3647f93f4c22fccc28c024f4fcbe5e49598f283d94a8351d901c9935b48ff801"
+    },
+    {
+      "path": "src/components/NavigationGuard.tsx",
+      "sha256": "83ddba0424e67da484e6ce5722867b0e7fdad6b183fcbef432fd1c9f8972b2d8"
+    },
+    {
+      "path": "src/components/NoticeCenter.tsx",
+      "sha256": "28576eaa365e228b20f839fb56303e4b4e378c2220226f66664219f694e2ba82"
+    },
+    {
+      "path": "src/components/PdfPreviewBody.tsx",
+      "sha256": "b147830a9579c92cbba651ff79cd5ed5e6e318a5232208420f5cf1fd2a86d8d0"
+    },
+    {
+      "path": "src/components/SourcePreview.tsx",
+      "sha256": "d0b4cdbd1c3629e0154c7de49b15b62cecd6447459878e131f50c9f2dd43af86"
+    },
+    {
+      "path": "src/css.d.ts",
+      "sha256": "a541ffbd5ce7232e4b86f5bcc0e604a1679f7a2a8187ba84f39592daeab89dc6"
+    },
+    {
+      "path": "src/lib/businessDraft.ts",
+      "sha256": "14dd488ee0362c1fc342983a31a2028254114f5c18d74c10a33b63b9eab1b5c3"
+    },
+    {
+      "path": "src/lib/directoryNumbering.ts",
+      "sha256": "0b236565a9f0dcf216a105a8d3f273f0c8f61e089da235b9953538b8f5073761"
+    },
+    {
+      "path": "src/lib/directoryTree.ts",
+      "sha256": "d71254c021e6b469eb715cbeb71129528193b155acedcec15afff2ec05e892a0"
+    },
+    {
+      "path": "src/lib/figureRenderer.ts",
+      "sha256": "b1b3708b19527030b3e4114e6bddfbfddcf46f7ec241f37ed910542145ff6381"
+    },
+    {
+      "path": "src/lib/renderService.ts",
+      "sha256": "5aac83c5646a015213310ef8cd9e74ec03c21a4bd32c5def93ca216a00e8d704"
+    },
+    {
+      "path": "src/plugin.tsx",
+      "sha256": "6d77b21d5f8546b73e14664a73e9aea6b0f637c6ebe633dfd374cbd381f795df"
+    },
+    {
+      "path": "src/reader.css",
+      "sha256": "64535630bb7df0eca624d3ed2f83b3911665459b0267ba93fb01fc834cea6d15"
+    },
+    {
+      "path": "src/screens/Library.tsx",
+      "sha256": "84779272e1feaac1bcf4242cbabd5309b9127aa409ec0a5b886cfdeaa25d242d"
+    },
+    {
+      "path": "src/screens/ProjectWorkbench.tsx",
+      "sha256": "74fbf70874d36b2b22149e13b9f71308855e1a0acab3081cc5960931b45af66f"
+    },
+    {
+      "path": "src/screens/TenderList.tsx",
+      "sha256": "9b3f038a63e6bf47a96a5c51417bda3cceb3b03794d1ff4348f9185dfb2a5247"
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "cc5f2714d10b043c8e744ac12959d2a75580cf71e8407a5446d3cd4aaaaa7447"
+    },
+    {
+      "path": "src/workspace.css",
+      "sha256": "613ad4ac3fbbe78eab0d2096844a6e013a2e3c89e8d613c3382c19d951c21ca2"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "accepted": [
+    ["body/写作指引.md", "body/写作指引.md"],
+    ["./body/写作指引.md", "body/写作指引.md"],
+    [".\\body\\写作指引.md", "body/写作指引.md"],
+    ["body\\册一/章节.docx", "body/册一/章节.docx"],
+    ["body//写作指引.md", "body/写作指引.md"],
+    ["body/../parse/来源.md", "parse/来源.md"],
+    ["body\\..\\parse\\来源.md", "parse/来源.md"],
+    ["body/", "body"]
+  ],
+  "rejected": ["", ".", "..", "../来源.md", "..\\来源.md", "/body/章.docx", "\\body\\章.docx", "C:\\body\\章.docx", "C:body\\章.docx", "//server/share/章.docx", "\\\\server\\share\\章.docx", "body/../../章.docx", "body\\..\\..\\章.docx"]
+}

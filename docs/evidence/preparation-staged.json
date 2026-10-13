@@ -1,0 +1,21 @@
+{
+  "candidate": "staged",
+  "model": "deterministic engineering fixture",
+  "results": [
+    {
+      "name": "staged-preparation",
+      "pass": true,
+      "actionSubmissions": 3,
+      "questionSubmissions": 1,
+      "selectedChapter": "ready",
+      "otherUnchanged": true
+    },
+    {
+      "name": "guide-validation-before-ready-guard",
+      "protected": false,
+      "observed": "Invalid guide can be marked ready without successful validation."
+    }
+  ],
+  "requestCount": 20,
+  "realCount": 0
+}

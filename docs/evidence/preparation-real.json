@@ -1,0 +1,6 @@
+{
+  "archivedAcceptance": "preparation-real-acceptance.json",
+  "archivedOutputs": "preparation-real-files",
+  "latestRun": "preparation-fixed-real.json",
+  "note": "Prior 21-request run acceptance and outputs are retained; use the latest report for the implemented fix."
+}

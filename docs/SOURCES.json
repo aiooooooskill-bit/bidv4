@@ -1,0 +1,109 @@
+[
+  {
+    "file": "src/plugin.tsx",
+    "origin": "bidpilot/src/plugin.tsx",
+    "sha256_before_changes": "8541f88e67791f7e6036449e561e3f29918ab45f72b4f230a29b571d7cab5756"
+  },
+  {
+    "file": "src/styles.css",
+    "origin": "bidpilot/src/styles.css",
+    "sha256_before_changes": "c2792b081fc66b9d79cd42ecfd699e72c7b13a9aec8bb4a888f63ef2cbb8ed00"
+  },
+  {
+    "file": "src/css.d.ts",
+    "origin": "bidpilot/src/css.d.ts",
+    "sha256_before_changes": "a541ffbd5ce7232e4b86f5bcc0e604a1679f7a2a8187ba84f39592daeab89dc6"
+  },
+  {
+    "file": "src/components/DocxViewer.tsx",
+    "origin": "bidpilot/src/components/DocxViewer.tsx",
+    "sha256_before_changes": "244b1da8e589fb021b95a7653faec86d6ea91c967410a2c6744c754d48ddb929"
+  },
+  {
+    "file": "src/components/Modal.tsx",
+    "origin": "bidpilot/src/components/Modal.tsx",
+    "sha256_before_changes": "3647f93f4c22fccc28c024f4fcbe5e49598f283d94a8351d901c9935b48ff801"
+  },
+  {
+    "file": "src/screens/TenderList.tsx",
+    "origin": "bidpilot/src/screens/TenderList.tsx",
+    "sha256_before_changes": "2e4cd57119fa80f051f1a0bb29e3ba26f41138a571937b719e93072bcdb8d858"
+  },
+  {
+    "file": "shared/quote.js",
+    "origin": "bidpilot/shared/quote.js",
+    "sha256_before_changes": "e89aae99638fc4f23ac21c26ceebe69eb5491580de25fcb89d10140bc8b73bbe"
+  },
+  {
+    "file": "shared/quote.d.ts",
+    "origin": "bidpilot/shared/quote.d.ts",
+    "sha256_before_changes": "e8a0c09e5350156db34409479e090b599a03936a989d62d13ef3622a1c7606ca"
+  },
+  {
+    "file": "shared/source-preview.js",
+    "origin": "bidpilot/shared/source-preview.js",
+    "sha256_before_changes": "cf4e334d51abfc949e2cb4edda1d80193d7f0f926636a9a85a1e5efe0b65bf98"
+  },
+  {
+    "file": "shared/source-preview.d.ts",
+    "origin": "bidpilot/shared/source-preview.d.ts",
+    "sha256_before_changes": "59693b66a0e65a1dd9c9aaf4dd653ea07add169b1212b006f7b9b1d44c5cef33"
+  },
+  {
+    "file": "shared/source-reference.js",
+    "origin": "bidpilot/shared/source-reference.js",
+    "sha256_before_changes": "1697885644d5de9d1ef0184b4054ce8f3ea2ac5d8078093994ee4048d7f78434"
+  },
+  {
+    "file": "shared/source-reference.d.ts",
+    "origin": "bidpilot/shared/source-reference.d.ts",
+    "sha256_before_changes": "d9423aee05ac88a7b6ded925ee4cec731e68696df85882c18a067561ea320a41"
+  },
+  {
+    "file": "shared/preview-numbering.js",
+    "origin": "bidpilot/shared/preview-numbering.js",
+    "sha256_before_changes": "34df0e4c9969ce0e0a221e72b19b6681455bf4281d4dfd5cb9f7c1eb57409d29"
+  },
+  {
+    "file": "shared/preview-numbering.d.ts",
+    "origin": "bidpilot/shared/preview-numbering.d.ts",
+    "sha256_before_changes": "848ea25934df37164f24f86060dbd71568a776308a60edf0e9d80dc5fb4bcb19"
+  },
+  {
+    "file": "src/components/NoticeCenter.tsx",
+    "origin": "bidv4 validated notice component",
+    "sha256_before_changes": "06b6a562cc07eb5f7063aa851c47b76af4b157104fb88a7dc862fdc244328f32"
+  },
+  {
+    "file": "src/reader.css",
+    "origin": "bidv4 validated reading styles",
+    "sha256_before_changes": "b2cee0ba7e8a2a4fa779f95a45d2691c77155e647fd572eb5f6b5fac5184869d"
+  },
+  {
+    "file": "src/lib/directoryTree.ts",
+    "origin": "LingYan/frontend/src/components/processors/directoryTree.ts",
+    "sha256_before_changes": "d30472e1bdefa7360430b11701ea8c6f0dfab554042147ddae152c2597fbf0e4"
+  },
+  {
+    "file": "src/lib/directoryNumbering.ts",
+    "origin": "LingYan/frontend/src/components/processors/directoryNumbering.ts",
+    "sha256_before_changes": "0b236565a9f0dcf216a105a8d3f273f0c8f61e089da235b9953538b8f5073761"
+  },
+  {
+    "file": "src/components/PdfPreviewBody.tsx",
+    "origin": "LingYan/frontend/src/components/preview/PdfPreviewBody.tsx",
+    "sha256_before_changes": "2ded47710fb26182149dba18f93ddbceb8ba0bb092744a5a27eb2423ef15d847"
+  },
+  {
+    "file": "src/lib/figureRenderer.ts",
+    "origin": "LingYan/frontend/src/lib/htmlRenderer.ts",
+    "commit": "de909f12572b4c469864b12255e26cc185ada7ec",
+    "upstream_sha256": "adba8a7268fbd326e2f362c2a9016a942f7dab11155da18abda99dfb47a5ac37",
+    "adaptations": [
+      "仅提取HTML/流程图渲染函数，保留原MIT来源",
+      "修正角标样式类名与iframe加载监听顺序",
+      "隐藏并清理Mermaid临时DOM，失败仅进入集中提示",
+      "独立懒加载构建；队列消费使用项目已有fetch及插件生命周期"
+    ]
+  }
+]

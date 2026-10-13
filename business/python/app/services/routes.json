@@ -1,0 +1,345 @@
+[
+  {
+    "method": "POST",
+    "path": "/files",
+    "module": "files",
+    "function": "upload_file",
+    "status": 201
+  },
+  {
+    "method": "GET",
+    "path": "/files",
+    "module": "files",
+    "function": "list_files",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/files/{name}/raw",
+    "module": "files",
+    "function": "read_file_raw",
+    "status": 200
+  },
+  {
+    "method": "DELETE",
+    "path": "/files/{name}",
+    "module": "files",
+    "function": "delete_file",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/workbench",
+    "module": "workbench",
+    "function": "list_workbench",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/workbench/meta",
+    "module": "workbench",
+    "function": "read_meta",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/workbench/content",
+    "module": "workbench",
+    "function": "read_content",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/workbench/docx-view",
+    "module": "workbench",
+    "function": "read_docx_view",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/workbench/raw",
+    "module": "workbench",
+    "function": "read_raw",
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/workbench/content",
+    "module": "workbench",
+    "function": "write_content",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/artifacts",
+    "module": "artifacts",
+    "function": "list_artifacts",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/artifacts/{aid}/meta",
+    "module": "artifacts",
+    "function": "get_artifact_meta",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/artifacts/{aid}/content",
+    "module": "artifacts",
+    "function": "get_artifact_content",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/artifacts/{aid}/file",
+    "module": "artifacts",
+    "function": "get_artifact_file",
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/artifacts/{aid}/content",
+    "module": "artifacts",
+    "function": "update_artifact_content",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/materials/files",
+    "module": "materials",
+    "function": "upload_file",
+    "status": 201
+  },
+  {
+    "method": "GET",
+    "path": "/materials/files",
+    "module": "materials",
+    "function": "list_files",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/materials/files/{fid}/outline",
+    "module": "materials",
+    "function": "get_outline",
+    "status": 200
+  },
+  {
+    "method": "DELETE",
+    "path": "/materials/files/{fid}",
+    "module": "materials",
+    "function": "delete_file",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/materials/files/{fid}/reparse",
+    "module": "materials",
+    "function": "reparse_file",
+    "status": 202
+  },
+  {
+    "method": "GET",
+    "path": "/materials/files/{fid}/raw",
+    "module": "materials",
+    "function": "get_file_raw",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/materials/blocks",
+    "module": "materials",
+    "function": "list_blocks",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/materials/blocks/{bid}",
+    "module": "materials",
+    "function": "get_block",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/materials/blocks/{bid}/content",
+    "module": "materials",
+    "function": "get_block_content",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/materials/files/{fid}/content",
+    "module": "materials",
+    "function": "get_file_content",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/materials/files/{fid}/blocks",
+    "module": "materials",
+    "function": "create_block",
+    "status": 201
+  },
+  {
+    "method": "PUT",
+    "path": "/materials/blocks/{bid}",
+    "module": "materials",
+    "function": "update_block",
+    "status": 200
+  },
+  {
+    "method": "DELETE",
+    "path": "/materials/blocks/{bid}",
+    "module": "materials",
+    "function": "delete_block",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/templates",
+    "module": "templates",
+    "function": "list_templates",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/templates",
+    "module": "templates",
+    "function": "upload_template",
+    "status": 201
+  },
+  {
+    "method": "DELETE",
+    "path": "/templates/{key}",
+    "module": "templates",
+    "function": "delete_template",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/templates/{key}/activate",
+    "module": "templates",
+    "function": "activate_template",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/templates/{key}/raw",
+    "module": "templates",
+    "function": "template_raw",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/kb/types",
+    "module": "knowledge",
+    "function": "list_types",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/kb/badge",
+    "module": "knowledge",
+    "function": "badge",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/kb/files",
+    "module": "knowledge",
+    "function": "upload_file",
+    "status": 201
+  },
+  {
+    "method": "GET",
+    "path": "/kb/items",
+    "module": "knowledge",
+    "function": "list_items",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/kb/items/{kid}",
+    "module": "knowledge",
+    "function": "get_item",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/kb/items/{kid}/content",
+    "module": "knowledge",
+    "function": "get_item_content",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/kb/items/{kid}/raw",
+    "module": "knowledge",
+    "function": "get_item_raw",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/kb/items/{kid}/retrigger",
+    "module": "knowledge",
+    "function": "retrigger",
+    "status": 202
+  },
+  {
+    "method": "DELETE",
+    "path": "/kb/items/{kid}",
+    "module": "knowledge",
+    "function": "delete_item",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/library/overview",
+    "module": "company_library",
+    "function": "overview",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/library/companies",
+    "module": "company_library",
+    "function": "save_company",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/library/representatives",
+    "module": "company_library",
+    "function": "save_representative",
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/kb/items/{kid}",
+    "module": "company_library",
+    "function": "review_asset",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/library/companies/{cid}/candidates",
+    "module": "company_library",
+    "function": "candidates",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/projects/{tid}/bidder",
+    "module": "bidder",
+    "function": "get_bidder",
+    "status": 200
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/{tid}/bidder",
+    "module": "bidder",
+    "function": "save_bidder",
+    "status": 200
+  }
+]
