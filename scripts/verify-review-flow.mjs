@@ -19,7 +19,7 @@ const traces=[],checks=[];let ctx,mode='normal',entered;
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const call=(name,args)=>({name,args});
 function report(docs){
- const cite=(d,term)=>{const lines=d.content.split('\n');const index=lines.findIndex(l=>l.includes(term));assert.ok(index>=0,term);return {document_id:d.id,start:index+1,end:index+1,quote:lines[index]}};
+ const cite=(d,term)=>{const lines=d.content.split('\n');const index=lines.findIndex(l=>l.includes(term));assert.ok(index>=0,term);return {document_id:d.id,start:index+1,end:index+1}};
  const tender=docs.find(d=>d.kind==='tender'),bid=docs.find(d=>d.kind==='bid');
  return {summary:'工程夹具发现团队人数及维护年限两项差异，其他文字要求已有响应。',requirements:reqs.map((text,i)=>({id:'r'+i,category:categories[i],text,status:[3,4].includes(i)?'conflict':'responded',tender:[cite(tender,text)],bid:[cite(bid,bids[i])]})),issues:[3,4].map(i=>({id:'i'+i,requirement_id:'r'+i,severity:'medium',title:i===3?'团队人数不足':'维护年限冲突',explanation:'招标要求与投标承诺存在差异。',suggestion:'对照双方原文核实并修改。'})),coverage:categories.map(category=>({category,note:'已阅读本夹具双方对应章节。'})),limitations:['工程夹具验证；签字盖章、证照真实性以及图片内容须人工确认。']};
 }
@@ -29,7 +29,8 @@ const endpoint=createServer(async(req,res)=>{
   let raw='';for await(const chunk of req)raw+=chunk;const request=JSON.parse(raw);
   const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
   const payload=JSON.parse(text.match(/页面输入：(\{[^\n]+\})/)[1]),cwd=text.match(/当前任务绝对路径：([^；]+)；/)[1];
-  const step=request.messages.filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
+  const latest=request.messages.findLastIndex(m=>m.role==='user'&&String(typeof m.content==='string'?m.content:JSON.stringify(m.content)).includes('页面输入：'));
+  const step=request.messages.slice(latest+1).filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
   res.writeHead(200,{'Content-Type':'text/event-stream'});
   if(mode==='stop'){res.write(': waiting for stop\n\n');entered?.();return}
   let calls=[];
@@ -40,8 +41,8 @@ const endpoint=createServer(async(req,res)=>{
    if(step===1)calls=docs.flatMap(d=>[call('read',{file_path:d.outline_path}),call('read',{file_path:d.path})]);
    if(step===2){
     for(const d of docs)d.content=await readFile(d.path,'utf8');
-    const r=report(docs);if(mode==='bad-evidence')r.requirements[0].tender[0].quote='原文不存在的内容';
-    calls=mode==='scope-leak'?[call('docx_section_create',{path:'body/审查章节.docx',title:'被误改章节',paragraphs:'越界修改。',replace:true})]:[call('save_review_report',{report_json:JSON.stringify(r)})];
+    const r=report(docs);if(mode==='bad-evidence'){r.requirements[0].tender[0].start=999999;r.requirements[0].tender[0].end=999999;}
+    calls=mode==='scope-leak'?[call('docx_section_create',{path:'body/审查章节.docx',title:'被误改章节',paragraphs:'越界修改。',replace:true})]:[call('save_review_report',{report:r})];
    }
   }
   traces.push({kind:payload.kind,mode,step,tools:calls.map(c=>c.name)});
@@ -80,6 +81,7 @@ try{
  for(const tid of [external,platform]){
   const before=await state(tid),files=before.review.mode==='external'?join(dataRoot,'workspace',tid,'sources/外部投标.docx'):join(dataRoot,'workspace',tid,'work/body/审查章节.docx'),hash=sha(await readFile(files));
   assert.equal(before.review.status,'unreviewed');const {run,payload}=await start(tid);const replay=await api('/page-flow/'+tid+'/action',payload);assert.equal(replay.session_id,run.session_id);assert.equal(replay.replayed,true);
+  const handle=runtime.handles.get(run.session_id);assert.equal(handle.agent.options.maxTokens,32768);const tools=runtime.ctx.tools.schemas(handle.agent).map(t=>t.name);assert.ok(tools.includes('save_review_report'));assert.ok(!tools.includes('docx_section_create'));
   const s=await settle(tid,run);assert.equal(s.execution.state,'completed',s.execution.error);assert.equal(s.review.status,'reviewed');assert.equal(s.review.report.report.issues.length,2);assert.equal(sha(await readFile(files)),hash);
   assert.ok(s.review.report.report.requirements.every(r=>r.tender.length&&r.bid.length));record(before.review.mode+' parse→outline→evidence→report',{session:run.session_id,sourceUnchanged:true,requirements:6,issues:2,replay:true});
  }

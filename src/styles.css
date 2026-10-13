@@ -123,10 +123,8 @@ a.bp-btn { text-decoration: none; display: inline-block; line-height: 1.5; }
 .bp-tile-title:focus-visible { outline: 2px solid var(--bid-color-primary); outline-offset: 2px; }
 .bp-tile-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .bp-tile-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--bid-color-text-muted); }
-.bp-tile-acts { display: flex; gap: 6px; margin-top: auto; position: relative; }
-.bp-tile-acts .bp-btn { flex: 1; justify-content: center; text-align: center; }
-.bp-project-tile[data-mode="build"] .bp-tile-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); }
-.bp-project-tile[data-mode="build"] .bp-tile-acts .bp-btn { min-width: 0; border-radius: var(--bid-radius-control); padding: 7px 8px; }
+.bp-tile-acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; margin-top: auto; position: relative; }
+.bp-tile-acts .bp-btn { justify-content: center; text-align: center; min-width: 0; border-radius: var(--bid-radius-control); padding: 7px 8px; white-space: nowrap; }
 .bp-project-tile[data-mode="analysis"] .bp-tile-acts .bp-btn { border-radius: var(--bid-radius-control); padding-block: 7px; }
 .bp-project-tile[data-mode="analysis"] .bp-tile-acts .bp-btn[data-kind="primary"] {
   background: var(--bid-color-primary); color: #fff; border-color: var(--bid-color-primary); }

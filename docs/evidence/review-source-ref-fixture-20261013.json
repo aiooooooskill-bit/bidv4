@@ -1,0 +1,233 @@
+{
+  "checks": [
+    {
+      "name": "external parse→outline→evidence→report",
+      "pass": true,
+      "session": "bid-54f15e72-5409-4217-a5dd-34b851732fc7",
+      "sourceUnchanged": true,
+      "requirements": 6,
+      "issues": 2,
+      "replay": true
+    },
+    {
+      "name": "platform parse→outline→evidence→report",
+      "pass": true,
+      "session": "bid-4b484005-0d02-4ae3-a5e6-6fd69d7d815f",
+      "sourceUnchanged": true,
+      "requirements": 6,
+      "issues": 2,
+      "replay": true
+    },
+    {
+      "name": "manual review persisted",
+      "pass": true
+    },
+    {
+      "name": "changed document returns pending and rejects old basis",
+      "pass": true
+    },
+    {
+      "name": "no-report cannot mark reviewed",
+      "pass": true
+    },
+    {
+      "name": "bad-evidence cannot mark reviewed",
+      "pass": true
+    },
+    {
+      "name": "scope-leak cannot mark reviewed",
+      "pass": true
+    },
+    {
+      "name": "stop cannot mark reviewed",
+      "pass": true
+    },
+    {
+      "name": "list distinguishes pending and reviewed",
+      "pass": true
+    },
+    {
+      "name": "host restart retains report and reconciles interrupted completion checkpoint",
+      "pass": true
+    }
+  ],
+  "traces": [
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 0,
+      "tools": [
+        "prepare_review_documents"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 1,
+      "tools": [
+        "read",
+        "read",
+        "read",
+        "read"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 2,
+      "tools": [
+        "save_review_report"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 3,
+      "tools": []
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 0,
+      "tools": [
+        "prepare_review_documents"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 1,
+      "tools": [
+        "read",
+        "read",
+        "read",
+        "read"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 2,
+      "tools": [
+        "save_review_report"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 3,
+      "tools": []
+    },
+    {
+      "kind": "review",
+      "mode": "no-report",
+      "step": 0,
+      "tools": []
+    },
+    {
+      "kind": "review",
+      "mode": "bad-evidence",
+      "step": 0,
+      "tools": [
+        "prepare_review_documents"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "bad-evidence",
+      "step": 1,
+      "tools": [
+        "read",
+        "read",
+        "read",
+        "read"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "bad-evidence",
+      "step": 2,
+      "tools": [
+        "save_review_report"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "bad-evidence",
+      "step": 3,
+      "tools": []
+    },
+    {
+      "kind": "review",
+      "mode": "scope-leak",
+      "step": 0,
+      "tools": [
+        "prepare_review_documents"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "scope-leak",
+      "step": 1,
+      "tools": [
+        "read",
+        "read",
+        "read",
+        "read"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "scope-leak",
+      "step": 2,
+      "tools": [
+        "docx_section_create"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "scope-leak",
+      "step": 3,
+      "tools": []
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 0,
+      "tools": [
+        "prepare_review_documents"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 1,
+      "tools": [
+        "read",
+        "read",
+        "read",
+        "read"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 2,
+      "tools": [
+        "save_review_report"
+      ]
+    },
+    {
+      "kind": "review",
+      "mode": "normal",
+      "step": 3,
+      "tools": []
+    }
+  ],
+  "base": "http://127.0.0.1:61469",
+  "loginUrl": "http://127.0.0.1:61281/login",
+  "external": "t_80bb2373f6e04c908f8c5e9d1e2f2060",
+  "platform": "t_b16a2d7b391d421ea343652ee9c5962b",
+  "pending": "t_8b8b8b260726446a9a056057f6b9a33e",
+  "scope": "Synthetic DOCX + deterministic local model fixture; semantic review quality not certified."
+}

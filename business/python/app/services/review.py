@@ -88,7 +88,6 @@ class Evidence(StrictModel):
     document_id: str
     start: int = Field(ge=1, strict=True)
     end: int = Field(ge=1, strict=True)
-    quote: str = Field(min_length=1)
 
 class Requirement(StrictModel):
     id: str = Field(min_length=1)
@@ -117,7 +116,7 @@ class Report(StrictModel):
     coverage: list[Coverage] = Field(min_length=6, max_length=6)
     limitations: list[str] = Field(min_length=1)
 
-def validate_report(tid, value):
+def compile_report(tid, value):
     report = Report.model_validate(value)
     docs = {d['id']: d for d in documents(tid)}
     ids = {r.id for r in report.requirements}
@@ -125,24 +124,45 @@ def validate_report(tid, value):
         raise ValueError('要求和问题编号必须唯一')
     if {c.category for c in report.coverage} != set(CATEGORIES):
         raise ValueError('必须说明六类要求的实际核查范围')
+    evidence_errors = []
     for req in report.requirements:
-        if req.status != 'missing' and not req.bid:
-            raise ValueError('已响应、冲突或待确认的要求必须提供投标证据')
+        if req.status in ('responded', 'conflict') and not req.bid:
+            evidence_errors.append(f'{req.id}：已响应或存在冲突的要求必须提供投标原文证据')
         for kind, evidence in [('tender', req.tender), ('bid', req.bid)]:
             for e in evidence:
                 d = docs.get(e.document_id)
                 if not d or d['kind'] != kind or e.end < e.start or e.end > d['lines']:
-                    raise ValueError('证据角色或行号无效')
-                text = '\n'.join(Path(d['path']).read_text().splitlines()[e.start - 1:e.end])
-                if ' '.join(e.quote.split()) not in ' '.join(text.split()):
-                    raise ValueError('证据摘录无法在指定原文行号定位')
+                    evidence_errors.append(f'{req.id}.{kind}：证据角色或行号无效（{e.document_id} L{e.start}-{e.end}）')
+                    continue
+    if evidence_errors:
+        raise ValueError('证据校验未通过，共' + str(len(evidence_errors)) + '处。请核对document_id、文件角色和起止行号。\n' + '\n'.join(evidence_errors))
     for issue in report.issues:
         if issue.requirement_id not in ids:
             raise ValueError('问题必须关联已核查要求')
     for req in report.requirements:
-        if req.status != 'responded' and not any(i.requirement_id == req.id for i in report.issues):
-            raise ValueError('缺失、冲突与待确认的要求必须进入问题清单')
-    return report.model_dump()
+        if req.status in ('missing', 'conflict') and not any(i.requirement_id == req.id for i in report.issues):
+            raise ValueError(f'{req.id}：缺失或冲突的要求必须进入问题清单；待外部核验事项应在范围限制中说明')
+    compiled = report.model_dump()
+    for req in compiled['requirements']:
+        for kind in ('tender', 'bid'):
+            for evidence in req[kind]:
+                d = docs[evidence['document_id']]
+                evidence['quote'] = '\n'.join(Path(d['path']).read_text().splitlines()[evidence['start'] - 1:evidence['end']])
+    return compiled
+
+def validate_saved_report(tid, value):
+    # Stored evidence is program-produced; recheck it against the same immutable sources.
+    refs = json.loads(json.dumps(value))
+    quotes = []
+    for req in refs['requirements']:
+        for kind in ('tender', 'bid'):
+            for evidence in req[kind]:
+                quotes.append(evidence.pop('quote'))
+    compiled = compile_report(tid, refs)
+    actual = [e['quote'] for r in compiled['requirements'] for kind in ('tender', 'bid') for e in r[kind]]
+    if quotes != actual:
+        raise ValueError('已保存证据与原文不一致，请重新审核')
+    return compiled
 
 def _record(tid):
     from ..config import data_dir
@@ -159,7 +179,7 @@ def save_report(tid, session, value):
     record = _record(tid)
     if not record or record['session_id'] != session or record.get('stopped_at') or record['input_version'] != basis(tid):
         raise BusinessError(409, '审查执行或文件版本已变化，报告未保存')
-    report = validate_report(tid, value)
+    report = compile_report(tid, value)
     if selection(tid)['mode'] == 'platform':
         from .build_state import sections
         missing = [s['title'] for s in sections(tid) if not (artifact_store.work_dir(tid) / s['path']).is_file()]
@@ -176,7 +196,7 @@ def finish(tid, session):
     report = json.loads(path.read_text())
     if report['input_version'] != basis(tid):
         raise ValueError('审查文件版本已变化，请重新审核')
-    validate_report(tid, report['report'])
+    validate_saved_report(tid, report['report'])
     report['completed'] = True
     write_atomic(path, json.dumps(report, ensure_ascii=False))
     return {'ok': True}

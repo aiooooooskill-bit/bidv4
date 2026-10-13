@@ -20,7 +20,7 @@ def setup(tmp_path, monkeypatch):
     docs = review.documents(tid)
     def citation(doc):
         lines = Path(doc['path']).read_text().splitlines(); i = next(i for i, t in enumerate(lines) if '维护服务期限' in t)
-        return {'document_id': doc['id'], 'start': i + 1, 'end': i + 1, 'quote': lines[i]}
+        return {'document_id': doc['id'], 'start': i + 1, 'end': i + 1}
     value = {'summary': '维护年限不符合招标要求。', 'requirements': [{'id': 'r1', 'category': '商务要求', 'text': '维护三年', 'status': 'conflict', 'tender': [citation(docs[0])], 'bid': [citation(docs[1])]}], 'issues': [{'id': 'i1', 'requirement_id': 'r1', 'severity': 'medium', 'title': '维护年限冲突', 'explanation': '投标承诺一年，要求三年。', 'suggestion': '核对实际维护年限并修订。'}], 'coverage': [{'category': c, 'note': '已阅读服务要求；本夹具未包含其余类别要求。'} for c in review.CATEGORIES], 'limitations': ['签字、盖章及证件真实性须人工确认。']}
     actions = tmp_path / 'data' / 'actions' / tid; actions.mkdir(parents=True)
     record = {'kind': 'review', 'session_id': 'review-test', 'input_version': review.basis(tid), 'created_at': 1}
@@ -79,3 +79,24 @@ def test_basis_only_changes_for_selected_review_inputs(setup):
     assert before == review.basis(tid)
     (artifact_store.work_dir(tid) / 'analysis/structure.md').write_text('已更新招标解读')
     assert before != review.basis(tid)
+
+
+def test_external_unknown_does_not_force_fabricated_bid_evidence_or_issue(setup):
+    tid, value, *_ = setup
+    value['requirements'][0]['status'] = 'uncertain'
+    value['requirements'][0]['bid'] = []
+    value['issues'] = []
+    value['limitations'] = ['外部真实行为与证照真实性无法由投标文字证明，须人工核验。']
+    assert review.compile_report(tid, value)['requirements'][0]['status'] == 'uncertain'
+
+
+def test_quotes_are_extracted_from_original_lines_and_saved_tampering_rejected(setup):
+    tid, value, *_ = setup
+    report = review.compile_report(tid, value)
+    e = report['requirements'][0]['bid'][0]
+    doc = next(d for d in review.documents(tid) if d['id'] == e['document_id'])
+    assert e['quote'] == '\n'.join(Path(doc['path']).read_text().splitlines()[e['start'] - 1:e['end']])
+    assert review.validate_saved_report(tid, report) == report
+    e['quote'] = '模型编造的摘录'
+    with pytest.raises(ValueError, match='与原文不一致'):
+        review.validate_saved_report(tid, report)

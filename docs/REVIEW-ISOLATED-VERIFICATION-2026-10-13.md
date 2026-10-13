@@ -1,5 +1,7 @@
 # 标书审查隔离技术验证
 
+后续真实数据验证见 [真实验证记录](REVIEW-REAL-VERIFICATION-2026-10-13.md)：已取得实际模型报告，技术链路通过，审查质量验收未通过。本文保留首轮工程夹具的验证范围。
+
 2026-10-13。候选实现位于 `/Users/ooo/.codex/worktrees/bid-review-verification/bidv4`，从当时主工作区 HEAD 建立独立工作树。主工作区代码、正式3080宿主、用户业务数据库与已安装插件未修改。Node/Python依赖复用现有安装，未增加依赖；业务数据、执行会话、测试模型和dsh profile独立。
 
 ## 判断依据

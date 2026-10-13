@@ -1,0 +1,54 @@
+{
+  "technical_chain": "pass",
+  "review_quality": "fail",
+  "taskId": "t_12b598e3c6a9451a9ac7f48f37bbc2f2",
+  "sessionId": "bid-ae938734-d1d0-43d4-91c6-3e0fb84ef661",
+  "model": {
+    "provider": "lmstudio",
+    "model": "mlx-community/Qwen3.8-27B-4bit"
+  },
+  "actual_model_requests": 23,
+  "model_request_minutes": 31.92,
+  "requirements": 18,
+  "issues": 3,
+  "source_evidence_count": 36,
+  "all_quotes_exact_program_extraction": true,
+  "original_and_uploaded_bytes_unchanged": true,
+  "ui_report_and_pending_note_verified": true,
+  "must_find": {
+    "team_3_vs_minimum_4": "found with correct tender/bid evidence; described as scoring risk",
+    "two_experiences_2021_2020": "found, but precise tender scoring window not cited"
+  },
+  "false_positive_checks": {
+    "delivery_deadline_missing": "not alleged",
+    "all_document_deliverables_missing": "not alleged",
+    "all_training_missing": "not alleged",
+    "unreadable_image_is_proven_missing": "not alleged"
+  },
+  "quality_failures": [
+    {
+      "requirement_id": "R20",
+      "problem": "Score start is explicitly 2023-01-01 at tender L1056. Report cites generic material list L260 and uses conditional rolling-three-year language. Risk grading requires review."
+    },
+    {
+      "requirement_id": "R22",
+      "problem": "Labels broad business-solution scoring requirement responded, but bid L457-458 only gives delivery deadlines, not business-solution evidence."
+    },
+    {
+      "requirement_id": "R11",
+      "problem": "Tender L58 concerns tax/social-security/financial qualification; cited bid L87-88 concerns non-subcontracting and related entities. Evidence does not substantiate the same requirement."
+    },
+    {
+      "requirement_id": "R38",
+      "problem": "Tender evidence L1422-1424 contains heading/table header only. It does not support full claim of recommended-software/version conformity."
+    }
+  ],
+  "limits": [
+    "One actual external DOCX pair; platform flow still verified using engineering fixture, not a second real production project.",
+    "This successful run inherited previous failed/stopped native history; it is not an independent first-attempt stability result.",
+    "Earlier runs failed from context overflow and invalid model-generated quotations; successful third run required corrective retries.",
+    "Digital DOCX embedded images were not visually checked. PDF and scan end-to-end review not newly verified.",
+    "32-minute successful retry is not evidence of acceptable production latency.",
+    "Automatic browser file selection blocked by extension local-file permission; HTTP actual byte upload verified."
+  ]
+}
