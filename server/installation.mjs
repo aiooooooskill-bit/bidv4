@@ -6,7 +6,7 @@ import {spawn} from 'node:child_process';
 
 const requiredFiles=['package.json','package-lock.json','cordis.patch.yml','server/agent.mjs','server/native/roles.json','business/python/runner.py','business/python/pyproject.toml','business/python/uv.lock','business/python/app/resources/tender_base_template.docx','dist/client.js','dist/renderer/figureRenderer.js','dist/pdfjs/pdf.worker.min.mjs'];
 const assetDirectories=['dist/pdfjs/cmaps','dist/pdfjs/standard_fonts','dist/pdfjs/wasm'];
-const skills=['document-parse','tender-analysis','tender-outline','tender-body','tender-qa','humanizer-zh'];
+const skills=['document-parse','tender-analysis','tender-outline','tender-body','tender-qa','humanizer-zh','tender-review'];
 export async function probePython(directory){
  const python=join(directory,'business/python/.venv/bin/python');
  const code="import sys,json,docx,pydantic,httpx,trafilatura,jieba,pypdfium2,PIL,markdown_it,fcntl; assert sys.version_info >= (3,12); print(json.dumps({'version':sys.version.split()[0],'prefix':sys.prefix}))";

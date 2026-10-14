@@ -5,7 +5,7 @@ from pydantic import BaseModel,TypeAdapter,create_model
 request=json.load(sys.stdin);os.environ['DATA_DIR']=request['data_root']
 from app import db,artifact_store,runctx,task_stage
 from app.services.errors import BusinessError,FileDownload,IncomingFile,Response
-from app.services import page_flow, build_state, review
+from app.services import page_flow, build_state, review, review_batches
 from app.tools import TOOLS
 from app import document
 from app.work_paths import normalize_work_path
@@ -47,6 +47,7 @@ async def dispatch():
         return snapshot_for_task(args['task_id'])
     if op=='review_prepare':return review.prepare(args['task_id'])
     if op=='review_documents':return {'documents':review.documents(args['task_id'])}
+    if op=='review_accept_batch':return review_batches.accept(args['task_id'],args['session_id'],args['candidate'])
     if op=='review_finish':return review.finish(args['task_id'],args['session_id'])
     if op=='review_input':return review.set_input(args['task_id'],args['bids'])
     if op=='review_decide':return review.decide(args['task_id'],args['session_id'],args['issue_id'],args['status'],args['note'])
@@ -69,6 +70,7 @@ async def dispatch():
         if Path(name).name!=name or name.startswith('.'):raise BusinessError(422,'来源文件名非法')
         return document.prepare(artifact_store.sources_dir(tid)/name,artifact_store.work_dir(tid)/'parse'/name)
     if op=='ocr_finish':return document.finish(args['plan'],args['outputs'])
+    if op=='ocr_page':return document.render_ocr_page(args['plan'],args['page'])
     if op=='outline_options':
         target = args['page_target']
         numbering = args['numbering']

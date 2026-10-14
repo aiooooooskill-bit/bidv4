@@ -24,11 +24,26 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
   return next();
  },{global:true});
  const guard=ctx.on('tools/execute',async(exec,next)=>{
-  if(!exec.agent||(!mutations.has(exec.name)&&!['read','read_image','glob','grep','save_review_report'].includes(exec.name))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
+  if(!exec.agent||(!mutations.has(exec.name)&&!['read','read_image','glob','grep','review_basis','review_batch','save_review_batch','finish_review_report'].includes(exec.name))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
   const tid=basename(exec.agent.session.header.cwd??''),cwd=join(dataRoot,'workspace',tid);
   if(resolve(exec.agent.session.header.cwd??'')!==resolve(cwd))return next();
   let record;try{record=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'))}catch(e){if(e.code==='ENOENT')return next();throw e}
-  if(record.kind==='review'){if(record.stopped_at)throw new BusinessError(409,'审查已停止');if(!['read','read_image','glob','grep','check_pipeline_state','save_review_report'].includes(exec.name))throw new BusinessError(409,'审查只读取投标文件和保存报告，不能修改制作成果');return next()}
+  if(record.kind==='review'){
+   let owner=exec.agent;
+   while(owner.session.id!==record.session_id&&owner.session.header.origin==='subagent'&&owner.session.header.parentSession){owner=ctx.agents.get(owner.session.header.parentSession);if(!owner)break}
+   if(record.stopped_at||owner?.session.id!==record.session_id)throw new BusinessError(409,'当前审查已变化或停止');
+   if(['write','edit'].includes(exec.name)){
+    if(exec.agent.session.id!==record.session_id)throw new BusinessError(409,'本轮审查要点由主执行维护');
+    const target=await ctx.fs.resolve(exec.arguments.file_path,{cwd});
+    const paths=['structure','requirements-qualification','requirements-submission','requirements-business','requirements-format','disqualification','evaluation','clarifications'].map(k=>join(cwd,'work/review/analysis',k+'.md'));
+    if(!paths.includes(target.targetKey))throw new BusinessError(409,'审查只能写本轮招标要点，不能修改原件、解读或投标正文');
+   }else if(!['read','read_image','glob','grep','review_basis','review_batch','save_review_batch','finish_review_report'].includes(exec.name))throw new BusinessError(409,'审查不能修改制作成果');
+   if(['save_review_batch','finish_review_report'].includes(exec.name)){
+    const previous=pending.get(tid)??Promise.resolve(),done=Promise.withResolvers();pending.set(tid,done.promise);await previous;
+    try{exec.signal.throwIfAborted();return await next()}finally{done.resolve();if(pending.get(tid)===done.promise)pending.delete(tid)}
+   }
+   return next();
+  }
   if(!['body','revise','build','guide','promises'].includes(record.kind))return next();
   let agent=exec.agent;
   while(agent.session.id!==record.session_id&&agent.session.header.origin==='subagent'&&agent.session.header.parentSession){agent=ctx.agents.get(agent.session.header.parentSession);if(!agent)break}

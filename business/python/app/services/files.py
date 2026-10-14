@@ -3,13 +3,14 @@ from .errors import BusinessError, FileDownload, IncomingFile, Response
 
 文件落在当前任务的 sources/ 子目录（workspace/<task_id>/sources/，2026-08-31 产物
 模型重构：只读来源区）——跨任务同名文件互不影响；task_id 必填（无任务上下文的前端
-禁止上传）。100MB 上限 + 任务内同名覆盖。上传只支持当前项目明确的七类来源格式。
+禁止上传）。招标来源100MB上限，受审投标文件不设大小上限；任务内同名覆盖。
 """
 import mimetypes
 import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 from .. import artifact_store, db
 from ..config import MAX_UPLOAD_BYTES
 from .edit_guard import require_idle
@@ -28,7 +29,7 @@ def _require_task(task_id: str) -> None:
     if not db.get_task(task_id):
         raise BusinessError(status_code=404, detail='任务不存在')
 
-async def upload_file(task_id: str, file: IncomingFile=None):
+async def upload_file(task_id: str, file: IncomingFile=None, purpose: Literal['source', 'bid']='source'):
     _require_task(task_id)
     require_idle(task_id)
     raw = file.filename or ''
@@ -51,7 +52,7 @@ async def upload_file(task_id: str, file: IncomingFile=None):
                 if not chunk:
                     break
                 size += len(chunk)
-                if size > MAX_UPLOAD_BYTES:
+                if purpose == 'source' and size > MAX_UPLOAD_BYTES:
                     raise BusinessError(status_code=413, detail='文件超过 100MB 上限')
                 f.write(chunk)
         require_idle(task_id)

@@ -17,21 +17,30 @@ def prepare(src,out):
         md='';info={'conversion':'vision','pages':1,'tables':0};scan=[1]
     else:
         result=convert(src);md=result.md;info=result.info;scan=info.get('scanned_pages',[])
-    if len(scan)>128:raise ValueError('扫描页超过128页处理预算，请拆分文件后上传；本次未标记解析成功')
     for page in scan:
         image=out/'images'/f'page-{page}.png';image.parent.mkdir(parents=True,exist_ok=True)
-        if src.suffix.lower()=='.pdf':render_page_png(src,page,image,dpi=150)
-        else:
-            with Image.open(src) as im:
-                if im.width*im.height>20_000_000:raise ValueError('图片超过2000万像素处理预算，请降低分辨率后重试')
-                im.seek(0);im.convert('RGB').save(image)
-        with Image.open(image) as im:
-            if im.width*im.height>20_000_000:raise ValueError('图片超过2000万像素处理预算，请降低分辨率后重试')
         pages.append({'page':page,'path':str(image)})
-    plan={'source':str(src),'out':str(out),'sha256':digest,'md':md,'info':info,'pages':pages}
+    info_stat=src.stat()
+    plan={'source':str(src),'out':str(out),'sha256':digest,'source_stat':[info_stat.st_size,info_stat.st_mtime_ns],'md':md,'info':info,'pages':pages}
     write_atomic(out/'plan.json',json.dumps(plan,ensure_ascii=False))
     if not pages:return finish(plan,[])
     return {'needs_ocr':True,'pages':pages,'prompt':_TRANSCRIBE_PROMPT,'plan':str(out/'plan.json')}
+
+def render_ocr_page(plan,page):
+    plan=json.loads(Path(plan).read_text())
+    src=Path(plan['source']);info=src.stat()
+    if [info.st_size,info.st_mtime_ns]!=plan['source_stat']:raise ValueError('来源文件已变化，请重新解析')
+    item=next((p for p in plan['pages'] if p['page']==page),None)
+    if item is None:raise ValueError('页面不属于本次OCR计划')
+    image=Path(item['path'])
+    if src.suffix.lower()=='.pdf':render_page_png(src,page,image,dpi=150)
+    else:
+        with Image.open(src) as im:
+            if im.width*im.height>20_000_000:raise ValueError('图片超过2000万像素处理预算，请降低分辨率后重试')
+            im.seek(0);im.convert('RGB').save(image)
+    with Image.open(image) as im:
+        if im.width*im.height>20_000_000:raise ValueError('图片超过2000万像素处理预算，请降低分辨率后重试')
+    return item
 
 def finish(plan,outputs):
     if isinstance(plan,str):plan=json.loads(Path(plan).read_text())

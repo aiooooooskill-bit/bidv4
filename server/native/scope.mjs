@@ -32,7 +32,7 @@ export async function createBusinessScope(parent,dataRoot){
   ['@deepseek-ai/dsh-session-checkpoint-policy',{}],
   ['@deepseek-ai/dsh-token-meter',{}],
   ['@deepseek-ai/dsh-compaction-tool-result-pruner',{}],
-  ['@deepseek-ai/dsh-compaction-basic',{headroomTokens:8192,maxTokens:4096}],
+  ['@deepseek-ai/dsh-compaction-basic',{headroomTokens:8192}],
  ];
  const ready=Promise.withResolvers();
  scope.plugin({name:'ooo-bidpliot-business-runtime',async apply(ctx){

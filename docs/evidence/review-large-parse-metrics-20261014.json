@@ -1,0 +1,20 @@
+[
+  {
+    "bytes": 539969255,
+    "parse_seconds": 3.990220750012668,
+    "terminal_check_seconds": 0.06759262499690522,
+    "peak_rss_bytes": 92717056,
+    "chars": 433504,
+    "images": 64,
+    "sha256": "0895525029317c063f6363d69aff12291e115118346fb3ce572fd016226ab75a"
+  },
+  {
+    "bytes": 1077429619,
+    "parse_seconds": 4.323098041000776,
+    "terminal_check_seconds": 0.04895174999546725,
+    "peak_rss_bytes": 111411200,
+    "chars": 434016,
+    "images": 128,
+    "sha256": "30acfddf10aef3faec50837a79bfac7b8370dfd9e218134e10110a4f0269fdbf"
+  }
+]

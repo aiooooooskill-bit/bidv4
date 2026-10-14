@@ -1,0 +1,25 @@
+{
+  "mode": "generic_explicit_tender_and_bid_citations_no_business_reviewer",
+  "checks": {
+    "python_passed": 491,
+    "focused_native_and_ui_passed": 5,
+    "updated_ui_passed": 3,
+    "typescript": "passed",
+    "client_build": "passed",
+    "isolated_end_to_end_passed": 10,
+    "actual_report_integrity_checks_passed": 5,
+    "actual_source_citation_repair": "passed",
+    "all181_business_judgments_unchanged": true
+  },
+  "generic_cases": [
+    "Expand actual source range while retaining original basis",
+    "Append non-contiguous exception clause",
+    "Preserve main/supplement conflict sources without choosing precedence",
+    "Reject original source omission, wrong role, unknown document, range overflow and fabricated/tampered quotes",
+    "Render every supplied tender source card"
+  ],
+  "real_scope": "Hangzhou-pei original files; current configured real local model; real previous 181 outcomes revalidated unchanged; model only repairs source range. Not a fresh semantic audit of all181.",
+  "deployment": "isolated_only_not_deployed",
+  "model_evidence": "review-citation-range-real-20261014.json",
+  "report": "review-hangzhou-pei-final-report-20261014.json"
+}

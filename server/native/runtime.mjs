@@ -9,7 +9,7 @@ import {installExecutionGuard} from './execution-guard.mjs';
 import {jsonResponse} from './markdown.mjs';
 const actions=join(dataRoot,'actions'),locks=join(dataRoot,'locks'),knowledgeJobs=join(dataRoot,'knowledge-jobs');
 const requiredAnalysis=['structure.md','requirements-submission.md','requirements-business.md','requirements-qualification.md','evaluation.md','requirements-format.md','disqualification.md','clarifications.md'];
-const instructions={review:'执行标书审查：先调用prepare_review_documents解析本次全部招标与投标文件，读双方大纲，再逐段读取原文。平台既有解读可复用但核对原文；外部投标不需要制作目录、写作指引或承诺清单。按废标条款、资格要求、格式与结构、评分标准、商务要求、技术要求逐项对照，全部文件都须阅读；输出要求清单、问题、六类实际核查范围和未覆盖事项。用save_review_report保存结构化报告，摘录与行号必须真实。无证据不能断言未提供，图片签章和外部真实性只能提示待确认；评分项不得夸大为废标。原文件、正文和解读不改写，不能调用制作工具。未完成章节或无法识别图像要在limitations声明。证据仅提交document_id/start/end，由程序逐字提取quote；save_review_report直接传report对象。图片内信息不能从文字确定，不断言缺失或无效；后文已响应的承诺先反查，不仅看前面清单。报告完成后停轮。',analyse:'按document-parse和tender-analysis技能解析页面指定的全部来源，完成八份解读文件。结束后停轮。',outline:'按tender-outline技能生成并发布单册或多册目录，结束后停轮。',guide:'按tender-body技能仅生成body/写作指引.md，结束后停轮。',promises:'按tender-body技能仅生成body/关键事实与承诺.md，未提供的具体承诺值向页面提问，结束后停轮。',body:'按tender-body技能生成页面所选章节。先读取build_preparation，复用ready规划，只补齐缺失准备；生成指引后校验并记录guide，整理承诺后记录promises。具体缺值集中ask_user_question，页面答复后同会话继续。已有承诺值保持原样，变更须由用户在页面编辑保存。两份准备ready后只写sections指定章节并逐章校验，不扩展范围，不合册。',revise:'按tender-body技能修订页面所选章节，保留其他章节。',build:'按tender-body技能执行完整制作：用build_preparation读取当前规划状态，生成缺失的写作指引并校验，用build_preparation(stage=guide)记录；整理承诺清单并用build_preparation(stage=promises)记录。具体承诺值缺失时一次提问并停轮，页面作答后在同一会话继续。两份规划就绪后补写尚无正文的章节，并完成build_preparation中标为draft的未完成章节（先核对当前文件，不盲目覆盖）；不覆盖已有章节，不因当前选中章节缩小整本范围。逐节校验、全局检查，全部所需章节存在后合册。已存在但依据变化的正文保留并点名待核对，不擅自改写。'};
+const instructions={review:'按tender-review技能完整复用灵燕解析、七类要点和共享证据规则，结合review_basis返回的前序有效成果。已有八份有效要点时直接validate复用。调用review_batch逐批取证，最多8项。每个slot的判断、tender/bid引用和problems写在同一对象内，tender保留原要点依据并收录回读到的相关完整条款、限定或冲突区段，不自选requirement_id，不手写行号。仅有本轮一次审核；save_review_batch执行条目、关联、原文范围和版本的程序校验后保存，不再调用其他模型复审。程序错误按提示修复，禁止删项或无依据改uncertain。继续所有批次直至complete，再finish_review_report汇总。不要读取此前失败的对照草稿，不重复传整份清单。后文新证据导致先前判断变化时，同一个Agent在本轮结束前更正该已保存批次，不额外复审。原解读和投标正文不修改。',analyse:'按document-parse和tender-analysis技能解析页面指定的全部来源，完成八份解读文件。结束后停轮。',outline:'按tender-outline技能生成并发布单册或多册目录，结束后停轮。',guide:'按tender-body技能仅生成body/写作指引.md，结束后停轮。',promises:'按tender-body技能仅生成body/关键事实与承诺.md，未提供的具体承诺值向页面提问，结束后停轮。',body:'按tender-body技能生成页面所选章节。先读取build_preparation，复用ready规划，只补齐缺失准备；生成指引后校验并记录guide，整理承诺后记录promises。具体缺值集中ask_user_question，页面答复后同会话继续。已有承诺值保持原样，变更须由用户在页面编辑保存。两份准备ready后只写sections指定章节并逐章校验，不扩展范围，不合册。',revise:'按tender-body技能修订页面所选章节，保留其他章节。',build:'按tender-body技能执行完整制作：用build_preparation读取当前规划状态，生成缺失的写作指引并校验，用build_preparation(stage=guide)记录；整理承诺清单并用build_preparation(stage=promises)记录。具体承诺值缺失时一次提问并停轮，页面作答后在同一会话继续。两份规划就绪后补写尚无正文的章节，并完成build_preparation中标为draft的未完成章节（先核对当前文件，不盲目覆盖）；不覆盖已有章节，不因当前选中章节缩小整本范围。逐节校验、全局检查，全部所需章节存在后合册。已存在但依据变化的正文保留并点名待核对，不擅自改写。'};
 async function jsonFile(p){try{return JSON.parse(await readFile(p,'utf8'))}catch(e){if(e.code==='ENOENT')return null;throw e}}
 async function atomic(p,data){await mkdir(resolve(p,'..'),{recursive:true});await writeFile(p+'.tmp',JSON.stringify(data));await rename(p+'.tmp',p)}
 function eventsView(events,questions,live){
@@ -39,9 +39,11 @@ export class BusinessRuntime{
    {name:'ooo-bidpliot/tools',config:{}},
   ]});
   await this.ctx.agentPresets.register({id:'ooo-bidpliot-review',name:'ooo-bidpliot 标书审查',plugins:[
-   {name:'@deepseek-ai/dsh-persona',config:{prefix:'你是页面驱动的标书审查Agent。只读取本次招标和投标原文，对照要求保存审查报告；不制作或修改正文，不查询其他项目和公司资料，不要求通用确认。证据不足写待确认，图片签章真实性留给人工核实。先解析、读大纲，再按真实行号读取全文。遇到上下文压缩后保留已核查清单与原文定位，必要时按行号重新读取证据。',includeRuntimeContext:true}},
+   {name:'@deepseek-ai/dsh-persona',config:{prefix:'你是页面驱动的标书审查Agent，执行已加载tender-review技能，完整复用其引用的灵燕方法。只可写本轮review/analysis招标要点，不修改原招标解读、原件或投标正文。先导航后分段精读，catalog逐项核查，不删除要求。',includeRuntimeContext:true}},
    {name:'@deepseek-ai/dsh-tool-fs',inject:['tools','fs','systemPrompt','attachments','llm'],config:{}},
    {name:'@deepseek-ai/dsh-tool-fs-search',config:{sampleOverCapGlobResults:false}},
+   {name:'@deepseek-ai/dsh-tool-skill',config:{}},
+   {name:'@deepseek-ai/dsh-tool-ask-user',config:{mode:'timed',timeout:1}},
    {name:'ooo-bidpliot/tools',config:{review:true}},
   ]});
   await this.ctx.plugin((await import('@deepseek-ai/dsh-skill-filesystem')),{includeDefaultRoots:false,customSkillDirs:[join(root,'business/python/app/skills')],watch:false});
@@ -142,17 +144,12 @@ export class BusinessRuntime{
    await writeFile(join(locks,tid),String(process.pid),{flag:'wx'});
    let handle;const previous=await jsonFile(join(dir,'latest.json'));
    try{
-    let inherited;
-    if(payload.kind==='review'&&previous?.kind==='review'&&previous.input_version===state.input_versions.review&&['failed','stopped'].includes(state.execution?.state)){
-     const source=await this.handle(previous);
-     inherited={seed:source.agent.session.snapshotEvents(),parentSession:previous.session_id};
-    }
-    handle=await this.ctx.agents.create({sessionId,meta:{cwd,agentPreset:preset,...(inherited?{parentSession:inherited.parentSession,isSeeded:true}:{})},...(inherited?{seed:inherited.seed,inheritedEventCount:inherited.seed.length}:{}),agentOptions:model,setup:async c=>{await this.ctx.agentPresets.mount(c,preset)}});
+    handle=await this.ctx.agents.create({sessionId,meta:{cwd,agentPreset:preset},agentOptions:model,setup:async c=>{await this.ctx.agentPresets.mount(c,preset)}});
     this.handles.set(sessionId,handle);
     const section_paths=state.body_sections.filter(s=>payload.kind==='build'?(s.status==='missing'||s.status==='draft'):sections.some(p=>p.volume===s.volume&&p.title===s.title)).map(s=>s.path);
     const record={session_id:sessionId,task_id:tid,kind:payload.kind,model,payload_hash:hash,input_version:(await business(this.ctx,'state',{task_id:tid})).input_versions[payload.kind],created_at:Date.now(),sections,section_paths,...(payload.kind==='analyse'?{analysis_before:Object.fromEntries(state.files.map(f=>[f.path,f.hash]))}:{})};
     await atomic(path,record);await atomic(join(dir,'latest.json'),record);
-    const prompt=(inherited?instructions[payload.kind]+'\n本次重试与上次输入版本相同，复用已有文件读取和草稿，仅回读需要核实的证据。使用当前save_review_report的report对象参数，证据只传文件标识与行号，不传quote或JSON字符串。直接核查并完成报告。\n':instructions[payload.kind])+'\n页面输入：'+JSON.stringify(payload)+'\n制作状态：'+JSON.stringify(state.build_preparation)+'；目录篇幅：'+JSON.stringify(state.directory?.content.page_target??null)+(bidderSnapshot?'\n已确认投标主体信息（唯一身份依据）：'+JSON.stringify(bidderSnapshot)+'。先读取此快照，已有公司地址、电话、传真、邮箱、签字代表姓名和职务及签署日期直接使用，不再次提问。缺失或项目专属承诺才提问。所有公司资质与业绩只检索本主体；写作素材全库共用，注入后修订并检查旧项目和旧主体名称。':'')+'\n当前任务绝对路径：'+cwd+'；来源集合以work/parse/sources.json为准。';
+    const prompt=instructions[payload.kind]+(payload.kind==='review'?'\n审核中的招标条款歧义、来源冲突、外部事实或证明不足，直接在报告“需确认”中列出原文依据、影响及尚待确认的范围，继续完整审核，不调用ask_user_question让用户逐项裁决。只有缺少开始审核所必需的文件或无法识别受审对象才提问；修改业务规则或替用户作新的承诺须询问。':'')+'\n页面输入：'+JSON.stringify(payload)+'\n制作状态：'+JSON.stringify(state.build_preparation)+'；目录篇幅：'+JSON.stringify(state.directory?.content.page_target??null)+(bidderSnapshot?'\n已确认投标主体信息（唯一身份依据）：'+JSON.stringify(bidderSnapshot)+'。先读取此快照，已有公司地址、电话、传真、邮箱、签字代表姓名和职务及签署日期直接使用，不再次提问。缺失或项目专属承诺才提问。所有公司资质与业绩只检索本主体；写作素材全库共用，注入后修订并检查旧项目和旧主体名称。':'')+'\n当前任务绝对路径：'+cwd+'；来源集合以work/parse/sources.json为准。';
     handle.agent.followup(createUserMessage({content:[{type:'text',text:prompt}],source:{kind:'human'}}));
     this.track(handle,tid);return {session_id:sessionId,replayed:false};
    }catch(e){await unlink(join(locks,tid)).catch(()=>{});await unlink(path).catch(()=>{});if(previous)await atomic(join(dir,'latest.json'),previous);else await unlink(join(dir,'latest.json')).catch(()=>{});if(handle){this.handles.delete(sessionId);await handle.dispose()}throw e}

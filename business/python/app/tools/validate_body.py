@@ -413,36 +413,7 @@ def validate_body(section: str, block_ids: list[str] | None=None) -> str:
         if not p.exists():
             return f'[校验失败] {raw} 不存在'
         if p.suffix == '.docx':
-            doc = Document(str(p))
-            labeled = section_lines_labeled(doc)
-            issues, warnings, notes = _validate_section([t for _, t in labeled], block_ids, labels=[lbl for lbl, _ in labeled])
-            warnings.extend(_figure_plan_reconcile(doc, p, wroot / 'body'))
-            notes.extend((f"{loc}〔批注〕：{t[:50]}{('…' if len(t) > 50 else '')}" for loc, t in section_comments_labeled(doc)))
-            outline_paras = [str(i) for i, para in enumerate(doc.paragraphs, 1) if (ppr := para._p.find(qn('w:pPr'))) is not None and ppr.find(qn('w:outlineLvl')) is not None]
-            if outline_paras:
-                shown = '、'.join((f'P{x}' for x in outline_paras[:6])) + ('…' if len(outline_paras) > 6 else '')
-                notes.append(f'〔大纲级别〕{len(outline_paras)} 段直挂大纲级别（{shown}）——历史拷贝残留，Word 导航窗格会出现树外条目（合册会自动摘出）；如需正文层级请改用标题样式')
-            heading_ids = _heading_style_ids(doc)
-            numbered_style_ids: set[str] = set()
-            for sid in heading_ids:
-                style_el = doc.styles.element.find(f'''{qn('w:style')}[@{qn('w:styleId')}="{sid}"]''')
-                sppr = style_el.find(qn('w:pPr')) if style_el is not None else None
-                if sppr is not None and sppr.find(qn('w:numPr')) is not None:
-                    numbered_style_ids.add(sid)
-
-            def _para_numbered(para) -> bool:
-                ppr = para._p.find(qn('w:pPr'))
-                if ppr is None:
-                    return False
-                pstyle = ppr.find(qn('w:pStyle'))
-                sid = pstyle.get(qn('w:val')) if pstyle is not None else None
-                if ppr.find(qn('w:numPr')) is not None:
-                    return sid in heading_ids
-                return sid in numbered_style_ids
-            numbered_paras = [str(i) for i, para in enumerate(doc.paragraphs, 1) if _para_numbered(para)]
-            if numbered_paras:
-                shown = '、'.join((f'P{x}' for x in numbered_paras[:6])) + ('…' if len(numbered_paras) > 6 else '')
-                notes.append(f'〔自动编号〕{len(numbered_paras)} 个标题段带自动编号（{shown}）——素材拷入残留，整本会渲染素材内部层级号（合册会自动剥除）；无需处理，继续写作即可')
+            issues, warnings, notes = validate_docx_file(p, block_ids, wroot / 'body')
         elif (guide := wroot / 'body' / body_contract.GUIDE_NAME).is_file() and p.samefile(guide):
             content_text = p.read_text(encoding='utf-8', errors='replace')
             issues, warnings, notes = _validate_guide(content_text, task_id)
@@ -457,3 +428,40 @@ def validate_body(section: str, block_ids: list[str] | None=None) -> str:
         return '\n'.join(parts)
     except Exception as e:
         return f'[校验失败] {type(e).__name__}: {e}'
+
+
+def validate_docx_file(p: Path, block_ids: list[str] | None = None, body_root: Path | None = None):
+    """Original DOCX terminal-view checks, also available for an external review input."""
+    from ..parse.docx_text import load_text_document
+    doc, _ = load_text_document(p)
+    labeled = section_lines_labeled(doc)
+    issues, warnings, notes = _validate_section([t for _, t in labeled], block_ids, labels=[lbl for lbl, _ in labeled])
+    if body_root is not None:
+        warnings.extend(_figure_plan_reconcile(doc, p, body_root))
+    notes.extend((f"{loc}〔批注〕：{t[:50]}{('…' if len(t) > 50 else '')}" for loc, t in section_comments_labeled(doc)))
+    outline_paras = [str(i) for i, para in enumerate(doc.paragraphs, 1) if (ppr := para._p.find(qn('w:pPr'))) is not None and ppr.find(qn('w:outlineLvl')) is not None]
+    if outline_paras:
+        shown = '、'.join((f'P{x}' for x in outline_paras[:6])) + ('…' if len(outline_paras) > 6 else '')
+        notes.append(f'〔大纲级别〕{len(outline_paras)} 段直挂大纲级别（{shown}）——历史拷贝残留，Word 导航窗格会出现树外条目（合册会自动摘出）；如需正文层级请改用标题样式')
+    heading_ids = _heading_style_ids(doc)
+    numbered_style_ids: set[str] = set()
+    for sid in heading_ids:
+        style_el = doc.styles.element.find(f'''{qn('w:style')}[@{qn('w:styleId')}="{sid}"]''')
+        sppr = style_el.find(qn('w:pPr')) if style_el is not None else None
+        if sppr is not None and sppr.find(qn('w:numPr')) is not None:
+            numbered_style_ids.add(sid)
+
+    def _para_numbered(para) -> bool:
+        ppr = para._p.find(qn('w:pPr'))
+        if ppr is None:
+            return False
+        pstyle = ppr.find(qn('w:pStyle'))
+        sid = pstyle.get(qn('w:val')) if pstyle is not None else None
+        if ppr.find(qn('w:numPr')) is not None:
+            return sid in heading_ids
+        return sid in numbered_style_ids
+    numbered_paras = [str(i) for i, para in enumerate(doc.paragraphs, 1) if _para_numbered(para)]
+    if numbered_paras:
+        shown = '、'.join((f'P{x}' for x in numbered_paras[:6])) + ('…' if len(numbered_paras) > 6 else '')
+        notes.append(f'〔自动编号〕{len(numbered_paras)} 个标题段带自动编号（{shown}）——素材拷入残留，整本会渲染素材内部层级号（合册会自动剥除）；无需处理，继续写作即可')
+    return issues, warnings, notes

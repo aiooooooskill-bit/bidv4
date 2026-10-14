@@ -15,6 +15,7 @@
 from __future__ import annotations
 import json
 import re
+from pathlib import Path
 from .. import runctx
 from ..artifact_store import work_dir
 from ..markdown import iter_tables, sections
@@ -222,58 +223,66 @@ def validate_analysis() -> str:
                 sources_note = 'sources.json 无法解析：文件名集合与行号上限校验已跳过'
         else:
             sources_note = 'sources.json 不存在：文件名集合与行号上限校验已跳过'
-        issues: list[str] = []
-        warnings: list[str] = []
-        citations = 0
-        stems: list[str] = []
-        for p in files:
-            stem = p.stem
-            stems.append(stem)
-            rel = p.name
-            content = p.read_text(encoding='utf-8', errors='replace')
-            tables = list(iter_tables(content))
-            for required in _REQUIRED_HEADERS.get(stem, []):
-                if not any(tuple(header) == required for _, header, _ in tables):
-                    issues.append(f'{rel} 缺少合法的必需表格「{" | ".join(required)}」——表头须按模板列序且列不增不减，分隔行列数须一致；无条目也保留空表，不得用段落或代码块替代')
-            if stem in _NEED_COVERAGE:
-                cover = next((body for heading, body in sections(content, 2)
-                              if _COVERAGE_RE.fullmatch(heading.title)), None)
-                if cover is None:
-                    issues.append(f'{rel} 缺「## coverage 声明」段——「未发现」只能对已检查范围成立，范围必须声明')
-                else:
-                    for kw in ('已检查：', '未检查：'):
-                        if kw not in cover:
-                            issues.append(f'{rel} 的 coverage 声明缺「{kw}」——两半都要写（未检查为无也写「未检查：无」）')
-                    if stem == 'disqualification' and '反查词表：' not in cover:
-                        issues.append(f'{rel} 的 coverage 声明缺「反查词表：」——废标节必须逐词列出反查词')
-            col_names = _CITATION_COLUMNS.get(stem)
-            if col_names:
-                for _, header, body in tables:
-                    col_idx = next((i for i, c in enumerate(header) if c in col_names), None)
-                    if col_idx is None:
-                        continue
-                    table_anchor: dict = {'file': None}
-                    for lineno, cells in body:
-                        if col_idx >= len(cells):
-                            continue
-                        found = _check_citation_cell(cells[col_idx], known, src_lines, table_anchor)
-                        if not found:
-                            citations += 1
-                        issues.extend((f'{rel}:{lineno} {msg}' for msg in found))
-        if 'clarifications' not in stems and set(_NEED_COVERAGE) <= set(stems):
-            warnings.append('clarifications.md 不存在——七节齐时应汇总待澄清清单')
-        extras = [s for s in stems if s not in _SECTIONS]
-        if extras:
-            warnings.append('存在未识别文件（不在八件清单）：' + '、'.join(extras) + '——若是临时文件请移走，避免混入流水线')
-        if sources_note:
-            warnings.append(sources_note)
-        if not issues:
-            parts = [f'[校验通过] work/analysis/ 共 {len(files)} 件：coverage/出处引用（{citations} 条）全部合规']
-            parts.extend((f'⚠️ {w}' for w in warnings))
-            return '\n'.join(parts)
-        parts = [f'[校验未通过] 共 {len(issues)} 处问题（按提示修复产物后重新运行 validate_analysis，全部通过才算完成）：']
-        parts.extend((f'- {i}' for i in issues))
-        parts.extend((f'⚠️ {w}' for w in warnings))
-        return '\n'.join(parts)
+        return validate_analysis_files(adir, known, src_lines, sources_note)
     except Exception as e:
         return f'[校验失败] {type(e).__name__}: {e}'
+
+
+def validate_analysis_files(adir: Path, known: list[str], src_lines: dict[str, int], sources_note: str = '') -> str:
+    """Same LingYan table, coverage and citation checks for a declared analysis directory."""
+    files = sorted(adir.glob('*.md'))
+    if not files:
+        return '[校验失败] 没有招标要点产物'
+    issues: list[str] = []
+    warnings: list[str] = []
+    citations = 0
+    stems: list[str] = []
+    for p in files:
+        stem = p.stem
+        stems.append(stem)
+        rel = p.name
+        content = p.read_text(encoding='utf-8', errors='replace')
+        tables = list(iter_tables(content))
+        for required in _REQUIRED_HEADERS.get(stem, []):
+            if not any(tuple(header) == required for _, header, _ in tables):
+                issues.append(f'{rel} 缺少合法的必需表格「{" | ".join(required)}」——表头须按模板列序且列不增不减，分隔行列数须一致；无条目也保留空表，不得用段落或代码块替代')
+        if stem in _NEED_COVERAGE:
+            cover = next((body for heading, body in sections(content, 2)
+                          if _COVERAGE_RE.fullmatch(heading.title)), None)
+            if cover is None:
+                issues.append(f'{rel} 缺「## coverage 声明」段——「未发现」只能对已检查范围成立，范围必须声明')
+            else:
+                for kw in ('已检查：', '未检查：'):
+                    if kw not in cover:
+                        issues.append(f'{rel} 的 coverage 声明缺「{kw}」——两半都要写（未检查为无也写「未检查：无」）')
+                if stem == 'disqualification' and '反查词表：' not in cover:
+                    issues.append(f'{rel} 的 coverage 声明缺「反查词表：」——废标节必须逐词列出反查词')
+        col_names = _CITATION_COLUMNS.get(stem)
+        if col_names:
+            for _, header, body in tables:
+                col_idx = next((i for i, c in enumerate(header) if c in col_names), None)
+                if col_idx is None:
+                    continue
+                table_anchor: dict = {'file': None}
+                for lineno, cells in body:
+                    if col_idx >= len(cells):
+                        continue
+                    found = _check_citation_cell(cells[col_idx], known, src_lines, table_anchor)
+                    if not found:
+                        citations += 1
+                    issues.extend((f'{rel}:{lineno} {msg}' for msg in found))
+    if 'clarifications' not in stems and set(_NEED_COVERAGE) <= set(stems):
+        warnings.append('clarifications.md 不存在——七节齐时应汇总待澄清清单')
+    extras = [s for s in stems if s not in _SECTIONS]
+    if extras:
+        warnings.append('存在未识别文件（不在八件清单）：' + '、'.join(extras) + '——若是临时文件请移走，避免混入流水线')
+    if sources_note:
+        warnings.append(sources_note)
+    if not issues:
+        parts = [f'[校验通过] {adir.name}/ 共 {len(files)} 件：coverage/出处引用（{citations} 条）全部合规']
+        parts.extend((f'⚠️ {w}' for w in warnings))
+        return '\n'.join(parts)
+    parts = [f'[校验未通过] 共 {len(issues)} 处问题（按提示修复产物后重新运行 validate_analysis，全部通过才算完成）：']
+    parts.extend((f'- {i}' for i in issues))
+    parts.extend((f'⚠️ {w}' for w in warnings))
+    return '\n'.join(parts)

@@ -1,0 +1,273 @@
+{
+  "session_id": "bid-aea79de9-b24e-4248-9600-fd37d464bf7f",
+  "input_version": "7ba004341abc4af0c5fd1b9c552978d7835db7dddce4a104c6568d415a2794f3",
+  "completed": true,
+  "created_at": "2026-10-14T08:30:01.946380+00:00",
+  "documents": [
+    {
+      "id": "tender-0",
+      "name": "容量验收招标.docx",
+      "kind": "tender",
+      "sha256": "a47659af5d6893dcbde56021fccbcdacf8785d910cd92be711251af689feee87",
+      "path": "/Users/ooo/.codex/worktrees/bid-review-verification/bidv4/data/workspace/t_9bcd5af4108040e08cdf97cf3700c4c0/work/review/parse/tender-0/容量验收招标.docx.md",
+      "outline_path": "/Users/ooo/.codex/worktrees/bid-review-verification/bidv4/data/workspace/t_9bcd5af4108040e08cdf97cf3700c4c0/work/review/parse/tender-0/容量验收招标.docx.outline.json",
+      "lines": 6
+    },
+    {
+      "id": "bid-0",
+      "name": "容量验收投标-128.docx",
+      "kind": "bid",
+      "sha256": "30acfddf10aef3faec50837a79bfac7b8370dfd9e218134e10110a4f0269fdbf",
+      "path": "/Users/ooo/.codex/worktrees/bid-review-verification/bidv4/data/workspace/t_9bcd5af4108040e08cdf97cf3700c4c0/work/review/parse/bid-0/容量验收投标-128.docx.md",
+      "outline_path": "/Users/ooo/.codex/worktrees/bid-review-verification/bidv4/data/workspace/t_9bcd5af4108040e08cdf97cf3700c4c0/work/review/parse/bid-0/容量验收投标-128.docx.outline.json",
+      "lines": 12133
+    }
+  ],
+  "report": {
+    "summary": "本份容量验收工程招标共4条受审义务（维护服务期限、到场时间、培训交付、文档交付），投标文件均在「服务承诺」或「后文补充承诺」章节逐字对应回应。四条全部判定为 responded：三年期限一致、到场时间两小时优于四小时上限、培训及课件操作手册逐字匹配、五类文档逐字匹配。中间容量测试附件索引区段（约12000行导航内容）自行声明不构成新义务，未引入额外要求。无废标、冲突或缺失问题。",
+    "requirements": [
+      {
+        "status": "responded",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 2,
+            "end": 2,
+            "quote": "维护服务期限为三年。"
+          }
+        ],
+        "bid": [
+          {
+            "document_id": "bid-0",
+            "start": 2,
+            "end": 2,
+            "quote": "维护服务期限为三年。现场服务到场时间为两小时。"
+          }
+        ],
+        "id": "requirements-business:0:3",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：维护服务期限为三年。"
+      },
+      {
+        "status": "responded",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 3,
+            "end": 3,
+            "quote": "现场服务到场时间不超过四小时。"
+          }
+        ],
+        "bid": [
+          {
+            "document_id": "bid-0",
+            "start": 2,
+            "end": 2,
+            "quote": "维护服务期限为三年。现场服务到场时间为两小时。"
+          }
+        ],
+        "id": "requirements-business:0:4",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：现场服务到场时间不超过四小时。"
+      },
+      {
+        "status": "responded",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 4,
+            "end": 4,
+            "quote": "须提供业务、技术、运维分层培训，并交付课件和操作手册。"
+          }
+        ],
+        "bid": [
+          {
+            "document_id": "bid-0",
+            "start": 12005,
+            "end": 12005,
+            "quote": "提供业务、技术、运维分层培训，并交付课件和操作手册。交付设计、开发、运维、使用及模型研发文档。"
+          }
+        ],
+        "id": "requirements-business:0:5",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：须提供业务、技术、运维分层培训，并交付课件和操作手册。"
+      },
+      {
+        "status": "responded",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 5,
+            "end": 5,
+            "quote": "须交付设计、开发、运维、使用及模型研发文档。"
+          }
+        ],
+        "bid": [
+          {
+            "document_id": "bid-0",
+            "start": 12005,
+            "end": 12005,
+            "quote": "提供业务、技术、运维分层培训，并交付课件和操作手册。交付设计、开发、运维、使用及模型研发文档。"
+          }
+        ],
+        "id": "requirements-business:0:6",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：须交付设计、开发、运维、使用及模型研发文档。"
+      }
+    ],
+    "issues": [],
+    "limitations": [
+      "本份招标材料自行声明为工程容量验收合成材料，不用于实际采购，不含废标条款、评分标准或签章要求，故七类要点中仅商务技术要求有内容，其余类别（结构事实、资格要求、递交要求、格式要求、废标条款、评分标准）无条目。",
+      "投标附件索引区段（约12000行）为测试用导航占位，其内容已声明不构成承诺，本轮未逐一核查每行索引文本是否存在与义务的冲突。",
+      "后文补充承诺章节含约128张图片占位（![](图片)），图片内容未在本轮审核范围内核验，如为交付物截图需人工确认真实性。"
+    ],
+    "coverage": [
+      {
+        "category": "结构事实",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "资格要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "递交要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "商务技术要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "格式要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "废标条款",
+        "note": "已检查：服务要求；未检查：无\n反查词表：废标、无效、否决"
+      },
+      {
+        "category": "评分标准",
+        "note": "已检查：服务要求；未检查：无"
+      }
+    ]
+  },
+  "decisions": {},
+  "method": {
+    "name": "灵燕能力整合审查",
+    "source_commit": "de909f12572b4c469864b12255e26cc185ada7ec",
+    "version": "04141e4df4e425aa88ed52355110b497d2a2af07d855173e687a1ff8a1348704"
+  },
+  "analysis": {
+    "catalog": [
+      {
+        "id": "requirements-business:0:3",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：维护服务期限为三年。",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 2,
+            "end": 2
+          }
+        ]
+      },
+      {
+        "id": "requirements-business:0:4",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：现场服务到场时间不超过四小时。",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 3,
+            "end": 3
+          }
+        ]
+      },
+      {
+        "id": "requirements-business:0:5",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：须提供业务、技术、运维分层培训，并交付课件和操作手册。",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 4,
+            "end": 4
+          }
+        ]
+      },
+      {
+        "id": "requirements-business:0:6",
+        "category": "商务技术要求",
+        "text": "需求（原文 verbatim 片段）：须交付设计、开发、运维、使用及模型研发文档。",
+        "tender": [
+          {
+            "document_id": "tender-0",
+            "start": 5,
+            "end": 5
+          }
+        ]
+      }
+    ],
+    "coverage": [
+      {
+        "category": "结构事实",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "资格要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "递交要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "商务技术要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "格式要求",
+        "note": "已检查：服务要求；未检查：无"
+      },
+      {
+        "category": "废标条款",
+        "note": "已检查：服务要求；未检查：无\n反查词表：废标、无效、否决"
+      },
+      {
+        "category": "评分标准",
+        "note": "已检查：服务要求；未检查：无"
+      }
+    ],
+    "analysis_version": "415d60f93fbb51c615d7550fd5f8a3aca53dc8d8e0051e5fe242c282af59eff4",
+    "validation": "[校验通过] analysis/ 共 8 件：coverage/出处引用（4 条）全部合规",
+    "reused_platform_analysis": false,
+    "clarifications": [],
+    "previous_flow": {
+      "mode": "external",
+      "note": "外部文件沿用本平台document-parse、tender-analysis和共享证据规则；同版有效招标要点直接复用，缺少时建立独立依据。不把已有制作记录推定为外部文件的制作过程证明。"
+    }
+  },
+  "checks": [
+    {
+      "name": "容量验收投标-128.docx · 灵燕正文检查",
+      "status": "warning",
+      "detail": "未传 block_ids——旧名残留与素材使用率检查跳过（使用计划里选了哪些块就传哪些）"
+    },
+    {
+      "name": "灵燕制作过程检查",
+      "status": "not_applicable",
+      "detail": "外部文件没有平台写作指引、已确认承诺清单和素材使用计划，不能验证素材使用率或将不存在的承诺清单当作已比对。承诺、旧名及前后冲突由全文原文对照核查。"
+    }
+  ],
+  "audit": {
+    "batches": 1,
+    "requirements": 4,
+    "assessments": {
+      "requirements-business:0:3": "招标要求维护服务期限为三年。投标「服务承诺」章节明确承诺「维护服务期限为三年」，与招标要求完全一致。全文反查未发现其他年限表述或冲突。",
+      "requirements-business:0:4": "招标要求现场服务到场时间不超过四小时（即≤4h）。投标「服务承诺」章节承诺到场时间为两小时，比招标最低要求更严格，满足「不超过四小时」约束。全文未见其他到场时间表述或冲突。",
+      "requirements-business:0:5": "招标要求提供业务、技术、运维分层培训并交付课件和操作手册。投标「后文补充承诺」章节逐字对应「提供业务、技术、运维分层培训，并交付课件和操作手册」，完全覆盖招标要求的三层培训内容及其交付物。中间索引区段（容量测试附件索引）为导航内容，自行声明不构成承诺，不作为证据。",
+      "requirements-business:0:6": "招标要求交付设计、开发、运维、使用及模型研发文档。投标「后文补充承诺」章节明确「交付设计、开发、运维、使用及模型研发文档」，与招标要求的五类文档完全一致。中间索引区段虽多次出现「文档」字样但均为导航行并声明不构成承诺，不作证据。"
+    }
+  }
+}

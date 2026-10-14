@@ -1,0 +1,372 @@
+{
+  "session_id": "bid-0472aa4b-06df-4cd7-9c14-82a2ed76f005",
+  "checked_at": "2026-10-14T06:52:39.067762+00:00",
+  "requirements": 181,
+  "batches": 27,
+  "integrity": "passed_5_checks",
+  "requested_fixes": "passed",
+  "business_acceptance": "passed_requested_fixes_and_citation_traceability",
+  "not_a_second_product_review": "Current native Agent only repairs source citation scope; prior actual model business outcomes are preserved and mechanically revalidated.",
+  "risk_counts": {
+    "confirmation": 8,
+    "disqualification": 2,
+    "suggestion": 6,
+    "scoring": 4
+  },
+  "observations": [
+    {
+      "requirement_id": "requirements-business:0:67",
+      "verdict": "passed",
+      "note": "计划2周为完成周期；整份文件综合回应，排期依双方商定；仅保留整合方案建议。",
+      "actual_status": "responded",
+      "actual_assessment": "整份投标文件对培训要求已作综合回应：报价一览表承诺“上述报价为完全满足招标人技术、服务、合同要求的所有费用”（含培训成本）；共创交付章节承诺按对象分层开展常态化知识转移培训（业务/风控/技术三层，理论+实操+跟岗，三个月陪跑期）；落地保障提及操作/技术/运维培训；成果交付承诺搭建分层实操式知识转移培训体系；技术解决方案承诺提供培训服务。招标本身即要求“根据实际进度双方商定具体日程安排”，排期属双方协商事项。建议将各章节培训方案在培训计划章节整合统一表述以提高可读性。",
+      "actual_issues": [
+        {
+          "id": "requirements-business:0:67:issue:1",
+          "requirement_id": "requirements-business:0:67",
+          "risk_type": "suggestion",
+          "title": "建议整合培训方案表述",
+          "explanation": "整份文件已综合回应培训要求（总价含培训成本、分层培训覆盖、陪跑期等），但各章节分散表述，培训计划专章未汇总后文承诺。招标本身要求“双方商定具体日程安排”，排期属协商事项。建议整合以提高评审可读性。",
+          "suggestion": "建议在培训计划章节整合后文各层培训承诺，统一呈现培训范围、方式和排期说明，便于评审一次性查阅。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          838,
+          845
+        ]
+      ],
+      "bid_ranges": [
+        [
+          179,
+          179
+        ],
+        [
+          862,
+          863
+        ],
+        [
+          1118,
+          1118
+        ],
+        [
+          1126,
+          1126
+        ],
+        [
+          1139,
+          1139
+        ]
+      ]
+    },
+    {
+      "requirement_id": "requirements-business:0:68",
+      "verdict": "passed",
+      "note": "采纳总价全部费用及后文培训承诺，无冲突或评分失分判断，仅保留统一表述建议。",
+      "actual_status": "responded",
+      "actual_assessment": "整份投标文件对培训条件已综合回应：报价一览表承诺“上述报价为完全满足招标人技术、服务、合同要求的所有费用”（培训费用含在总价内，即免费）；共创交付章节承诺按对象分层开展常态化知识转移培训、每期配套课件/手册/录播、三个月陪跑期；成果交付章节承诺搭建分层实操式培训体系；技术解决方案承诺提供培训服务。招标本身要求“根据实际进度双方商定具体日程安排”，排期属协商事项。建议将各章节承诺在培训计划章节统一表述以提高可读性。",
+      "actual_issues": [
+        {
+          "id": "requirements-business:0:68:issue:1",
+          "requirement_id": "requirements-business:0:68",
+          "risk_type": "suggestion",
+          "title": "建议培训条件统一表述",
+          "explanation": "招标要求“参加人数不限”“培训为免费，乙方讲师费用乙方自行负责”。投标总价承诺“完全满足所有费用”已涵盖培训成本，后文各章节已覆盖培训内容和范围，但未在培训计划章节逐字复述“人数不限”“免费”字样。建议整合表述以避免评审遗漏。",
+          "suggestion": "建议在培训计划章节补充“参加人数不限”“培训免费，讲师费用由我方承担”的明确表述，并将后文各层培训承诺汇总于此。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          841,
+          845
+        ]
+      ],
+      "bid_ranges": [
+        [
+          179,
+          179
+        ],
+        [
+          862,
+          863
+        ],
+        [
+          1126,
+          1126
+        ],
+        [
+          1139,
+          1139
+        ]
+      ]
+    },
+    {
+      "requirement_id": "requirements-business:0:47",
+      "verdict": "passed",
+      "note": "已引用后文设计、开发、运维、使用及模型研发文档和培训交付承诺，不再断言缺少使用文档。",
+      "actual_status": "responded",
+      "actual_assessment": "技术平台章节标注\"是否满足：是\"，说明提供性能测试和系统监控告警功能覆盖应用状态、接口耗时、模型输入输出、工具调用及失败情况；技术解决方案章节进一步承诺按合同交付设计、开发、运维、使用及模型研发相关文档，数据库设计遵循杭州银行规范。",
+      "actual_issues": [],
+      "tender_ranges": [
+        [
+          500,
+          500
+        ]
+      ],
+      "bid_ranges": [
+        [
+          903,
+          903
+        ],
+        [
+          1139,
+          1139
+        ]
+      ]
+    },
+    {
+      "requirement_id": "evaluation:0:8",
+      "verdict": "passed",
+      "note": "保留“大模型开发或同类技术服务”；不把财务分析经验单独排除；3人不足4人仍保留评分风险。",
+      "actual_status": "conflict",
+      "actual_assessment": "招标原文要求“拟派项目经理应以项目经理身份承担过大模型开发或同类技术服务项目的”。“或”表明大模型开发和同类技术服务均属可接受范围。投标PM徐飞航经验为两个农商行财务分析模型项目（10人团队、项目经理、全程），与本项目“企业智能财务分析模型”同属财务分析模型领域，可视为同类技术服务，但是否被评标认定需确认。团队方面仅列出3人且岗位均为“技术人员”，未满足“不少于4人”的最低数量要求，公司技术人员总数3人。",
+      "actual_issues": [
+        {
+          "id": "evaluation:0:8:issue:1",
+          "requirement_id": "evaluation:0:8",
+          "risk_type": "scoring",
+          "title": "团队数量不足4人及PM同类认定待确认（满分6分）",
+          "explanation": "招标原文“大模型开发或同类技术服务项目”中“或”表明两者均可。PM的财务分析模型经验与本项目同领域，可视为同类技术服务，但是否被评标小组认定为“同类”需确认。确定性问题：团队仅3人不满足“不少于4人”最低要求，且岗位未区分算法/大模型/产品/技术专项。",
+          "suggestion": "建议：①增加至少1名专职人员使团队达4人，明确算法/大模型/产品/技术岗位分工；②提供PM大模型开发或同类技术服务项目合同作为证明；③提供全部拟派人员简历、证书、工作业绩和近1年社保证明。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          1057,
+          1057
+        ]
+      ],
+      "bid_ranges": [
+        [
+          148,
+          163
+        ],
+        [
+          319,
+          325
+        ]
+      ]
+    },
+    {
+      "requirement_id": "evaluation:0:7",
+      "verdict": "passed",
+      "note": "保留2021/2020早于2023起点的事实；合同图片未核验，不给确定得分。",
+      "actual_status": "conflict",
+      "actual_assessment": "招标要求2023年1月1日起至今具备智能财务分析模型/财务舞弊识别模型/大模型/智能体/AI智能体平台实施落地项目，每提供1个得1分满分10分。投标业绩表列出3个项目，其中仅1个在2023年范围内（宁波鄞州农商行 2023.10），另2个分别为2021年和2020年。合同内容均为“企业数据、财务分析系统”，合同证明材料为图片形式。",
+      "actual_issues": [
+        {
+          "id": "evaluation:0:7:issue:1",
+          "requirement_id": "evaluation:0:7",
+          "risk_type": "scoring",
+          "title": "业绩时间范围和匹配度待确认（满分10分）",
+          "explanation": "业绩评分要求2023年1月至今且涉及五类项目方向。投标仅1个业绩在时间范围内，且合同内容“企业数据、财务分析系统”是否匹配招标所列类别需评标确认。合同金额标注“保密”，证明材料为图片，无法确认是否包含招标要求的五页。",
+          "suggestion": "建议确认：①合同内容描述是否可被认定为智能财务分析模型/大模型/智能体类项目；②合同图片是否包含首页、工作内容页、金额页、签字盖章页、签订时间页；③金额“保密”标注是否满足“合同金额页”要求。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          1056,
+          1056
+        ]
+      ],
+      "bid_ranges": [
+        [
+          342,
+          355
+        ]
+      ]
+    },
+    {
+      "requirement_id": "disqualification:0:38",
+      "verdict": "passed",
+      "note": "截图要求为条件句；未找到产品/参数截图具体提交要求，不再给普遍缺截图问题。",
+      "actual_status": "uncertain",
+      "actual_assessment": "评分标准中的截图条款为条件句：“如有要求提供产品功能截图或技术参数截图等相关证明材料的”才视为负偏离；经核查招标文件全文，未发现单独的产品功能/参数截图提交要求。偏离表标注无负偏离，技术响应以文字描述为主。单一文件无法判断证明材料真实性，需评标时验证。",
+      "actual_issues": [],
+      "tender_ranges": [
+        [
+          1059,
+          1059
+        ]
+      ],
+      "bid_ranges": [
+        [
+          375,
+          398
+        ]
+      ]
+    },
+    {
+      "requirement_id": "evaluation:0:10",
+      "verdict": "passed",
+      "note": "未把条件截图规则改成普遍义务，也不保证技术满分。",
+      "actual_status": "responded",
+      "actual_assessment": "投标文件对各业务需求和技术需求章节均标注“是否满足：是”，商务及技术偏离表未列出任何负偏离项。评分标准中的截图条款为条件句：“如有要求提供产品功能截图或技术参数截图等相关证明材料的”才视为负偏离；经核查招标文件全文，未发现单独的产品功能/参数截图提交要求，该条件触发前提不成立。",
+      "actual_issues": [],
+      "tender_ranges": [
+        [
+          1059,
+          1059
+        ]
+      ],
+      "bid_ranges": [
+        [
+          375,
+          398
+        ]
+      ]
+    },
+    {
+      "requirement_id": "evaluation:0:12",
+      "verdict": "passed",
+      "note": "相对评分无法从单份标书预测最终分值；建议结合真实能力优化，不擅自新增2-4小时承诺。",
+      "actual_status": "responded",
+      "actual_assessment": "售后支持章节承诺分级响应（一级30分/2h、二级2h/8h、三级4h/24h），现场到达5小时，7×24热线；增值服务承诺免费运维期12月延长至18月及线上学习平台课程永久回看。评分按到场时效优劣和增值服务数量相对打分，最终得分取决于与其他投标人的比较，单一文件无法确定最终分值。",
+      "actual_issues": [
+        {
+          "id": "evaluation:0:12:issue:1",
+          "requirement_id": "evaluation:0:12",
+          "risk_type": "suggestion",
+          "title": "售后增值服务评分为相对打分",
+          "explanation": "评分标准为按到场时效优劣和增值服务数量相对打分。投标承诺5小时到场、增值服务2项（18月免费运维+线上学习平台）。最终得分取决于与其他投标人的相对比较，无法从单一文件预判。",
+          "suggestion": "建议结合真实服务能力确认/优化到场时效和增值服务内容，以在相对评分中取得更有利位置。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          1061,
+          1061
+        ]
+      ],
+      "bid_ranges": [
+        [
+          407,
+          417
+        ],
+        [
+          419,
+          423
+        ]
+      ]
+    },
+    {
+      "requirement_id": "requirements-submission:0:4",
+      "verdict": "passed",
+      "note": "删除文件存在就证明已实际提交的推断；平台操作保持未知。",
+      "actual_status": "uncertain",
+      "actual_assessment": "招标要求在投标截止前将电子加密投标文件成功上传递交至杭州银行电子招投标平台。此为平台操作流程，无法从本地文档内容验证是否已完成上传及上传时间是否在截止之前。",
+      "actual_issues": [],
+      "tender_ranges": [
+        [
+          137,
+          137
+        ]
+      ],
+      "bid_ranges": [
+        [
+          1,
+          13
+        ]
+      ]
+    },
+    {
+      "requirement_id": "requirements-submission:0:14",
+      "verdict": "passed",
+      "note": "当前合并文件准备递交的用户事实已采纳；未找到必须三个独立文件的依据，PDF上传要求需确认。",
+      "actual_status": "uncertain",
+      "actual_assessment": "投标文件已编制完整目录，包含全部章节层级。招标要求“上传的文件格式为PDF”，当前源文件为DOCX格式，最终是否转换为PDF并按平台要求递交待确认。三个组成部分（资格/资信技术/报价）为逻辑章节划分，合并于单一文件不违反编制顺序要求。",
+      "actual_issues": [
+        {
+          "id": "requirements-submission:0:14:issue:1",
+          "requirement_id": "requirements-submission:0:14",
+          "risk_type": "confirmation",
+          "title": "上传文件格式需转换为PDF",
+          "explanation": "招标明确要求上传文件格式为PDF，当前源文件为DOCX。需在递交前确认是否已转换为PDF。合并文件结构本身不违反三个组成部分的编排要求（逻辑章节而非独立物理文件）。",
+          "suggestion": "确认最终递交前将文件转换为PDF格式并通过杭州银行电子招投标平台完成上传。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          273,
+          273
+        ]
+      ],
+      "bid_ranges": [
+        [
+          15,
+          74
+        ]
+      ]
+    },
+    {
+      "requirement_id": "requirements-business:0:65",
+      "verdict": "passed",
+      "note": "固定2小时时效原句与软件X表均已进入真实原文证据卡，原要点引用保留；不改变需确认判断或条款优先级。",
+      "actual_status": "responded",
+      "actual_assessment": "招标文件包含两条现场时效要求：一是“设备保修、维修请求后2小时内抵达现场”（固定时效）；二是软件故障响应表使用X占位符供投标人填入（四级故障分类）。投标售后支持章节承诺分级响应（一级30分/2h、二级2h/8h、三级4h/24h）和现场到达5小时，系对软件故障X表的填写。设备保修2小时条款是否适用于本纯软件系统开发项目，以及其优先级与软件故障条款的关系，需确认适用范围。",
+      "actual_issues": [
+        {
+          "id": "requirements-business:0:65:issue:1",
+          "requirement_id": "requirements-business:0:65",
+          "risk_type": "confirmation",
+          "title": "设备保修2小时条款适用范围待确认",
+          "explanation": "招标同时存在“设备保修/维修2小时抵达”固定条款和软件故障X表待填条款。投标5小时承诺系对软件故障表的填写，但设备保修2小时条款是否适用于本项目（纯软件开发无硬件交付）需确认。两条适用范围和优先级待招标人明确。",
+          "suggestion": "建议向招标人确认：①设备保修2小时条款是否适用于纯软件系统开发项目；②若适用，投标方5小时承诺是否满足；③两条条款的适用范围和优先级。"
+        }
+      ],
+      "tender_ranges": [
+        [
+          859,
+          859
+        ],
+        [
+          860,
+          874
+        ]
+      ],
+      "bid_ranges": [
+        [
+          410,
+          417
+        ]
+      ]
+    }
+  ],
+  "remaining_findings": [],
+  "limits": [
+    "图片占位内容（营业执照、保证金回单、ISO证书、软著、荣誉、项目组成员证件、合同原件）无法从文本验证，需人工查看原件确认",
+    "CA电子签章、平台加密、上传时序、解密时效等均为平台操作层面要求，无法从本地文档内容核验，需在递交前逐项确认操作已完成",
+    "上传文件格式要求PDF，当前源文件为DOCX，最终是否已转换待确认",
+    "多投标人相关废标条款（串标、弄虚作假、两份不同文件、选择性报价）无法从单一投标文件判断",
+    "相对评分项（到场时效优劣、增值服务数量、基准价偏差率）需所有投标人承诺后才能确定最终得分",
+    "设备保修2小时条款是否适用于本纯软件系统开发项目范围待招标人确认",
+    "ISO/软著/备案等资质证明为图片，无法从文本确认是否满足评分标准",
+    "业绩合同证明为图片且金额标注保密，无法验证是否包含招标要求的五页",
+    "杭州本地专职维护人员安排未在后文售后章节中单独设段明确承诺",
+    "对《银行保险机构信息科技外包风险监管办法》及甲方外包安全标准的遵循承诺未在全文中找到"
+  ],
+  "deployment": "not_deployed_isolated_only",
+  "ui": {
+    "overview": "review-single-round-final-page-20261014.jpg",
+    "training_evidence": "review-single-round-final-training-20261014.jpg",
+    "counts_verified": true,
+    "all_7_categories_181_verified": true,
+    "onsite_evidence": "review-citation-range-page-20261014.jpg",
+    "both_actual_source_cards_verified": true,
+    "login_url": "http://127.0.0.1:58362/login"
+  },
+  "original_files_unchanged": true,
+  "citation_gap_closed": true,
+  "business_judgments_unchanged": true,
+  "acceptance_scope": "Original requested fixes retained; current verification replays genuine prior 181 judgments unchanged, real configured model repairs citation scope, source/program/UI checks confirm both clauses. No additional business scoring or independent review model."
+}

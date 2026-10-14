@@ -2,14 +2,13 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
 from .. import artifact_store, document, runctx
 from ..parse import write_atomic
-from . import page_flow
+from . import page_flow, review_method
 from .errors import BusinessError
+from .review_schema import Report
 
-CATEGORIES = ('废标条款', '资格要求', '格式与结构', '评分标准', '商务要求', '技术要求')
+CATEGORIES = review_method.CATEGORIES
 
 def _root(tid):
     return artifact_store.work_dir(tid) / 'review'
@@ -22,13 +21,14 @@ def set_input(tid, bids):
     from .edit_guard import require_idle
     page_flow.require_task(tid)
     require_idle(tid)
-    main = page_flow.source_selection(tid)['main']
+    selected = page_flow.source_selection(tid)
+    main = selected['main']
     names = {p.name for p in artifact_store.sources_dir(tid).iterdir() if p.is_file() and not p.name.startswith('.')}
     if not isinstance(bids, list) or not bids or any(not isinstance(n, str) or n not in names or n == main for n in bids) or len(set(bids)) != len(bids):
         raise BusinessError(422, '请选择与招标文件不同的投标文件')
     value = {'mode': 'external', 'bids': bids}
     # Bid documents must never participate in tender interpretation.
-    page_flow.set_sources(tid, main, [])
+    page_flow.set_sources(tid, main, [s['file'] for s in selected['supplements'] if s['file'] not in bids])
     write_atomic(_root(tid) / 'input.json', json.dumps(value, ensure_ascii=False))
     return value
 
@@ -56,14 +56,25 @@ def inputs(tid):
     return result
 
 def basis(tid):
-    from .build_state import sections
+    from .build_state import sections, read as build_state
+    from .asset_usage import basis as asset_basis
+    from .bidder import basis as bidder_basis
     root = artifact_store.work_dir(tid)
     selected = page_flow.source_selection(tid)
     config = selection(tid)
     names = [selected['main'], *[s['file'] for s in selected['supplements']], *config['bids']]
     sources = {n: page_flow.file_hash(artifact_store.sources_dir(tid) / n) if (artifact_store.sources_dir(tid) / n).is_file() else None for n in names if n}
     body = {s['path']: page_flow.file_hash(root / s['path']) if (root / s['path']).is_file() else None for s in sections(tid)} if config['mode'] == 'platform' else {}
-    return page_flow.digest({'sources': sources, 'selection': selected, 'review_input': config, 'body': body, 'directory': page_flow.directory(tid) if config['mode'] == 'platform' else None, 'analysis': {p.name: page_flow.file_hash(p) for p in (root / 'analysis').glob('*.md')}})
+    context = {'sources': sources, 'selection': selected, 'review_input': config, 'body': body,
+               'directory': page_flow.directory(tid) if config['mode'] == 'platform' else None,
+               'analysis': {p.name: page_flow.file_hash(p) for p in (root / 'analysis').glob('*.md')},
+               'review_method': review_method.method_version()}
+    if config['mode'] == 'platform':
+        context.update(planning={p.name: page_flow.file_hash(p) for p in (root / 'body').glob('*.md')},
+                       planning_state=build_state(tid), assets=asset_basis(tid, ['guide', 'promises', *body]),
+                       bidder=bidder_basis(tid))
+    return page_flow.digest(context)
+
 
 def prepare(tid):
     docs = inputs(tid)
@@ -78,90 +89,86 @@ def documents(tid):
         meta = d['parse_dir'] / (d['name'] + '.meta.json')
         if not md.is_file() or not meta.is_file() or json.loads(meta.read_text())['sha256'] != d['sha256']:
             raise BusinessError(422, '审查文件尚未完整解析：' + d['name'])
-        result.append({k: d[k] for k in ('id', 'name', 'kind', 'sha256')} | {'path': str(md), 'outline_path': str(d['parse_dir'] / (d['name'] + '.outline.json')), 'lines': len(md.read_text().splitlines())})
+        with md.open() as stream:
+            lines = sum(len(line.splitlines()) for line in stream)
+        result.append({k: d[k] for k in ('id', 'name', 'kind', 'sha256')} | {'path': str(md), 'outline_path': str(d['parse_dir'] / (d['name'] + '.outline.json')), 'lines': lines})
     return result
 
-class StrictModel(BaseModel):
-    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+def review_basis(tid, validate=False):
+    docs = documents(tid)
+    mode = selection(tid)['mode']
+    if not validate:
+        return review_method.analysis_context(tid, docs, mode)
+    return review_method.analysis_catalog(tid, docs, mode)
 
-class Evidence(StrictModel):
-    document_id: str
-    start: int = Field(ge=1, strict=True)
-    end: int = Field(ge=1, strict=True)
+def source_excerpt(path, start, end):
+    from itertools import chain, islice
+    with Path(path).open() as stream:
+        lines = chain.from_iterable(line.splitlines() for line in stream)
+        return '\n'.join(islice(lines, start - 1, end))
 
-class Requirement(StrictModel):
-    id: str = Field(min_length=1)
-    category: Literal['废标条款', '资格要求', '格式与结构', '评分标准', '商务要求', '技术要求']
-    text: str = Field(min_length=1)
-    status: Literal['responded', 'missing', 'uncertain', 'conflict']
-    tender: list[Evidence] = Field(min_length=1)
-    bid: list[Evidence]
 
-class Issue(StrictModel):
-    id: str = Field(min_length=1)
-    requirement_id: str
-    severity: Literal['high', 'medium', 'low']
-    title: str = Field(min_length=1)
-    explanation: str = Field(min_length=1)
-    suggestion: str = Field(min_length=1)
+def resolve_evidence(docs, tender, bid, basis_tender):
+    """Resolve explicit citations; preserve every catalog source without guessing context."""
+    from .review_schema import Evidence
+    result = {}
+    covered = {}
+    for kind, items in (('tender', tender), ('bid', bid)):
+        result[kind] = []
+        for item in items:
+            e = Evidence.model_validate(item).model_dump()
+            d = docs.get(e['document_id'])
+            if not d or d['kind'] != kind or not 1 <= e['start'] <= e['end'] <= d['lines'] or e['end'] - e['start'] > 100:
+                raise ValueError('证据角色或范围无效；单段引用不超过101行')
+            if kind == 'tender':
+                covered.setdefault(e['document_id'], set()).update(range(e['start'], e['end'] + 1))
+            result[kind].append(e | {'quote': source_excerpt(d['path'], e['start'], e['end'])})
+    for base in basis_tender:
+        if not set(range(base['start'], base['end'] + 1)) <= covered.get(base['document_id'], set()):
+            raise ValueError('招标引用必须保留完整要点依据；回查原文后可扩展或补充引用')
+    return result
 
-class Coverage(StrictModel):
-    category: Literal['废标条款', '资格要求', '格式与结构', '评分标准', '商务要求', '技术要求']
-    note: str = Field(min_length=1)
-
-class Report(StrictModel):
-    summary: str = Field(min_length=1)
-    requirements: list[Requirement] = Field(min_length=1)
-    issues: list[Issue]
-    coverage: list[Coverage] = Field(min_length=6, max_length=6)
-    limitations: list[str] = Field(min_length=1)
 
 def compile_report(tid, value):
     report = Report.model_validate(value)
     docs = {d['id']: d for d in documents(tid)}
-    ids = {r.id for r in report.requirements}
-    if len(ids) != len(report.requirements) or len({i.id for i in report.issues}) != len(report.issues):
-        raise ValueError('要求和问题编号必须唯一')
-    if {c.category for c in report.coverage} != set(CATEGORIES):
-        raise ValueError('必须说明六类要求的实际核查范围')
-    evidence_errors = []
-    for req in report.requirements:
-        if req.status in ('responded', 'conflict') and not req.bid:
-            evidence_errors.append(f'{req.id}：已响应或存在冲突的要求必须提供投标原文证据')
-        for kind, evidence in [('tender', req.tender), ('bid', req.bid)]:
-            for e in evidence:
-                d = docs.get(e.document_id)
-                if not d or d['kind'] != kind or e.end < e.start or e.end > d['lines']:
-                    evidence_errors.append(f'{req.id}.{kind}：证据角色或行号无效（{e.document_id} L{e.start}-{e.end}）')
-                    continue
-    if evidence_errors:
-        raise ValueError('证据校验未通过，共' + str(len(evidence_errors)) + '处。请核对document_id、文件角色和起止行号。\n' + '\n'.join(evidence_errors))
-    for issue in report.issues:
-        if issue.requirement_id not in ids:
-            raise ValueError('问题必须关联已核查要求')
-    for req in report.requirements:
-        if req.status in ('missing', 'conflict') and not any(i.requirement_id == req.id for i in report.issues):
-            raise ValueError(f'{req.id}：缺失或冲突的要求必须进入问题清单；待外部核验事项应在范围限制中说明')
+    basis = review_basis(tid, True)
+    catalog = {r['id']: r for r in basis['catalog']}
+    ids = [r.basis_id for r in report.requirements]
+    if len(set(ids)) != len(ids) or set(ids) != set(catalog):
+        raise ValueError('必须逐项核查已校验的招标要点，不能遗漏或增加要求。缺少：' + '、'.join(set(catalog) - set(ids)) + '；未知：' + '、'.join(set(ids) - set(catalog)))
+    if len({i.id for i in report.issues}) != len(report.issues):
+        raise ValueError('问题编号必须唯一')
+    errors = []
     compiled = report.model_dump()
     for req in compiled['requirements']:
-        for kind in ('tender', 'bid'):
-            for evidence in req[kind]:
-                d = docs[evidence['document_id']]
-                evidence['quote'] = '\n'.join(Path(d['path']).read_text().splitlines()[evidence['start'] - 1:evidence['end']])
+        key = req.pop('basis_id')
+        cited = resolve_evidence(docs, req['tender'], req['bid'], catalog[key]['tender'])
+        req.update(catalog[key])
+        req.update(cited)
+        if review_method.information_only(req) != (req['status'] == 'informational'):
+            errors.append(key + '：背景信息与投标响应状态不一致')
+        if req['status'] == 'informational' and (req['bid'] or any(i.requirement_id == key for i in report.issues)):
+            errors.append(key + '：背景信息不得套用无关投标引用或问题')
+        if req['status'] in ('responded', 'conflict') and not req['bid']:
+            errors.append(key + '：已响应或冲突必须提供投标证据')
+        if req['status'] in ('missing', 'conflict') and not any(i.requirement_id == key for i in report.issues):
+            errors.append(key + '：缺失或冲突必须关联问题')
+    for issue in report.issues:
+        if issue.requirement_id not in catalog:
+            errors.append('问题必须关联招标要点：' + issue.requirement_id)
+    if errors:
+        raise ValueError('\n'.join(errors))
+    compiled['coverage'] = basis['coverage']
     return compiled
 
 def validate_saved_report(tid, value):
-    # Stored evidence is program-produced; recheck it against the same immutable sources.
-    refs = json.loads(json.dumps(value))
-    quotes = []
-    for req in refs['requirements']:
-        for kind in ('tender', 'bid'):
-            for evidence in req[kind]:
-                quotes.append(evidence.pop('quote'))
+    refs = {'summary': value['summary'], 'issues': value['issues'], 'limitations': value['limitations'],
+            'requirements': [{'basis_id': r['id'], 'status': r['status'],
+                **{kind: [{k: e[k] for k in ('document_id', 'start', 'end')} for e in r[kind]] for kind in ('tender', 'bid')}} for r in value['requirements']]}
     compiled = compile_report(tid, refs)
-    actual = [e['quote'] for r in compiled['requirements'] for kind in ('tender', 'bid') for e in r[kind]]
-    if quotes != actual:
-        raise ValueError('已保存证据与原文不一致，请重新审核')
+    if compiled != value:
+        raise ValueError('已保存报告与招标要点或原文不一致，请重新审核')
     return compiled
 
 def _record(tid):
@@ -185,7 +192,7 @@ def save_report(tid, session, value):
         missing = [s['title'] for s in sections(tid) if not (artifact_store.work_dir(tid) / s['path']).is_file()]
         if missing:
             report['limitations'].append('当前平台目录尚有未生成章节：' + '、'.join(missing) + '；本次只核查现有正文。')
-    envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': documents(tid), 'report': report, 'decisions': {}}
+    envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': documents(tid), 'report': report, 'decisions': {}, 'method': {'name': '灵燕能力整合审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'analysis': review_basis(tid, True), 'checks': review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])}
     write_atomic(_report_path(tid, session), json.dumps(envelope, ensure_ascii=False))
     return {'saved': True, 'requirements': len(report['requirements']), 'issues': len(report['issues'])}
 
@@ -196,6 +203,16 @@ def finish(tid, session):
     report = json.loads(path.read_text())
     if report['input_version'] != basis(tid):
         raise ValueError('审查文件版本已变化，请重新审核')
+    from . import review_batches
+    rows = review_batches.completed(tid, session)
+    expected_issues = [p | {'id': f'{r["id"]}:issue:{n + 1}', 'requirement_id': r['id']} for r in rows for n, p in enumerate(r['problems'])]
+    if report['report']['issues'] != expected_issues:
+        raise ValueError('报告问题与已保存批次不一致')
+    def citations(rows):
+        return [{'basis_id': r['id'], 'status': r['status'], **{kind: [{k: e[k] for k in ('document_id', 'start', 'end')} for e in r[kind]] for kind in ('tender', 'bid')}} for r in rows]
+    expected, actual = citations(rows), citations(report['report']['requirements'])
+    if actual != expected:
+        raise ValueError('报告结论与已保存批次不一致')
     validate_saved_report(tid, report['report'])
     report['completed'] = True
     write_atomic(path, json.dumps(report, ensure_ascii=False))
@@ -217,7 +234,13 @@ def snapshot(tid):
         if record.get('finished_state') == 'completed':
             status = 'reviewed' if envelope and envelope['completed'] else 'failed'
         if status == 'reviewed' and envelope['input_version'] != current: status = 'stale'
-    return {'mode': config['mode'], 'bids': config['bids'], 'status': status, 'input_version': current, 'report': envelope if envelope and envelope['completed'] else None}
+    if envelope and envelope.get('method', {}).get('version') != review_method.method_version():
+        envelope = None
+    elif envelope and status == 'reviewed':
+        adir = artifact_store.work_dir(tid) / ('analysis' if envelope['analysis']['reused_platform_analysis'] else 'review/analysis')
+        version = page_flow.digest({k: page_flow.file_hash(adir / (k + '.md')) if (adir / (k + '.md')).is_file() else None for k in review_method.LABELS})
+        if version != envelope['analysis']['analysis_version']: status = 'stale'
+    return {'method': {'name': '灵燕能力整合审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'mode': config['mode'], 'bids': config['bids'], 'status': status, 'input_version': current, 'report': envelope if envelope and envelope['completed'] else None}
 
 def decide(tid, session, issue_id, status, note):
     from .edit_guard import require_idle
@@ -227,7 +250,7 @@ def decide(tid, session, issue_id, status, note):
     if state['status'] != 'reviewed' or not report or report['session_id'] != session:
         raise BusinessError(409, '当前报告已变化，请重新审核或读取最新报告')
     if status not in ('pending', 'confirmed', 'fixed', 'ignored') or not isinstance(note, str) or len(note) > 4000:
-        raise BusinessError(422, '复核结论或备注无效')
+        raise BusinessError(422, '处理状态或备注无效')
     if not any(i['id'] == issue_id for i in report['report']['issues']):
         raise BusinessError(422, '问题不属于当前报告')
     report['decisions'][issue_id] = {'status': status, 'note': note, 'updated_at': datetime.now(timezone.utc).isoformat()}

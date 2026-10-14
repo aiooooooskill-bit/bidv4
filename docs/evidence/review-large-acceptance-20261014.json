@@ -1,0 +1,60 @@
+{
+  "scope": "Large-file capacity only; not full real-bid business acceptance",
+  "isolated": true,
+  "deployed": false,
+  "upload_limit_removed_for_bid_only": true,
+  "source_limit_http_test": "review-large-http-source-limit-20261014.json",
+  "metrics": [
+    {
+      "bytes": 539969255,
+      "parse_seconds": 3.990220750012668,
+      "terminal_check_seconds": 0.06759262499690522,
+      "peak_rss_bytes": 92717056,
+      "chars": 433504,
+      "images": 64,
+      "sha256": "0895525029317c063f6363d69aff12291e115118346fb3ce572fd016226ab75a"
+    },
+    {
+      "bytes": 1077429619,
+      "parse_seconds": 4.323098041000776,
+      "terminal_check_seconds": 0.04895174999546725,
+      "peak_rss_bytes": 111411200,
+      "chars": 434016,
+      "images": 128,
+      "sha256": "30acfddf10aef3faec50837a79bfac7b8370dfd9e218134e10110a4f0269fdbf"
+    }
+  ],
+  "real_model": {
+    "model": {
+      "provider": "lmstudio",
+      "model": "mlx-community/Qwen3.8-27B-4bit"
+    },
+    "audit_ms": 176902,
+    "status": "reviewed",
+    "requirements": 4,
+    "responded": 4,
+    "calls": 13,
+    "late_training_and_document_delivery_cited": true,
+    "proof": "review-large-real-20261014.json"
+  },
+  "regression": {
+    "python": 493,
+    "ui": 21,
+    "native_integration": 1
+  },
+  "scan_129_page_contract": {
+    "complete_outputs_required": true,
+    "lazy_render_checked": true,
+    "real_129_page_model_ocr_tested": false
+  },
+  "limitations": [
+    "DOCX embedded images remain placeholders, not verified proof content",
+    "Huge browser original preview still fetches and renders full source and is independent of audit; not pressure validated",
+    "No all-size or all-page semantic coverage guarantee; synthetic audit has four explicit requirements and prebuilt analysis",
+    "Slow uploads remain subject to host HTTP timeout and available disk; fixed byte limits removed for bids",
+    "Current parser retains the document text XML in memory; exceptionally huge text XML remains memory sensitive"
+  ],
+  "genuine_hangzhou_report_file_unchanged": true,
+  "screen": "review-large-real-page-20261014.jpg",
+  "loginUrl": "http://127.0.0.1:51711/login"
+}

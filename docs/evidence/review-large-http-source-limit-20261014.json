@@ -1,0 +1,9 @@
+{
+  "source_bytes": 539969255,
+  "status": 413,
+  "detail": {
+    "detail": "文件超过100MB上限"
+  },
+  "no_partial_sources": true,
+  "taskArchived": true
+}

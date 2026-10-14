@@ -1,0 +1,812 @@
+{
+  "scope": "Original Hangzhou-pei documents + actual configured local model; no fabricated model responses",
+  "model": {
+    "provider": "lmstudio",
+    "model": "mlx-community/Qwen3.8-27B-4bit"
+  },
+  "originalModelEndpoint": "http://localhost:8000/v1",
+  "requests": [
+    {
+      "index": 1,
+      "startedAt": "2026-10-14T06:40:05.533Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 108,
+        "content": 85,
+        "toolArguments": 24
+      },
+      "lastProgressAt": "2026-10-14T06:40:19.108Z",
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 4466,
+        "completion_tokens": 67,
+        "total_tokens": 4533,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 21
+        }
+      },
+      "elapsedMs": 14541,
+      "calledTools": [
+        "skill"
+      ]
+    },
+    {
+      "index": 2,
+      "startedAt": "2026-10-14T06:40:20.095Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 752,
+        "content": 0,
+        "toolArguments": 348
+      },
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 5929,
+        "completion_tokens": 347,
+        "total_tokens": 6276,
+        "prompt_tokens_details": {
+          "cached_tokens": 4448
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 168
+        }
+      },
+      "elapsedMs": 9018,
+      "calledTools": [
+        "read",
+        "read"
+      ]
+    },
+    {
+      "index": 3,
+      "startedAt": "2026-10-14T06:40:29.142Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 1254,
+        "content": 152,
+        "toolArguments": 128
+      },
+      "lastProgressAt": "2026-10-14T06:40:39.166Z",
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 10246,
+        "completion_tokens": 447,
+        "total_tokens": 10693,
+        "prompt_tokens_details": {
+          "cached_tokens": 5920
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 343
+        }
+      },
+      "elapsedMs": 19320,
+      "calledTools": [
+        "prepare_review_documents",
+        "read"
+      ]
+    },
+    {
+      "index": 4,
+      "startedAt": "2026-10-14T06:40:48.899Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 118,
+        "content": 0,
+        "toolArguments": 20
+      },
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 13147,
+        "completion_tokens": 56,
+        "total_tokens": 13203,
+        "prompt_tokens_details": {
+          "cached_tokens": 10240
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 27
+        }
+      },
+      "elapsedMs": 7546,
+      "calledTools": [
+        "review_basis"
+      ]
+    },
+    {
+      "index": 5,
+      "startedAt": "2026-10-14T06:40:56.724Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 365,
+        "content": 194,
+        "toolArguments": 539
+      },
+      "lastProgressAt": "2026-10-14T06:41:06.775Z",
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 14007,
+        "completion_tokens": 482,
+        "total_tokens": 14489,
+        "prompt_tokens_details": {
+          "cached_tokens": 13120
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 95
+        }
+      },
+      "elapsedMs": 11506,
+      "calledTools": [
+        "grep",
+        "grep",
+        "grep"
+      ]
+    },
+    {
+      "index": 6,
+      "startedAt": "2026-10-14T06:41:08.342Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 278,
+        "content": 104,
+        "toolArguments": 249
+      },
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 14819,
+        "completion_tokens": 267,
+        "total_tokens": 15086,
+        "prompt_tokens_details": {
+          "cached_tokens": 13984
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 85
+        }
+      },
+      "elapsedMs": 6038,
+      "calledTools": [
+        "read"
+      ]
+    },
+    {
+      "index": 7,
+      "startedAt": "2026-10-14T06:41:14.410Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 3762,
+        "content": 365,
+        "toolArguments": 4164
+      },
+      "lastProgressAt": "2026-10-14T06:42:15.616Z",
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 15805,
+        "completion_tokens": 3183,
+        "total_tokens": 18988,
+        "prompt_tokens_details": {
+          "cached_tokens": 14784
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 1212
+        }
+      },
+      "elapsedMs": 64566,
+      "calledTools": [
+        "save_review_batch"
+      ]
+    },
+    {
+      "index": 8,
+      "startedAt": "2026-10-14T06:42:19.263Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 2112,
+        "content": 44,
+        "toolArguments": 3516
+      },
+      "lastProgressAt": "2026-10-14T06:43:10.924Z",
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 19058,
+        "completion_tokens": 2510,
+        "total_tokens": 21568,
+        "prompt_tokens_details": {
+          "cached_tokens": 15776
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 500
+        }
+      },
+      "elapsedMs": 57785,
+      "calledTools": [
+        "save_review_batch"
+      ]
+    },
+    {
+      "index": 9,
+      "startedAt": "2026-10-14T06:43:17.616Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 294,
+        "content": 139,
+        "toolArguments": 1024
+      },
+      "lastProgressAt": "2026-10-14T06:43:39.296Z",
+      "finishReason": "tool_calls",
+      "usage": {
+        "prompt_tokens": 21460,
+        "completion_tokens": 728,
+        "total_tokens": 22188,
+        "prompt_tokens_details": {
+          "cached_tokens": 19040
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 70
+        }
+      },
+      "elapsedMs": 24599,
+      "calledTools": [
+        "finish_review_report"
+      ]
+    },
+    {
+      "index": 10,
+      "startedAt": "2026-10-14T06:43:42.752Z",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "tools": [
+        "ask_user_question",
+        "edit",
+        "finish_review_report",
+        "glob",
+        "grep",
+        "prepare_review_documents",
+        "read",
+        "read_image",
+        "review_basis",
+        "review_batch",
+        "save_review_batch",
+        "skill",
+        "write"
+      ],
+      "outputChars": {
+        "reasoning": 879,
+        "content": 350,
+        "toolArguments": 0
+      },
+      "lastProgressAt": "2026-10-14T06:43:52.862Z",
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 22226,
+        "completion_tokens": 464,
+        "total_tokens": 22690,
+        "prompt_tokens_details": {
+          "cached_tokens": 19040
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 258
+        }
+      },
+      "elapsedMs": 19720,
+      "calledTools": []
+    }
+  ],
+  "taskId": "t_236d560a039342a18d8582e15fb572d8",
+  "base": "http://127.0.0.1:58368",
+  "loginUrl": "http://127.0.0.1:58362/login",
+  "files": [
+    {
+      "name": "9.15定杭州银行企业智能财务分析模型及系统建设采购项目-----R-A-8 1-2-公开招标文件（软件服务类）（电子）(1)(1).docx",
+      "bytes": 1216917,
+      "sha256": "06d8fc5c804db45f8267991d256d7da0641aa7b245a2afa3ad3de87785ad5eaf"
+    },
+    {
+      "name": "万野.docx",
+      "bytes": 20964614,
+      "sha256": "737f177f35a8a9a3d3c257fa6d06ec043396fec1cdf56f6815e8fdd76d578307"
+    }
+  ],
+  "baseline": {
+    "session_id": "bid-5e78c08b-ddb2-454d-8d4b-3cf256e85784",
+    "requirements": 181,
+    "issues": 20,
+    "mode": "Unchanged genuine prior model judgments replayed through current citation validation; actual model only repairs tender citation scope. No synthetic model responses or business re-review."
+  },
+  "sessionId": "bid-0472aa4b-06df-4cd7-9c14-82a2ed76f005",
+  "replayedRequirements": 181,
+  "execution": {
+    "session_id": "bid-0472aa4b-06df-4cd7-9c14-82a2ed76f005",
+    "kind": "review",
+    "model": {
+      "provider": "lmstudio",
+      "model": "mlx-community/Qwen3.8-27B-4bit",
+      "maxTokens": 32768
+    },
+    "sections": [],
+    "state": "completed",
+    "questions": []
+  },
+  "reviewStatus": "reviewed",
+  "toolResults": [
+    {
+      "tool": "skill",
+      "isError": false,
+      "returnedTextChars": 2939
+    },
+    {
+      "tool": "read",
+      "isError": false,
+      "returnedTextChars": 6756
+    },
+    {
+      "tool": "read",
+      "isError": false,
+      "returnedTextChars": 1381
+    },
+    {
+      "tool": "prepare_review_documents",
+      "isError": false,
+      "returnedTextChars": 1131
+    },
+    {
+      "tool": "read",
+      "isError": false,
+      "returnedTextChars": 3108
+    },
+    {
+      "tool": "review_basis",
+      "isError": false,
+      "returnedTextChars": 1388
+    },
+    {
+      "tool": "grep",
+      "isError": false,
+      "returnedTextChars": 170
+    },
+    {
+      "tool": "grep",
+      "isError": false,
+      "returnedTextChars": 170
+    },
+    {
+      "tool": "grep",
+      "isError": false,
+      "returnedTextChars": 237
+    },
+    {
+      "tool": "read",
+      "isError": false,
+      "returnedTextChars": 1275
+    },
+    {
+      "tool": "save_review_batch",
+      "isError": true,
+      "returnedTextChars": 234
+    },
+    {
+      "tool": "save_review_batch",
+      "isError": false,
+      "returnedTextChars": 73
+    },
+    {
+      "tool": "finish_review_report",
+      "isError": false,
+      "returnedTextChars": 58
+    }
+  ],
+  "trace_note": "Source excerpts omitted from tracked metadata; full native events remain in isolated ignored data/dsh sessions.",
+  "originalAndUploadedBytesUnchanged": true,
+  "report": {
+    "requirements": 181,
+    "issues": 20,
+    "risk_types": {
+      "disqualification": 2,
+      "scoring": 4,
+      "confirmation": 8,
+      "suggestion": 6
+    },
+    "categories": [
+      {
+        "category": "结构事实",
+        "note": "已检查：招标公告（L44-L94）、投标人须知前附表（L113-L163）、投标人须知总则（L164-L243）、评标办法概述（L971-L1043）。未检查：无。"
+      },
+      {
+        "category": "资格要求",
+        "note": "已检查：招标公告投标人资格要求（L55-L64）、投标人须知前附表\"投标人不得存在的情形\"（L153-L155）、投标人须知其他（L209-L212）、附件2资格证明文件（L1086-L1099）。未检查：无。"
+      },
+      {
+        "category": "递交要求",
+        "note": "已检查：招标公告（L72-L88）、投标人须知前附表（L133-L144）、投标人须知3.2-4.4（L267-L306）、5.2不予接收（L313-L315）。未检查：无。"
+      },
+      {
+        "category": "商务技术要求",
+        "note": "已检查：三、交付要求（L395-L401）、四、业务需求全部（L402-L477）、五、技术需求全部（L478-L533）、SOW培训计划（L837-L845）、SOW维护服务（L846-L885）、合同乙方责任（L612-L638）、前附表\"其他重要事项\"（L161）。未检查：无。已对交付要求、业务需求、技术需求区段反查无遗漏。"
+      },
+      {
+        "category": "格式要求",
+        "note": "已检查：投标人须知3.2投标文件组成（L247-L266）、3.3编制（L267-L274）、前附表投标文件组成（L132）、附件1-16全部格式模板（L1066-L1499）。未检查：无。"
+      },
+      {
+        "category": "废标条款",
+        "note": "已检查：全文全部章节（L44-L1499，含标题反查）。反查词表：无效、否决、拒收、不予受理、不合格、取消、废标、作废、放弃、撤回、拒绝、不予接受、不被接收、失效、罚金、违约金、没收、无权参加、列入、实质性响应（20词全部反查）；自扩词：作废（未发现独立触发）、罚金（未发现）、拒收（已覆盖）、撤销（与撤回合并）。未检查：无不可读区段。"
+      },
+      {
+        "category": "评分标准",
+        "note": "已检查：评标办法总则（L973-L993）、评标程序（L994-L1001）、初步评审（L1002-L1020）、评标细则（L1036-L1061）、前附表评标办法（L146）。未检查：无。"
+      }
+    ],
+    "limitations": [
+      "图片占位内容（营业执照、保证金回单、ISO证书、软著、荣誉、项目组成员证件、合同原件）无法从文本验证，需人工查看原件确认",
+      "CA电子签章、平台加密、上传时序、解密时效等均为平台操作层面要求，无法从本地文档内容核验，需在递交前逐项确认操作已完成",
+      "上传文件格式要求PDF，当前源文件为DOCX，最终是否已转换待确认",
+      "多投标人相关废标条款（串标、弄虚作假、两份不同文件、选择性报价）无法从单一投标文件判断",
+      "相对评分项（到场时效优劣、增值服务数量、基准价偏差率）需所有投标人承诺后才能确定最终得分",
+      "设备保修2小时条款是否适用于本纯软件系统开发项目范围待招标人确认",
+      "ISO/软著/备案等资质证明为图片，无法从文本确认是否满足评分标准",
+      "业绩合同证明为图片且金额标注保密，无法验证是否包含招标要求的五页",
+      "杭州本地专职维护人员安排未在后文售后章节中单独设段明确承诺",
+      "对《银行保险机构信息科技外包风险监管办法》及甲方外包安全标准的遵循承诺未在全文中找到"
+    ]
+  },
+  "method": {
+    "name": "灵燕能力整合审查",
+    "source_commit": "de909f12572b4c469864b12255e26cc185ada7ec",
+    "version": "67e944dac22bd08c7368445f2ce115d4c5f0daf4dd7d4e50b783cd3cdc2e60f5"
+  },
+  "analysis": {
+    "validation": "[校验通过] analysis/ 共 8 件：coverage/出处引用（181 条）全部合规",
+    "requirements": 181,
+    "reused": false
+  },
+  "audit": {
+    "batches": 27,
+    "requirements": 181,
+    "assessments": {
+      "structure:0:4": "投标封面载明项目名称\"杭州银行企业智能财务分析模型及系统建设采购项目\"，与招标一致。",
+      "structure:0:5": "投标封面载明项目编号\"XM_2026NHY00593\"，与招标一致。",
+      "structure:0:6": "投标封面载明招标人\"杭州银行股份有限公司\"，与招标一致。",
+      "structure:0:7": "代理机构信息属招标背景信息，投标方无需响应。",
+      "structure:0:8": "招标方式属招标背景信息，投标方无需响应。",
+      "structure:0:9": "开标时间属招标背景信息，投标方无需响应。",
+      "structure:0:10": "开标地点属招标背景信息，投标方无需响应。",
+      "structure:0:11": "投标函载明\"本投标文件有效期为自投标文件递交截止之日起 90 个日历日（如中标，投标文件有效期同合同有效期）\"，与招标要求一致。",
+      "structure:0:12": "投标文件全文为中文撰写，投标函等章节均使用中文，与招标要求一致。",
+      "structure:0:13": "招标规定投标截止时间以最终发布的招标公告为准，具体日期未在招标文件中固定。投标封面日期为2026年10月15日，无法从文本判断是否逾期。",
+      "structure:0:14": "澄清截止属招标背景信息，投标方无需响应。",
+      "structure:0:15": "文件获取截止属招标背景信息，投标方无需响应。",
+      "structure:0:16": "投标人已设置投标保证金缴纳凭证章节，但内容为图片占位，无法从文本确认实际到账金额和日期是否符合要求。",
+      "requirements-qualification:0:4": "资格证明文件\"营业执照\"章节已设置，但实际营业执照内容为图片占位，无法从文本验证注册地、法人资格等信息。",
+      "requirements-qualification:0:5": "承诺函载明\"具有健全的财务会计制度，有依法缴纳税收和社会保障资金的良好记录\"，与招标要求一致，且使用附件2-1格式。",
+      "requirements-qualification:0:6": "承诺函载明近3年内未被列入失信被执行人、重大税收违法、政府采购严重违法失信、严重违法失信名单，且未被五大银行总行官网列入不良行为供应商，与招标要求完全一致。",
+      "requirements-qualification:0:7": "投标人已单独设置禁入名单自查章节，载明\"未被列入杭州银行官网公示的禁入名单\"，与招标要求一致。",
+      "requirements-qualification:0:8": "承诺函载明不存在已知不合法情形及第三方知识产权争议，侵权指控由投标人承担全部责任，与招标要求一致。",
+      "requirements-qualification:0:9": "承诺函载明不转包、不存在联合体投标、未经招标人同意不分包，与招标要求一致。",
+      "requirements-qualification:0:10": "承诺函载明不存在与负责人为同一人或存在控股管理关系的其他单位参加本项目投标，与招标要求一致。",
+      "requirements-qualification:0:11": "投标人已单独设置章节承诺符合国家相关法律、法规规定的其他要求，与招标要求一致。",
+      "requirements-qualification:0:12": "服务原厂商声明明确载明\"我公司为杭州银行企业智能财务分析模型及系统建设采购项目服务的原厂商，特此声明\"，并附公司基本情况，证明服务由投标人自身提供。",
+      "requirements-qualification:0:13": "服务原厂商声明证明投标人自身为原厂商，但招标要求涵盖资格、信誉、荣誉、业绩、企业认证等全部证明材料，后续需逐批确认业绩/荣誉等材料归属。当前已读范围内不能确认全部材料均为投标人自身拥有。",
+      "requirements-qualification:0:14": "亲属关系承诺书明确勾选\"不存在关联关系\"，披露范围涵盖法定代表人/负责人、实际控制人、持股10%及以上个人股东与杭州银行员工的直系亲属关系，与招标要求对应。",
+      "requirements-qualification:0:15": "招标列明串通投标、弄虚作假、被暂停资格等多种不得存在情形。投标人承诺函覆盖不转包/不联合体/不关联关系等部分情形，亲属关系承诺书覆盖利害关系，但未逐一声明不串通/不弄虚作假等全部情形。这些情形属评价时发现性违规，投标文本中无法直接确认全部不存在。",
+      "requirements-submission:0:4": "招标要求在投标截止前将电子加密投标文件成功上传递交至杭州银行电子招投标平台。此为平台操作流程，无法从本地文档内容验证是否已完成上传及上传时间是否在截止之前。",
+      "requirements-submission:0:5": "招标要求通过平台编制并加密投标文件，未加密则拒收。此为平台操作要求，无法从文档内容验证是否已正确加密。",
+      "requirements-submission:0:6": "招标要求开标后60分钟内完成在线解密，超出时间视为撤回。此为开标现场操作要求，无法从文档内容验证。",
+      "requirements-submission:0:7": "招标要求使用CA数字证书加盖单位电子印章。投标文档中未出现CA或电子印章相关字样，此操作在平台层面完成，无法从文档文本确认是否已加盖。",
+      "requirements-submission:0:8": "投标函载明“本投标文件有效期为自投标文件递交截止之日起 90 个日历日（如中标，投标文件有效期同合同有效期）”，与招标附件3投标函模板一致。",
+      "requirements-submission:0:9": "招标要求保证金20000元在投标截止前递交。投标人已设置保证金缴纳凭证章节，但内容为图片占位，无法验证金额和到账时间。",
+      "requirements-submission:0:10": "招标要求电子加密投标文件在线上传递交一份。此为平台操作流程，无法从文档内容验证份数。",
+      "requirements-submission:0:11": "招标要求中标人提供与电子投标文件内容一致的纸质投标文件贰份，在签订合同前分别给代理机构和招标人。此为中标后义务，非投标文档本身的响应内容。",
+      "requirements-submission:0:12": "投标文件全文未包含任何备选（替代）方案，仅提供单一投标方案，符合招标要求。",
+      "requirements-submission:0:13": "招标要求投标截止后递交的将被拒收。此为平台操作流程，无法从文档内容验证递交时序。",
+      "requirements-submission:0:14": "投标文件已编制完整目录，包含全部章节层级。招标要求“上传的文件格式为PDF”，当前源文件为DOCX格式，最终是否转换为PDF并按平台要求递交待确认。三个组成部分（资格/资信技术/报价）为逻辑章节划分，合并于单一文件不违反编制顺序要求。",
+      "requirements-submission:0:15": "招标要求通过杭州银行电子招投标平台编制并加密。此为平台操作流程，无法从文档内容验证。",
+      "requirements-business:0:4": "交付要求章节明确复述\"8个月内完成全部系统上线，其中财务分析模型、财务舞弊模型在6个月内完成\"并标注\"是否满足：是\"。项目实施计划章节提供三阶段里程碑，第二阶段（第3-6月）完成核心模型上线，第三阶段（第7-8月）全系统上线，与招标要求匹配。",
+      "requirements-business:0:5": "交付要求章节载明\"投标人为招标人实施本项目提供的原型软件产品\"，标注\"是否满足：是\"。",
+      "requirements-business:0:6": "交付要求章节载明文档要求，标注\"是否满足：是\"。后续项目交付物清单和成果交付章节有进一步说明。",
+      "requirements-business:0:7": "交付要求章节载明\"杭州银行数据中心，开发环境、测试环境、生产环境双活\"，标注\"是否满足：是\"。技术解决方案章节亦明确系统部署于杭州银行数据中心，开发、测试、验收、生产环境相互隔离，生产环境双活。",
+      "requirements-business:0:8": "交付要求章节载明\"提供指导和培训，并提供相关培训材料\"，标注\"是否满足：是\"。培训计划章节和成果交付与知识转移章节有进一步展开。",
+      "requirements-business:0:9": "交付要求章节载明\"系统终验合格后，乙方须提供为期12个月的维保服务\"，标注\"是否满足：是\"。售后支持章节有分级响应和到场时效的详细说明。",
+      "requirements-business:0:10": "投标文件对报表完整性自动校验要求完整响应，标注\"是否满足：是\"，并详细说明系统内置校验引擎，支持多格式解析、多期交叉校验、自动标记异常、闭环管理等。",
+      "requirements-business:0:11": "投标文件对会计科目勾稽关系核查要求完整响应，标注\"是否满足：是\"，详细说明系统内置风控勾稽规则，覆盖表内/表间/跨期校验，支持行业差异化适配和规则版本管理。",
+      "requirements-business:0:12": "投标文件完整响应五大维度财务指标要求，标注\"是否满足：是\"，说明系统内置指标公式库自动测算30+类指标，覆盖盈利、偿债、营运、发展、现金流五大维度，支持杜邦分析、行业基准对比、可视化展示。",
+      "requirements-business:0:13": "投标文件响应历史比对与经营趋势分析要求，标注\"是否满足：是\"，说明支持多期纵向对比、自动绘制趋势曲线、时序预判经营走势，对大幅波动/趋势突变自动触发异常预警。",
+      "requirements-business:0:14": "投标文件响应行业规则自动适配与迭代要求，标注\"是否满足：是\"，说明按《国民经济行业分类》建立20个门类97个大类体系，适配不同行业规则、基准值和合理区间，支持版本管理和灰度发布。",
+      "requirements-business:0:15": "投标文件响应财务分析报告智能生成要求，标注\"是否满足：是\"，说明采用\"指标计算引擎+大模型RAG+报告模板引擎\"三层架构，报告包含六大章节，以可视化图表和文字结论结合呈现。",
+      "requirements-business:0:16": "投标文件响应财务分析模型智能调优要求，标注\"是否满足：是\"，说明依托闭环迭代大模型实现专家与智能体多轮对话调优，支持工作流编排和Skill两种形式，形成完整调优链路。",
+      "requirements-business:0:17": "投标文件完整响应传统财务舞弊识别模型要求，标注\"是否满足：是\"，详细说明四层混合架构覆盖六大类舞弊行为（收入虚增、利润操纵、资产虚增、负债隐匿、现金流造假、成本费用不实），每类均有具体规则示例。",
+      "requirements-business:0:18": "投标文件响应证据链自动推理生成要求，标注\"是否满足：是\"，说明整合五类信息源，生成\"结论→子结论→证据→原始数据\"四级证据链，以图数据库存储，支持逐级下钻溯源和原文PDF定位。",
+      "requirements-business:0:19": "投标文件响应新型舞弊行为迭代智能挖掘要求，标注\"是否满足：是\"，说明依托大模型全网学习最新舞弊案例和监管通报，自动提炼新型特征，形成\"发现—提炼—验证—发布—回溯\"闭环。",
+      "requirements-business:0:20": "投标文件完整响应企业健康诊断三项要求（多维度综合研判、佐证资料、智能诊断报告），均标注\"是否满足：是\"。说明系统覆盖经营成长性、盈利质量、关联交易风险等维度，输出财报可信度评分、综合风险评级、发展潜力评估，支持一键生成适配行内模板的报告。",
+      "requirements-business:0:21": "投标文件完整响应闭环迭代大模型五大核心环节（对话交互、过程记录、智能整理、提炼萃取、输出建议），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:22": "投标文件完整响应模型应用展示五项功能（智能财务分析、舞弊检测、健康度诊断、报告管理、记录查询），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:23": "投标文件完整响应规则模型管理四项要求（参数配置、应用监测、模型调优、版本管理），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:24": "投标文件完整响应智能体管理三项要求（调用性能监测、应用效果监测六维度、智能化监测报告），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:25": "投标文件完整响应信息管理要求（四库建设+数据权限管理），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:26": "投标文件完整响应数据接入管理三项要求（定时更新、质量管控、安全管理），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:27": "投标文件完整响应运维服务管理两项要求（系统运营监测7×24、模型运营监测定期评估），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:28": "投标文件明确承诺\"我方将派驻算法、产品、技术专项人员，与贵行业务、风控、技术人员组建长期固定联合工作组\"，与招标要求一致，标注\"是否满足：是\"。",
+      "requirements-business:0:29": "投标文件完整响应全流程共创机制六项要求（前期需求共创、样本规则共创、模型联合共创、功能开发测试共创、上线试运行、后续迭代支持），均标注\"是否满足：是\"并附详细说明。",
+      "requirements-business:0:30": "投标文件响应共创交付要求，标注\"是否满足：是\"，承诺全部成果知识产权归属本行，项目结束交付全套文档及源代码和代码检释；知识转移培训按对象分层实施并设三个月陪跑期。",
+      "requirements-business:0:31": "技术需求章节标注\"是否满足：是\"，说明系统选型遵循杭州银行信创和技术规范，非标准组件使用前报行方确认；共创交付章节明确承诺\"交付全套设计、开发、运维、模型研发文档及共研模型与系统的源代码和代码检释\"。",
+      "requirements-business:0:32": "技术需求章节复述系统选型部署基础规则要求并标注\"是否满足：是\"，说明非标准组件使用前报行方确认；亲属关系承诺书后附系统选型部署基础规则响应表，逐项确认适配。",
+      "requirements-business:0:33": "技术需求章节标注\"是否满足：是\"，说明\"生产环境按照行方要求采用双活或集群部署，结合负载均衡、健康检查和故障自动切换，关键服务支持横向扩展\"，满足多节点多活和横向扩展要求。",
+      "requirements-business:0:34": "技术需求章节标注\"是否满足：是\"，说明\"外部访问通过行内代理统一控制\"，满足代理访问要求，不允许应用直接面向互联网。",
+      "requirements-business:0:35": "技术需求章节标注\"是否满足：是\"，说明生产环境采用双活或集群部署，结合负载均衡、健康检查和故障自动切换，关键服务支持横向扩展；技术解决方案亦明确双活或集群方式保障可用性，满足无单点架构要求。",
+      "requirements-business:0:36": "技术需求章节标注\"是否满足：是\"，说明行内大模型服务异常时系统通过超时、重试、熔断和规则兖底处理，区分了应用层灾备与大模型故障降级策略。",
+      "requirements-business:0:37": "技术需求章节标注\"是否满足：是\"，说明\"提供启停、部署、升级脚本及日志归档、临时文件清理机制\"，满足脚本化要求。",
+      "requirements-business:0:38": "技术需求章节标注\"是否满足：是\"，说明\"生产环境按照行方要求采用双活或集群部署，结合负载均衡、健康检查和故障自动切换\"，满足高可用架构及自动化管理机制要求。",
+      "requirements-business:0:39": "技术需求章节标注\"是否满足：是\"，说明通信和敏感数据存储使用国密算法，技术解决方案章节亦明确系统结合行内统一身份认证、权限控制、国密加密与审计要求设计安全机制。",
+      "requirements-business:0:40": "技术需求章节标注\"是否满足：是\"，说明\"通信和敏感数据存储按要求使用国密算法\"，满足国密加密落地要求。",
+      "requirements-business:0:41": "技术需求章节标注\"是否满足：是\"，说明\"开发、测试、验收和生产环境分别隔离，配置、提示词与知识库独立管理\"，满足多套环境物理及逻辑隔离要求。",
+      "requirements-business:0:42": "技术平台章节标注\"是否满足：是\"，说明\"平台名称、项目名称采用中性命名\"，满足不得出现公司名字的要求。",
+      "requirements-business:0:43": "技术平台章节标注\"是否满足：是\"，说明所用第三方软件遵循合法授权要求；投标文件附第三方软件使用承诺书，声明\"在本产品中未使用第三方软件\"，清单为空。",
+      "requirements-business:0:44": "技术平台章节标注\"是否满足：是\"，说明\"对外接口采用HTTP(S)、REST/JSON等开放协议，结合业务流水号及幂等校验防止重复交易\"，满足重复交易去重要求。",
+      "requirements-business:0:45": "技术平台章节标注\"是否满足：是\"，说明管理平台支持操作员及角色权限管理，智能体会话、业务数据和操作记录按权限隔离，关键操作保留审计日志。",
+      "requirements-business:0:46": "技术平台章节标注\"是否满足：是\"，说明\"配套提供性能测试、系统监控和告警功能\"，满足压力测试和耐力测试要求。",
+      "requirements-business:0:47": "技术平台章节标注\"是否满足：是\"，说明提供性能测试和系统监控告警功能覆盖应用状态、接口耗时、模型输入输出、工具调用及失败情况；技术解决方案章节进一步承诺按合同交付设计、开发、运维、使用及模型研发相关文档，数据库设计遵循杭州银行规范。",
+      "requirements-business:0:48": "技术平台章节标注\"是否满足：是\"，说明\"提供提示词模板、知识库和智能体流程的可视化配置功能，支持版本管理及无需代码发布的日常业务调整\"，满足可视化运营配置要求。",
+      "requirements-business:0:49": "开发语言和工具章节标注\"是否满足：是\"，详细说明采用Java/Spring Boot开发业务服务，Python实现模型算法，前端采用Vue；开发工具包括Axure、IntelliJ IDEA、VS Code、Git、Maven、Postman、JMeter等。",
+      "requirements-business:0:50": "网络和安全章节标注\"是否满足：是\"，说明系统提供流量控制和并发管理机制，支持限流策略；建立完善的安全管理和审计机制，记录全维度审计日志。",
+      "requirements-business:0:51": "接口技术章节标注\"是否满足：是\"，详细说明系统采用RESTful API架构、HTTPS协议和JSON格式，接口具备超时控制、失败重试、服务熔断、访问限流、请求幂等及异常处理能力，敏感字段脱敏，提供Mock测试能力。",
+      "requirements-business:0:52": "大模型技术要求章节标注\"是否满足：是\"，说明\"大模型应用统一调用杭州银行现有基座模型，不引入外部模型服务\"，满足不另外采购或引入外部模型的要求。",
+      "requirements-business:0:53": "大模型技术要求章节标注\"是否满足：是\"，说明项目联合行方构建脱敏评测样本；结合数据安全章节说明传输链路全程加密、国密算法落地、敏感数据脱敏展示，满足敏感数据安全要求。",
+      "requirements-business:0:54": "大模型技术要求章节标注\"是否满足：是\"，说明\"智能体支持任务拆解、工具调用、多轮会话和中断处理\"，满足智能体核心能力要求。",
+      "requirements-business:0:55": "大模型技术要求章节标注\"是否满足：是\"，说明\"分析结论关联数据来源\"，满足结论溯源要求；技术解决方案章节亦明确关键分析结论提供数据来源、规则依据和原始材料查询。",
+      "requirements-business:0:56": "大模型技术要求章节标注\"是否满足：是\"，说明\"模型异常时执行熔断降级\"，满足大模型服务依赖熔断降级机制要求。",
+      "requirements-business:0:57": "大模型技术要求章节标注\"是否满足：是\"，说明\"提示词、Skill及知识库支持版本管理、环境隔离、测试与回滚\"，满足版本管理、灰度发布、回滚和环境隔离要求。",
+      "requirements-business:0:58": "大模型技术要求章节标注\"是否满足：是\"；智能体管理章节说明\"全过程合规评测：对智能体平台/agent的创建、上线、应用全过程开展合规评测，评测记录留痕可查，确保符合监管要求\"，满足合规校验要求。",
+      "requirements-business:0:59": "大模型技术要求章节标注\"是否满足：是\"，说明\"项目联合行方构建脱敏评测样本，评估财务指标计算准确率、舞弊线索识别精确率和召回率、模型幻觉率、答案合规率等\"，满足样本构造机制配合要求。",
+      "requirements-business:0:60": "大模型技术要求章节标注“是否满足：是”，说明项目联合行方构建脱敏评测样本并评估各项指标，满足样本构造配合要求。",
+      "requirements-business:0:61": "大模型技术要求章节标注“是否满足：是”，说明评估范围覆盖财务指标计算准确率、舞弊线索识别精确率和召回率、模型幻觉率、答案合规率等，满足自动化评估要求。",
+      "requirements-business:0:62": "大模型技术要求章节标注“是否满足：是”，说明评估指标包含财务指标计算准确率、舞弊线索识别精确率和召回率、模型幻觉率、答案合规率等，具体阈值以双方确认的样本和验收方案为准。",
+      "requirements-business:0:63": "大模型技术要求章节标注“是否满足：是”，说明“按要求交付共研开发成果的源代码、注释和技术文档，行内既有基座模型源码不在交付范围内”；成果交付与知识转移章节进一步承诺“项目结束后完整交全套设计/开发/运维/模型文档”。",
+      "requirements-business:0:64": "售后支持章节明确提供7×24小时技术支持热线和分级响应机制；增值服务章节承诺“免费运维期由12个月延长至18个月”；落地保障措施章节亦承诺“上线后12个月免费运维”，超出招标12个月最低要求。",
+      "requirements-business:0:65": "招标文件包含两条现场时效要求：一是“设备保修、维修请求后2小时内抵达现场”（固定时效）；二是软件故障响应表使用X占位符供投标人填入（四级故障分类）。投标售后支持章节承诺分级响应（一级30分/2h、二级2h/8h、三级4h/24h）和现场到达5小时，系对软件故障X表的填写。设备保修2小时条款是否适用于本纯软件系统开发项目，以及其优先级与软件故障条款的关系，需确认适用范围。",
+      "requirements-business:0:66": "招标文件要求“乙方在距离杭州最近的范围内安排系统维护人员”。投标公司注册地为杭州市萧山区，项目组成员表显示3名成员均为“现场”服务方式，售后章节承诺5小时现场到达。但未在售后章节单独设段明确承诺“在距离杭州最近范围内安排专职维护人员”。",
+      "requirements-business:0:67": "整份投标文件对培训要求已作综合回应：报价一览表承诺“上述报价为完全满足招标人技术、服务、合同要求的所有费用”（含培训成本）；共创交付章节承诺按对象分层开展常态化知识转移培训（业务/风控/技术三层，理论+实操+跟岗，三个月陪跑期）；落地保障提及操作/技术/运维培训；成果交付承诺搭建分层实操式知识转移培训体系；技术解决方案承诺提供培训服务。招标本身即要求“根据实际进度双方商定具体日程安排”，排期属双方协商事项。建议将各章节培训方案在培训计划章节整合统一表述以提高可读性。",
+      "requirements-business:0:68": "整份投标文件对培训条件已综合回应：报价一览表承诺“上述报价为完全满足招标人技术、服务、合同要求的所有费用”（培训费用含在总价内，即免费）；共创交付章节承诺按对象分层开展常态化知识转移培训、每期配套课件/手册/录播、三个月陪跑期；成果交付章节承诺搭建分层实操式培训体系；技术解决方案承诺提供培训服务。招标本身要求“根据实际进度双方商定具体日程安排”，排期属协商事项。建议将各章节承诺在培训计划章节统一表述以提高可读性。",
+      "requirements-business:0:69": "经检索全文，投标文件未出现对“严格遵照甲方外包开发安全标准和变更控制管理流程”的明确响应，也未说明如何保证数据的机密性和完整性。",
+      "requirements-business:0:70": "经检索全文，投标文件未出现对《银行保险机构信息科技外包风险监管办法》的承诺，也未表明愿意接受银行监管部门信息安全检查和审核。",
+      "requirements-format:0:17": "投标文件包含资格证明文件章节（含营业执照、承诺函、禁入名单自查、法律合规、服务原厂商声明、授权书、项目小组），满足组成要求。",
+      "requirements-format:0:18": "投标文件包含报价一览表章节，满足组成要求。",
+      "requirements-format:0:19": "投标文件包含报价清单明细章节，满足组成要求。",
+      "requirements-format:0:20": "投标文件包含评分索引表章节，满足组成要求。",
+      "requirements-format:0:21": "投标文件包含投标函章节，满足组成要求。",
+      "requirements-format:0:22": "投标文件包含法定代表人资格证明书及授权委托书章节，满足组成要求。",
+      "requirements-format:0:23": "投标文件包含投标人廉洁从业承诺书章节，满足组成要求。",
+      "requirements-format:0:24": "投标文件包含投标人基本状况一览表和企业介绍章节，满足组成要求。",
+      "requirements-format:0:25": "投标文件包含投标人同类业绩情况及证明材料章节，满足组成要求。",
+      "requirements-format:0:26": "投标文件包含投标人商务及技术偏离表章节，满足组成要求。",
+      "requirements-format:0:27": "投标文件包含投标保证金缴纳凭证章节（图片形式），满足组成要求。",
+      "requirements-format:0:28": "投标文件包含项目实施方案及服务措施章节（含售后支持、增值服务、培训计划、项目成果、需求说明、实施计划、联合共创、成果交付与知识转移、技术解决方案），满足组成要求。",
+      "requirements-format:0:29": "投标文件包含第三方软件使用承诺书章节，满足组成要求。",
+      "requirements-format:0:30": "投标文件包含亲属关系承诺书章节，满足组成要求。",
+      "requirements-format:0:31": "投标文件包含系统选型部署基础规则响应章节，满足组成要求。",
+      "requirements-format:0:32": "投标文件包含服务原厂商声明章节，满足组成要求。",
+      "requirements-format:0:33": "投标文件包含项目小组成员情况表，含姓名、岗位、角色、参与阶段、现场/远程、工作年限、学历、证书、同类项目经验等字段，满足模板要求。",
+      "requirements-format:1:38": "投标文件包含封面，含招标方名称、项目名称、投标文件标题、项目编号、投标人名称及盖章、签字、日期，满足模板要求。",
+      "requirements-format:1:39": "投标文件包含声明/承诺函，内容涵盖财务会计制度、信用合规、知识产权、不转包分包、无关联竞标等承诺，满足模板要求。",
+      "requirements-format:1:40": "投标文件包含服务原厂商声明，含公司基本信息（名称、地址、注册日期、实收资本、资产负债表、负责人、经营范围）及签章，满足模板要求。",
+      "requirements-format:1:41": "投标文件包含授权书章节，因投标人为服务原厂商，授权书格式自理，已包含授权委托内容。",
+      "requirements-format:1:42": "投标文件包含项目小组成员情况表，与模板字段一致，满足格式要求。",
+      "requirements-format:1:43": "投标文件包含投标函，含项目名称、编号、报价确认、有效期90天、履约承诺、发票承诺等内容，满足模板要求。",
+      "requirements-format:1:44": "投标文件包含报价一览表，含含税报价、合同期限等内容，满足模板要求。",
+      "requirements-format:1:45": "投标文件包含报价清单明细表，含软件产品费、实施服务费等分行项，满足模板要求。",
+      "requirements-format:1:46": "投标文件包含评分索引表，满足模板要求。",
+      "requirements-format:1:47": "投标文件包含法定代表人资格证明书及授权委托书，满足模板要求。",
+      "requirements-format:1:48": "投标文件包含投标人廉洁从业承诺书，涵盖十条承诺内容，满足模板要求。",
+      "requirements-format:1:49": "投标文件包含投标人基本状况一览表，含单位名称、法定代表人、地址、成立时间、资质、人员、股权结构等内容，满足模板要求。",
+      "requirements-format:1:50": "投标文件包含投标人业绩情况表，满足模板要求。",
+      "requirements-format:1:51": "投标文件包含商务及技术偏离表，满足模板要求。",
+      "requirements-format:1:52": "投标文件包含第三方软件使用承诺书，声明未使用第三方软件并附空清单，满足模板要求。",
+      "requirements-format:1:53": "投标文件包含亲属关系承诺书，勾选“不存在关联关系”，含信息变更告知义务和违约责任条款，满足模板要求。",
+      "disqualification:0:4": "投标文件包含完整资格证明文件（营业执照、承诺函、禁入名单自查、法律合规、服务原厂商声明、授权书、项目小组），满足投标资格条件。",
+      "disqualification:0:5": "投标文件包含投标保证金缴纳凭证章节，但以图片形式呈现（![](图片)），无法从文本验证保证金金额、缴纳方式和有效期等细节。",
+      "disqualification:0:6": "投标文件中营业执照显示投标人为浙江万野科技发展有限公司，承诺函及项目主体一致，未出现实质性变更情形。",
+      "disqualification:0:7": "本次审查仅涉及一份投标文件，无法判断是否存在两份以上内容不同的投标文件。",
+      "disqualification:0:8": "投标文件包含法定代表人资格证明书及授权委托书（含法定代表人身份信息和授权委托内容），满足要求。",
+      "disqualification:0:9": "投标文件各章节均设有签字/盖章栏位，但解析文档中无法验证实际签章是否已加盖（图片形式）。需人工核验实物文件。",
+      "disqualification:0:10": "投标文件包含全部17个必须章节（资格证明文件、报价一览表、报价清单明细、评分索引表、投标函、法定代表人证明书、廉洁承诺书、基本状况、业绩、偏离表、保证金、项目实施方案、第三方软件承诺书、亲属关系承诺书、系统选型部署规则、服务原厂商声明等），未发现明显漏项。",
+      "disqualification:0:11": "招标文件未发布补充文件，无补充文件需要响应。由于无法确认招标过程中是否有口头或其他形式的补充通知，标注为待确认。",
+      "disqualification:0:12": "投标文件包含完整的报价一览表，含项目名称、编号、固定总价258万元、合同期限8个月、税率13%、投标人签章，内容完整可辨认。",
+      "disqualification:0:13": "投标总价258万元，分项报价见报价清单明细。是否低于其他投标人报价或明显不合理需评标时与其他投标人横向比较，单一文件无法判定。",
+      "disqualification:0:14": "投标报价258万元，未超出最高限价260万元；报价一览表注明“完全满足招标人技术、服务、合同要求的所有费用”，报价清单明细含软件产品费和实施服务费分项，覆盖全部招标内容。",
+      "disqualification:0:15": "招标文件带“▲”条款主要涉及交付要求（时间、使用权、文档、环境、知识转移、维保），投标文件对“▲三、交付要求”章节整体标注“是否满足：是”，各项均有详细响应说明。",
+      "disqualification:0:16": "投标文件对各模型需求、系统功能、数据运维、联合共创、技术需求等章节均标注“是否满足：是”并提供详细说明，未出现无法满足招标范围或技术规格的情形。",
+      "disqualification:0:17": "单一投标文件无法判断是否附有招标人不能接受的条款，需评标小组确认。",
+      "disqualification:0:18": "单一投标文件无法判断是否存在串标、抬标或弄虚作假情况，需评标时结合多家投标文件综合判断。",
+      "disqualification:0:19": "单一投标文件无法判断是否违反法律法规或构成重大偏离，需评标小组综合认定。",
+      "disqualification:0:20": "投标文件为单一完整方案，未包含任何备选（替代）方案，不存在递交备选方案的情形。",
+      "disqualification:0:21": "报价一览表包含固定总价258万元，报价清单明细含软件产品费和实施服务费，内容完整，未发现缺漏项。",
+      "disqualification:0:22": "投标报价为固定总价258万元，未附加任何条件或选择性报价选项，不存在带附加条件的报价。",
+      "disqualification:0:23": "投标截止时间后送达与否无法从文件内容判断，需核实实际递交时间。",
+      "disqualification:0:24": "投标文件是否按要求加封无法从文档内容判断，需核实实际递交时的封装情况。",
+      "disqualification:0:25": "是否按规定通过电子招投标平台加密上传无法从文档内容判断，需核实平台递交记录。",
+      "disqualification:0:26": "投标人在投标有效期内是否撤销投标文件无法从文件内容判断。",
+      "disqualification:0:27": "单一投标文件无法判断是否存在与其他投标人串标情形，需评标时结合多家投标文件综合判断。",
+      "disqualification:0:28": "单一投标文件无法判断是否存在伪造许可证件、虚假财务状况/业绩/信用等弄虚作假行为，需评标时核实原件。",
+      "disqualification:0:29": "投标文件对招标需求中所有带“▲”的实质性要求均标注“是否满足：是”并提供详细响应说明，商务及技术偏离表亦未列出任何负偏离项，不存在▲条款负偏离情形。",
+      "disqualification:0:30": "是否所有投标均明显高于市场价格需评标时综合判断，单一文件无法确定。",
+      "disqualification:0:31": "投标总价258万元未超过最高限价260万元，不存在超最高限价情形。",
+      "disqualification:0:32": "单一投标文件无法判断是否存在影响招标公正的违法违规行为。",
+      "disqualification:0:33": "单一投标文件无法判断评标结果是否会否决所有投标。",
+      "disqualification:0:34": "投标文件包含声明/承诺函，承诺内容涵盖财务会计制度、信用合规、知识产权、不转包分包、无关联竞标等，承诺事项明确具体。是否真实有效需评标时核实。",
+      "disqualification:0:35": "中标后是否拒签合同属于未来行为，无法从投标文件中判断。投标函中已承诺“若我方为中标人，将按投标文件内容和承诺签订合同”。",
+      "disqualification:0:36": "中标后是否在规定时间内缴纳履约保证金属于未来行为，无法从投标文件判断。投标函中已承诺按投标文件内容和承诺签订合同。",
+      "disqualification:0:37": "单一投标文件无法判断是否提供虚假信息，需评标时核实。投标函中承诺“信息真实、准确和有效”。",
+      "disqualification:0:38": "评分标准中的截图条款为条件句：“如有要求提供产品功能截图或技术参数截图等相关证明材料的”才视为负偏离；经核查招标文件全文，未发现单独的产品功能/参数截图提交要求。偏离表标注无负偏离，技术响应以文字描述为主。单一文件无法判断证明材料真实性，需评标时验证。",
+      "evaluation:0:4": "投标报价为固定总价258万元，未超过最高限价260万元，报价形式符合评分规则。具体得分取决于与其他投标人的相对价格比较，单一文件无法确定最终分值。",
+      "evaluation:0:5": "招标要求提供ISO质量管理体系、ISO信息安全管理体系、ISO信息技术服务管理体系三项认证证书复印件及全国认证认可信息公共服务平台查询截图，材料不全不计分。投标文件“证书”章节为图片占位，基本状况表“资质或认证情况”栏为空，无法从文本确认是否提供了三项ISO认证及查询截图。",
+      "evaluation:0:6": "招标要求：①大模型/智能体/AI/意图识别相关软著每项1分满分4分；②互联网信息服务算法备案证明3分+生成式AI服务备案证明3分。投标文件“软著”章节为图片占位，企业介绍提及“二十多项软件著作权”但未明确是否与本项目核心能力匹配；全文未提及互联网信息服务算法备案或生成式AI服务备案。",
+      "evaluation:0:7": "招标要求2023年1月1日起至今具备智能财务分析模型/财务舞弊识别模型/大模型/智能体/AI智能体平台实施落地项目，每提供1个得1分满分10分。投标业绩表列出3个项目，其中仅1个在2023年范围内（宁波鄞州农商行 2023.10），另2个分别为2021年和2020年。合同内容均为“企业数据、财务分析系统”，合同证明材料为图片形式。",
+      "evaluation:0:8": "招标原文要求“拟派项目经理应以项目经理身份承担过大模型开发或同类技术服务项目的”。“或”表明大模型开发和同类技术服务均属可接受范围。投标PM徐飞航经验为两个农商行财务分析模型项目（10人团队、项目经理、全程），与本项目“企业智能财务分析模型”同属财务分析模型领域，可视为同类技术服务，但是否被评标认定需确认。团队方面仅列出3人且岗位均为“技术人员”，未满足“不少于4人”的最低数量要求，公司技术人员总数3人。",
+      "evaluation:0:9": "投标文件技术解决方案章节完整覆盖需求理解与整体方案、财务分析能力、财务舞弊识别与证据链、企业健康度诊断、闭环迭代大模型&智能体、模型系统监测运维六个子项，均标注“是否满足：是”并提供详细说明，方案内容完整。此项为主观评分，最终得分由评审专家判断。",
+      "evaluation:0:10": "投标文件对各业务需求和技术需求章节均标注“是否满足：是”，商务及技术偏离表未列出任何负偏离项。评分标准中的截图条款为条件句：“如有要求提供产品功能截图或技术参数截图等相关证明材料的”才视为负偏离；经核查招标文件全文，未发现单独的产品功能/参数截图提交要求，该条件触发前提不成立。",
+      "evaluation:0:11": "投标文件包含项目实施计划（8个月总工期、6个月模型上线、里程碑计划、保障措施）、联合共创机制（团队配置、流程分工、协同机制、工具交付、保障措施）和成果交付与知识转移（知识产权归属、文档交付、分层培训、陪跑期），三个子项均完整。此项为主观评分，最终得分由评审专家判断。",
+      "evaluation:0:12": "售后支持章节承诺分级响应（一级30分/2h、二级2h/8h、三级4h/24h），现场到达5小时，7×24热线；增值服务承诺免费运维期12月延长至18月及线上学习平台课程永久回看。评分按到场时效优劣和增值服务数量相对打分，最终得分取决于与其他投标人的比较，单一文件无法确定最终分值。"
+    }
+  },
+  "checks": [
+    {
+      "name": "万野.docx · 灵燕正文检查",
+      "status": "warning",
+      "detail": "T1R5：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT1R6：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT1R7：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT7R5：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT7R6：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT8R4：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT8R5：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT8R6：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT8R7：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\nT8R8：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表\n未传 block_ids——旧名残留与素材使用率检查跳过（使用计划里选了哪些块就传哪些）\n〔大纲级别〕28 段直挂大纲级别（P381、P387、P392、P405、P406、P407…）——历史拷贝残留，Word 导航窗格会出现树外条目（合册会自动摘出）；如需正文层级请改用标题样式\n〔自动编号〕60 个标题段带自动编号（P77、P78、P81、P95、P103、P112…）——素材拷入残留，整本会渲染素材内部层级号（合册会自动剥除）；无需处理，继续写作即可"
+    },
+    {
+      "name": "灵燕制作过程检查",
+      "status": "not_applicable",
+      "detail": "外部文件没有平台写作指引、已确认承诺清单和素材使用计划，不能验证素材使用率或将不存在的承诺清单当作已比对。承诺、旧名及前后冲突由全文原文对照核查。"
+    }
+  ],
+  "reportPath": "/Users/ooo/.codex/worktrees/bid-review-verification/bidv4/data/workspace/t_236d560a039342a18d8582e15fb572d8/work/review/runs/bid-0472aa4b-06df-4cd7-9c14-82a2ed76f005.json",
+  "businessJudgmentsUnchanged": true,
+  "repairedTenderEvidence": [
+    {
+      "document_id": "tender-0",
+      "start": 859,
+      "end": 859,
+      "quote": "- 在接到设备保修、维修请求后，乙方需委派技术人员2小时内抵达现场进行技术支持或维护。"
+    },
+    {
+      "document_id": "tender-0",
+      "start": 860,
+      "end": 874,
+      "quote": "## 8.3、现场技术支持（响应时间、解决问题时间、人员资质等）\n***公司承诺向甲方提供每天24小时热线电话服务,如果通过电话无法解决故障的,***公司承诺在接到甲方故障通知后，***公司的工程师到达甲方使用标的软件的现场。\n\n| 序号 | 故障等级 | 电话响应 | 现场支持 | 排除故障时间 |\n| --- | --- | --- | --- | --- |\n| 1 | 一级故障 | X分钟 | 本地X小时内到现场 外地最近一班飞机 | X小时内排除故障恢复运行 |\n| 2 | 二级故障 | X分钟 | 本地X小时内到现场 外地最近一班飞机 | X小时内排除故障恢复运行 |\n| 3 | 三级故障 | X分钟 | 本地X小时内到现场 外地最近一班飞机 | X天内排除故障恢复运行 |\n| 4 | 四级故障 | X分钟 | 本地X小时内到现场 外地相应的航班 | X天内排除故障恢复运行 |\n\n其中：\n一级故障（CASE）：由于硬件或系统软件的原因造成现有的系统停机，或对用户的业务运作有严重影响。\n二级故障（CASE）：现有系统的操作性能严重下降，或由于系统性能明显下降，使用户的业务运作受到严重影响。\n三级故障（CASE）：系统的操作性能受损，但用户大部分业务运作仍可正常工作。\n四级故障（CASE）：在原厂商产品功能、安装或配置方面需要信息或支援。很显然对用户的业务运作几乎无影响，或根本没有影响。"
+    }
+  ],
+  "citationGapClosed": true
+}

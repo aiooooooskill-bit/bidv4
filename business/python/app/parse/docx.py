@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from docx import Document
 from docx.oxml.ns import qn
 
 from . import ParseResult, register, _normalize_md
 from .numbering import numbered_heading_level
+from .docx_text import load_text_document
 
 
 def _heading_level(p) -> int:
@@ -74,7 +74,7 @@ def convert(path: Path) -> ParseResult:
     的映射，供 docx 元素级注入按行号区间回找元素（素材块勾选锚定的是 md 行号）。
     空行折叠会删行，故折叠时同步维护原始行 → 输出行换算，映射以最终 md 为准。
     """
-    doc = Document(str(path))
+    doc, image_count = load_text_document(path)
     lines: list[str] = []
     plain_at: list[tuple[int, str]] = []  # (行索引, 文本)——兜底二次标记用
     el_lines: list[list[int]] = []  # [元素全序索引, 起行, 止行]（lines 坐标，闭区间）
@@ -123,7 +123,6 @@ def convert(path: Path) -> ParseResult:
             tables += 1
             el_lines.append([el_idx, start, len(lines)])
     # 内嵌图片计数（v3：docx 图片不再静默丢弃——计数进解析概况，抽取属增强工序）
-    image_count = len(doc.part.package.image_parts) if hasattr(doc.part, "package") else 0
     conversion = "docx-native"
     if styled == 0:
         for idx, text in plain_at:
