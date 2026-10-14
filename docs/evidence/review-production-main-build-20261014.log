@@ -1,0 +1,5 @@
+
+> build
+> node scripts/build.mjs
+
+正式插件和 PDF 本地资源已构建
