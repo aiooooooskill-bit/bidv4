@@ -1,0 +1,46 @@
+{
+  "status": "completed_engineering_checks",
+  "business_status": "failed_training_window_effort_comparison_and_incomplete_onsite_scope",
+  "task_id": "t_34bd0a4586dc",
+  "session_id": "bid-0c421cff-79cc-47b6-98cf-7575dc20fdb9",
+  "model": {
+    "provider": "deepseek-official",
+    "model": "deepseek-flash"
+  },
+  "requirements": 181,
+  "batches": 27,
+  "total_issues": 79,
+  "counts": {
+    "confirmation": 53,
+    "suggestion": 10,
+    "scoring": 15,
+    "disqualification": 1
+  },
+  "all_bid_facts_literal_and_bid_role": true,
+  "all_original_tender_conditions_preserved": true,
+  "ambiguous_applicability_only_confirmation": true,
+  "source_hashes": {
+    "9.15定杭州银行企业智能财务分析模型及系统建设采购项目-----R-A-8 1-2-公开招标文件（软件服务类）（电子）(1)(1).docx": "06d8fc5c804db45f8267991d256d7da0641aa7b245a2afa3ad3de87785ad5eaf",
+    "万野.docx": "737f177f35a8a9a3d3c257fa6d06ec043396fec1cdf56f6815e8fdd76d578307"
+  },
+  "production_changed_files": [],
+  "same_round_prior_batch_reads": 1,
+  "evidence_index_reads": 0,
+  "tools": {
+    "skill": 1,
+    "prepare_review_documents": 1,
+    "review_basis": 2,
+    "read": 24,
+    "review_batch": 2,
+    "save_review_batch": 66,
+    "grep": 4,
+    "finish_review_report": 1
+  },
+  "regression": {
+    "python": 534,
+    "node": 129,
+    "typescript": "passed",
+    "build": "passed"
+  },
+  "isolated_only": true
+}

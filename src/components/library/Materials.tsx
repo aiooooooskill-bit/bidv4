@@ -1,3 +1,4 @@
+import {Pager} from '../Pager';
 import {useConflictRecovery} from './ConflictRecovery';
 import {useEffect,useState} from 'react';
 import {BASE,json,request} from '../../api';
@@ -5,7 +6,7 @@ import {Modal} from '../Modal';
 import {SourcePreview} from '../SourcePreview';
 import {MaterialBlocks} from '../MaterialBlocks';
 import {MarkdownDocument} from '../MarkdownDocument';
-import {api,encode,Pager,Tag,type Page,type Shared} from './shared';
+import {api,encode,Tag,type Page,type Shared} from './shared';
 type Block={id:string;file_id:string;file_name:string;title:string;note:string;chars:number;ranges:number[][]};
 type FileItem={id:string;file_name:string;parse_status:string;error?:string};
 export function Materials({dirty,onDirty,onSaved,onError,epoch}:Shared){

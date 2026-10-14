@@ -85,3 +85,15 @@ def test_image_budget_checked_before_conversion(tmp_path):
     result=prepare(src,out)
     with pytest.raises(ValueError,match='2000万像素'):render_ocr_page(result['plan'],1)
     assert not (out/'images/page-1.png').exists()
+
+
+def test_native_tables_are_not_markdown_but_literal_cell_residue_is(tmp_path):
+    from app.tools.validate_body import validate_docx_file
+    source = tmp_path / '原生表格.docx'
+    d = Document(); table = d.add_table(rows=1, cols=4)
+    table.cell(0, 1).text = '产品名称'; table.cell(0, 2).text = '实际承诺'
+    d.save(source)
+    assert not any('markdown 表格残字' in s for s in validate_docx_file(source)[0])
+    table.cell(0, 2).text = '| 名称 | 内容 |'
+    d.save(source)
+    assert any('T1R1：单元格含竖线拼' in s for s in validate_docx_file(source)[0])

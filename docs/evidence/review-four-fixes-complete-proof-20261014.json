@@ -1,0 +1,58 @@
+{
+  "status": "flow_completed",
+  "business_status": "pending_discussion_no_rules_changed",
+  "session_id": "bid-72ca4ff1-f2a7-4428-bbf1-ae2862e24c92",
+  "task_id": "t_34bd0a4586dc",
+  "model": {
+    "provider": "deepseek-official",
+    "model": "deepseek-flash"
+  },
+  "requirements": 181,
+  "batches": 27,
+  "summary_items": [
+    "本轮已逐项核查 181 项招标要点，涵盖结构事实、资格要求、递交要求、商务技术要求、格式要求、废标条款、评分标准。",
+    "本次形成 24 条审查意见：可能废标 0 条、评分失分风险 8 条、需确认 14 条、建议修改 2 条。"
+  ],
+  "issue_counts": {
+    "confirmation": 14,
+    "scoring": 8,
+    "suggestion": 2
+  },
+  "total_issues": 24,
+  "document_issues": 0,
+  "source_unchanged": true,
+  "production_checked_files": 30,
+  "production_changed_files": [],
+  "regression": {
+    "python": 517,
+    "node": 126,
+    "typescript": "passed",
+    "build": "passed"
+  },
+  "program_checks": [
+    "all_catalog_entries_present",
+    "all_batch_citations_resolve_to_source",
+    "saved_report_matches_canonical_requirements_and_checks",
+    "summary_generated_from_actual_issues",
+    "summary_titles_limitations_plain_single_items",
+    "input_and_method_versions_current"
+  ],
+  "manual_steering_in_current_run": false,
+  "page_verification": {
+    "url": "http://127.0.0.1:61961/",
+    "metrics_at_top_of_overview": true,
+    "summary_items": 2,
+    "literal_escaped_newlines": false,
+    "onsite_evidence_includes_equipment_and_software_clauses": true,
+    "onsite_tender_range": [
+      859,
+      874
+    ],
+    "additional_scoring_range": [
+      1061,
+      1061
+    ],
+    "screenshot": "docs/evidence/review-four-fixes-complete-page-20261014.jpg",
+    "report_survives_host_restart": true
+  }
+}

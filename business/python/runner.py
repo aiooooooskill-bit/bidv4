@@ -51,6 +51,7 @@ async def dispatch():
     if op=='review_finish':return review.finish(args['task_id'],args['session_id'])
     if op=='review_input':return review.set_input(args['task_id'],args['bids'])
     if op=='review_decide':return review.decide(args['task_id'],args['session_id'],args['issue_id'],args['status'],args['note'])
+    if op=='analysis_source_version':return page_flow.analysis_source_version(args['task_id'])
     if op=='state':return state(args['task_id'])
     if op=='tasks':return {'tasks':task_stage.enrich(db.list_tasks())}
     if op=='create_task':

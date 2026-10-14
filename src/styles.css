@@ -214,12 +214,17 @@ a.bp-btn { text-decoration: none; display: inline-block; line-height: 1.5; }
 .review-overview,.review-coverage{border:1px solid var(--bid-color-border);border-radius:10px;background:var(--bid-color-surface);padding:20px;margin-bottom:16px}
 .review-file-picks{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:14px 0}.review-file-picks .bp-upload-drop{margin-top:0;min-width:0}
 .review-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.review-metrics .bp-stat{display:flex;align-items:center;gap:16px}.review-metrics strong{font-size:28px}
-.review-filter{display:flex;align-items:center;gap:12px;padding:16px 0}.review-filter label{display:flex;gap:6px;align-items:center}
-.review-issue-layout{display:grid;grid-template-columns:minmax(240px,35%) minmax(0,1fr);gap:20px;margin-top:16px;align-items:start}
-.review-issue-list{display:flex;flex-direction:column;gap:8px}.review-issue{display:grid;grid-template-columns:1fr auto;gap:10px;text-align:left;font:inherit;color:inherit;background:var(--bid-color-surface);border:1px solid var(--bid-color-border);border-radius:8px;padding:14px;cursor:pointer}.review-issue strong,.review-issue>span:last-child{grid-column:1/-1}.review-issue>span:last-child,.review-issue small{color:var(--bid-color-text-secondary);font-size:12px}.review-issue[data-active=true]{border-color:var(--bid-color-primary);background:var(--bid-color-selected)}
-.review-issue-detail{min-width:0;padding:20px;border:1px solid var(--bid-color-border);border-radius:10px;background:var(--bid-color-surface)}.review-evidence{margin:10px 0}.review-evidence small{overflow-wrap:anywhere;color:var(--bid-color-text-secondary)}.review-evidence blockquote{margin:8px 0;padding:12px;border-left:3px solid var(--bid-color-control-border);background:var(--bid-color-page);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
+.review-filter{display:flex;align-items:center;gap:12px;padding:8px 0}.review-filter>strong,.review-filter>label{flex-shrink:0;white-space:nowrap}.review-filter>.bp-tabs{flex:1;min-width:0;padding:0}.review-filter label{display:flex;gap:6px;align-items:center}
+.review-scroll[data-tab=issues]{display:flex;flex-direction:column}
+.review-scroll[data-tab=issues]>.bp-tabs,.review-scroll[data-tab=issues]>.review-previous,.review-scroll[data-tab=issues]>.chapter-notice{flex-shrink:0}
+.review-issues{display:flex;flex-direction:column;flex:1;min-height:280px}
+.review-issues>.review-filter{flex-shrink:0}
+.review-issue-layout{display:grid;grid-template-columns:minmax(280px,35%) minmax(0,1fr);gap:20px;margin-top:16px;align-items:stretch;flex:1;min-height:0;overflow:hidden}
+.review-issue-sidebar{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--bid-color-border);border-radius:10px;background:var(--bid-color-surface)}
+.review-issue-list{display:flex;flex-direction:column;gap:8px;padding:8px;flex:1;min-height:0;overflow:auto}.review-issue-list>.review-issue{flex-shrink:0;min-width:0;overflow-wrap:anywhere}.review-issue{display:grid;grid-template-columns:1fr auto;gap:10px;text-align:left;font:inherit;color:inherit;background:var(--bid-color-surface);border:1px solid var(--bid-color-border);border-radius:8px;padding:14px;cursor:pointer}.review-issue strong,.review-issue>span:last-child{grid-column:1/-1}.review-issue>span:last-child,.review-issue small{color:var(--bid-color-text-secondary);font-size:12px}.review-issue[data-active=true]{border-color:var(--bid-color-primary);background:var(--bid-color-selected)}
+.review-issue-detail{min-width:0;min-height:0;overflow:auto;padding:20px;border:1px solid var(--bid-color-border);border-radius:10px;background:var(--bid-color-surface)}.review-evidence{margin:10px 0}.review-evidence small{overflow-wrap:anywhere;color:var(--bid-color-text-secondary)}.review-evidence blockquote{margin:8px 0;padding:12px;border-left:3px solid var(--bid-color-control-border);background:var(--bid-color-page);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}
 .review-issue-detail label{display:flex;flex-direction:column;gap:8px}.review-issue-detail textarea{font:inherit;padding:10px;border:1px solid var(--bid-color-control-border);border-radius:6px;resize:vertical}.review-decisions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.review-coverage table{width:100%;border-collapse:collapse}.review-coverage td,.review-coverage th{padding:10px;text-align:left;border-bottom:1px solid var(--bid-color-border)}
-@media(max-width:760px){.review-file-picks,.review-issue-layout{grid-template-columns:1fr}.review-scroll{padding:12px}.review-issue-list{max-height:320px;overflow:auto}.review-metrics{grid-template-columns:repeat(2,1fr);gap:6px}.review-metrics .bp-stat{padding:12px;flex-direction:column;gap:6px}}
+@media(max-width:760px){.review-file-picks,.review-issue-layout{grid-template-columns:1fr}.review-scroll{padding:12px}.review-scroll[data-tab=issues]{display:block}.review-issue-layout{height:auto;overflow:visible}.review-issue-sidebar{height:320px}.review-issue-detail{overflow:visible}.review-metrics{grid-template-columns:repeat(2,1fr);gap:6px}.review-metrics .bp-stat{padding:12px;flex-direction:column;gap:6px}}
 
 .review-upload>.bp-row{display:flex;align-items:center;gap:10px}.review-upload>.bp-row{flex-wrap:wrap}
 
@@ -240,3 +245,9 @@ a.bp-btn { text-decoration: none; display: inline-block; line-height: 1.5; }
 .review-summary{margin:0 0 20px;padding-left:24px;line-height:1.8}
 .review-summary li+li{margin-top:10px}
 @media(max-width:760px){.review-header .review-status{width:100%}.review-actions{width:100%;margin-left:0;justify-content:flex-end}.review-file-actions{margin-right:auto;gap:6px}}
+
+/* Shared left-pane pagination, used by review and library lists. */
+.bp-root .pager{padding:12px 14px;border-top:1px solid var(--bid-color-border);display:flex;flex-direction:column;gap:8px;background:var(--bid-color-surface);font-size:11px;flex:none;color:var(--bid-color-text-muted)}
+.bp-root .pager>div{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.bp-root .pager button{padding:4px 8px;font-size:11px;white-space:nowrap}
+.bp-root .pager select{padding:4px;font-size:11px;width:auto;max-width:100%}

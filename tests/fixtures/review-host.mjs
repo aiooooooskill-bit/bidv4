@@ -34,10 +34,11 @@ const endpoint=createServer(async(req,res)=>{
   if(mode==='stop'){res.write(': waiting for stop\n\n');entered?.();return}
   let calls=[];
   if(mode!=='no-report'){
+   if(step===0){assert.match(text,/参数量纲、完成窗口、排期与最低投入量/);assert.match(text,/后文方案和附件对同一义务的回应要合并取证/)}
    if(step===0)calls=[call('prepare_review_documents',{}),call('read',{file_path:'skills/tender-review/SKILL.md'}),call('read',{file_path:'skills/_shared/evidence-rules.md'})];
    const toolResult=request.messages.find(m=>m.role==='tool'&&String(m.content).includes('outline_path'));
    const docs=toolResult?JSON.parse(String(toolResult.content)).documents:[];
-   if(step===1)calls=docs.flatMap(d=>[call('read',{file_path:d.outline_path}),call('read',{file_path:d.path})]);
+   if(step===1)calls=[...docs.flatMap(d=>[call('read',{file_path:d.outline_path}),call('read',{file_path:d.path})]),call('review_basis',{})];
    if(step===2){for(const d of docs)d.content=await readFile(d.path,'utf8');calls=notes(docs).map(n=>call('write',{file_path:join(cwd,'work/review/analysis',n.key+'.md'),content:n.content}));}
    if(step===3)calls=[call('review_basis',{stage:'validate'})];
    if(step===4)calls=[call('review_batch',{})];
@@ -45,10 +46,10 @@ const endpoint=createServer(async(req,res)=>{
     for(const d of docs)d.content=await readFile(d.path,'utf8');
     const last=request.messages.findLast(m=>m.role==='tool');let value;try{value=JSON.parse(last.content)}catch{}
     const batch=value?.next??value;
-    if(batch?.complete)calls=[call('finish_review_report',{summary:'工程夹具发现团队人数及维护年限两项差异。',limitations:['工程夹具；签字及图片真实性须人工确认。']})];
+    if(batch?.complete)calls=[call('finish_review_report',{limitations:['工程夹具；签字及图片真实性须人工确认。']})];
     else if(batch?.batch_id){
      const bid=docs.find(d=>d.kind==='bid');
-     const results=batch.requirements.map(r=>{const i=reqs.findIndex(t=>r.text.includes(t));assert.ok(i>=0);return {slot:r.slot,tender:r.tender.map(({document_id,start,end})=>({document_id,start,end})),status:[3,4].includes(i)?'conflict':'responded',assessment:'已检查双方对应章节和后文，双方响应'+([3,4].includes(i)?'不一致':'一致')+'。',bid:[citation(bid,bids[i])],problems:[3,4].includes(i)?[{risk_type:i===3?'scoring':'suggestion',title:i===3?'团队人数不足':'维护年限冲突',explanation:'双方原文存在差异。',suggestion:'核对并修改。'}]:[]}});
+     const results=batch.requirements.map(r=>{const i=reqs.findIndex(t=>r.tender.some(e=>e.quote.includes(t)));assert.ok(i>=0);return {slot:r.slot,tender:r.tender.map(({document_id,start,end})=>({document_id,start,end})),status:[3,4].includes(i)?'conflict':'responded',conflicts:[3,4].includes(i)?[{parameter:i===3?'团队人数':'维护期限',tender:{fact:{evidence:citation(docs.find(d=>d.kind==='tender'),reqs[i]),text:reqs[i]},dimension:i===3?'quantity':'period'},bid:{fact:{evidence:citation(bid,bids[i]),text:bids[i]},dimension:i===3?'quantity':'period'}}]:[],applicability:'established',applicability_reason:'工程夹具双方描述同一服务对象与条款，原文无其他适用条件。',bid_facts:[{evidence:citation(bid,bids[i]),text:bids[i]}],assessment:'已检查双方对应章节和后文，双方响应'+([3,4].includes(i)?'不一致':'一致')+'。',bid:[citation(bid,bids[i])],problems:[3,4].includes(i)?[{risk_type:i===3?'scoring':'suggestion',title:i===3?'团队人数不足':'维护年限冲突',explanation:'双方原文存在差异。',suggestion:'核对并修改。'}]:[]}});
      if(mode==='bad-evidence')results[0].bid[0].end=999999;
      calls=mode==='scope-leak'?[call('write',{file_path:join(cwd,'work/body/审查章节.docx'),content:'越界修改'})]:[call('save_review_batch',{batch_id:batch.batch_id,results})];
     }

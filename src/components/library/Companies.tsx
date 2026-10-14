@@ -1,8 +1,9 @@
+import {Pager} from '../Pager';
 import {useConflictRecovery} from './ConflictRecovery';
 import React,{useEffect,useRef,useState} from 'react';
 import {BASE} from '../../api';
 import {SourcePreview} from '../SourcePreview';
-import {api,encode,stamp,cx,Tag,Pager,CompanySelect,type Company,type Representative,type Kb,type Page,type Metadata,type Overview,type Shared} from './shared';
+import {api,encode,stamp,cx,Tag,CompanySelect,type Company,type Representative,type Kb,type Page,type Metadata,type Overview,type Shared} from './shared';
 const PROFILE_ALIASES:Record<string,string>={
  company_name:'name','持证单位':'name','企业名称':'name','公司名称':'name','公司全称':'name','账户名称':'name',
  '统一社会信用代码':'credit_code','社会信用代码':'credit_code',

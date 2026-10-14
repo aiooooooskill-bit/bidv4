@@ -1,0 +1,9 @@
+{
+  "session_id": "bid-6ae0156e-208a-40e2-a519-579234ceefe8",
+  "status": "stopped",
+  "execution": "stopped",
+  "batches": 4,
+  "accepted": 25,
+  "total": 181,
+  "reason": "用户要求停止测试，仅汇报当前结果"
+}

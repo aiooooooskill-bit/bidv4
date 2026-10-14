@@ -1,0 +1,28 @@
+{
+  "feature": "问题清单左侧分页",
+  "environment": "isolated",
+  "url": "http://127.0.0.1:61961/",
+  "report_session_id": "bid-72ca4ff1-f2a7-4428-bbf1-ae2862e24c92",
+  "report_unchanged": true,
+  "production_source_files_unchanged": true,
+  "page_sizes": [
+    5,
+    10,
+    20
+  ],
+  "default_page_size": 5,
+  "real_issue_count": 24,
+  "five_per_page_pages": 5,
+  "real_second_page_detail_changed": true,
+  "real_second_page_detail_scroll_top": 0,
+  "real_second_page_visible_items": 5,
+  "ten_per_page_resets_to_first_page": true,
+  "ten_per_page_pages": 3,
+  "sidebar_height": 483,
+  "pager_bottom": 847,
+  "viewport_height": 864,
+  "related_tests_passed": 40,
+  "typescript": "passed",
+  "build": "passed",
+  "screenshot": "docs/evidence/review-pagination-page-20261014.jpg"
+}

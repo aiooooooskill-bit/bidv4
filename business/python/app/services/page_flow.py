@@ -8,16 +8,38 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
 @lru_cache(maxsize=256)
-def _file_hash(path: str, modified: int, size: int):
+def _file_hash(path: str, fingerprint: tuple, cache_root: str):
+    # The Python runner starts a fresh process per operation. Keep digests in the
+    # existing settings store so unchanged sources are not reread on each poll.
+    key = 'file-digest:' + hashlib.sha256(path.encode()).hexdigest()
+    saved = db.get_setting(key)
+    if saved:
+        cached = json.loads(saved)
+        if cached['fingerprint'] == list(fingerprint):
+            return cached['sha256']
     h = hashlib.sha256()
     with open(path, 'rb') as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(chunk)
-    return h.hexdigest()
+    if _fingerprint(Path(path).stat()) != fingerprint:
+        raise ValueError('文件在读取期间已变化，请重试')
+    value = h.hexdigest()
+    db.set_setting(key, json.dumps({'fingerprint': fingerprint, 'sha256': value}))
+    return value
+
+def _fingerprint(info):
+    return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns)
 
 def file_hash(path: Path):
-    info = path.stat()
-    return _file_hash(str(path), info.st_mtime_ns, info.st_size)
+    from ..config import data_dir
+    path = path.resolve()
+    return _file_hash(str(path), _fingerprint(path.stat()), str(data_dir()))
+
+def analysis_source_version(tid):
+    selected = source_selection(tid)
+    names = [selected['main'], *[s['file'] for s in selected['supplements']]]
+    return digest({'main': selected['main'], 'supplements': selected['supplements'],
+                   'sources': {n: file_hash(artifact_store.sources_dir(tid) / n) for n in names if n}})
 
 def require_task(tid):
     task = db.get_task(tid)

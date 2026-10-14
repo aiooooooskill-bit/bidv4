@@ -33,7 +33,7 @@ from ..artifact_store import work_dir
 from ..knowledge import materials_lib
 from . import body_contract
 from .check_residue import re_split_name, scan_residue
-from .docx_ops import _heading_style_ids, section_comments_labeled, section_lines_labeled, section_text_lines
+from .docx_ops import _accepted_text, _heading_style_ids, section_comments_labeled, section_lines_labeled, section_text_lines
 from ..markdown import iter_tables, markdown_text
 _BLOCK_ID_RE = re.compile('blk_[0-9a-f]{12}')
 _PLACEHOLDER_MARKS = body_contract.PLACEHOLDER_MARKS
@@ -247,12 +247,12 @@ def _validate_section(lines: list[str], block_ids: list[str] | None, labels: lis
             issues.append(f'{loc}：行首 markdown 标题残字「{ln.strip()[:24]}」——docx 通道不解析 #，层级用 Heading 样式（建节后 docx_section_revise 的 insert_after 带 style）')
         elif '**' in ln:
             issues.append(f'{loc}：正文含「**」加粗残字——docx 通道不解析 markdown，星号会原样印进交付稿；删除星号用普通文本')
-        elif _MD_TABLE_ROW_RE.match(ln.strip()):
+        elif not loc.startswith('T') and _MD_TABLE_ROW_RE.match(ln.strip()):
             issues.append(f'{loc}：整行为竖线拼的 markdown 表格残字——表格用建节 body 的 table 块或 docx_diagram_insert 生成，不在正文写竖线表')
         elif '`' in ln:
             warnings.append(f'{loc}：正文含反引号——确认不是 markdown 代码残字（代码类内容用普通文字描述）')
     if block_ids is None:
-        warnings.append('未传 block_ids——旧名残留与素材使用率检查跳过（使用计划里选了哪些块就传哪些）')
+        notes.append('未传 block_ids——旧名残留与素材使用率检查跳过（使用计划里选了哪些块就传哪些）')
         return (issues, warnings, notes)
     for hit in scan_residue(lines, _residue_names(block_ids), labels=labels):
         warnings.append(f'疑似残留（来自素材文件名，可能为通用术语）：{hit}——逐条核对，旧项目用语→替换')
@@ -320,7 +320,7 @@ def _section_dup_warnings(body_dir: Path, sections: list[Path], finals: list[str
                 warns.append(f'节间疑似重复：「{na}」与「{nb}」内容重叠约 {ratio:.0%}——同一素材进多节或原文照搬；对照写作指引素材列，拆块或改写')
     return warns
 
-def _validate_body_global(body_dir: Path) -> str:
+def body_global_checks(body_dir: Path, files: list[Path] | None = None, check_promises: bool = True) -> dict:
     """全局收尾比对：承诺清单的每个值是否落进了正文（单向：清单→正文）+ 节间查重。
 
     匹配 = 去空白归一化后的子串（「90 天」↔「90天」视为一致）；未在任何正文节
@@ -329,12 +329,13 @@ def _validate_body_global(body_dir: Path) -> str:
     全部为提示级——提示不是门禁；反向「正文出现与清单不一致的值」属语义审阅，
     不在此判。
     """
-    sections = [q for q in sorted(body_dir.rglob('*.docx')) if not (q.parent == body_dir and q.name.startswith(body_contract.VOLUME_PREFIX))]
+    sections = files if files is not None else [q for q in sorted(body_dir.rglob('*.docx')) if not (q.parent == body_dir and q.name.startswith(body_contract.VOLUME_PREFIX))]
     if not sections:
-        return '[校验通过] body 全局：暂无正文节——跳过承诺比对'
+        return {'summary': '[校验通过] body 全局：暂无正文节——跳过承诺比对', 'warnings': [], 'notes': []}
 
     def _final_text(q: Path) -> str:
-        return '\n'.join(section_text_lines(Document(str(q))))
+        from ..parse.docx_text import load_text_document
+        return '\n'.join(section_text_lines(load_text_document(q)[0]))
     finals: list[str] = []
     broken: list[str] = []
     readable: list[Path] = []
@@ -345,14 +346,16 @@ def _validate_body_global(body_dir: Path) -> str:
         except Exception:
             broken.append(f'{q.parent.name}/{q.name}')
     if broken and (not finals):
-        return '[校验失败] body 全局：正文节全部损坏（' + '、'.join(broken) + '）——删除重建后再收尾'
+        return {'summary': '[校验失败] body 全局：正文节全部损坏', 'warnings': ['正文节全部损坏（' + '、'.join(broken) + '）——删除重建或人工核查'], 'notes': []}
     sections = readable
     dup_warns = _section_dup_warnings(body_dir, sections, finals)
     skip_note: str | None = None
     promise_summary = ''
     warn_lines: list[str] = []
     promise_path = body_dir / body_contract.PROMISE_NAME
-    if not promise_path.is_file():
+    if not check_promises:
+        skip_note = '承诺清单未就绪或已过期，未进行当前承诺比对'
+    elif not promise_path.is_file():
         skip_note = '无关键事实与承诺清单——跳过承诺比对（开工时应生成 body/关键事实与承诺.md）'
     else:
         parsed, header_seen = promise_rows(promise_path.read_text(encoding='utf-8', errors='replace'))
@@ -377,7 +380,11 @@ def _validate_body_global(body_dir: Path) -> str:
     head = f'[校验通过] body 全局：{len(sections)} 节正文{promise_summary}' if skip_note is None else f'[校验通过] body 全局：{skip_note}'
     if dup_warns:
         head += f'，节间查重 {len(dup_warns)} 对疑似重复'
-    return '\n'.join([head] + [f'⚠️ {m}' for m in warn_lines])
+    return {'summary': head, 'warnings': warn_lines, 'notes': [skip_note] if skip_note else []}
+
+def _validate_body_global(body_dir: Path) -> str:
+    result = body_global_checks(body_dir)
+    return '\n'.join([result['summary'], *[f'⚠️ {m}' for m in result['warnings']]])
 
 def validate_body(section: str, block_ids: list[str] | None=None) -> str:
     """机器校验正文产物：写作指引表 / 单节正文 / body 全局承诺比对+节间查重。
@@ -436,6 +443,12 @@ def validate_docx_file(p: Path, block_ids: list[str] | None = None, body_root: P
     doc, _ = load_text_document(p)
     labeled = section_lines_labeled(doc)
     issues, warnings, notes = _validate_section([t for _, t in labeled], block_ids, labels=[lbl for lbl, _ in labeled])
+    # Joined native cell text contains synthetic pipes. Inspect actual cell
+    # paragraphs when detecting literal Markdown tables instead.
+    for ti, table in enumerate(doc.tables, 1):
+        for ri, row in enumerate(table.rows, 1):
+            if any(_MD_TABLE_ROW_RE.match(_accepted_text(p._p).strip()) for cell in row.cells for p in cell.paragraphs):
+                issues.append(f'T{ti}R{ri}：单元格含竖线拼的 markdown 表格残字——请改为原生 Word 表格，不在单元格中填写 Markdown 表格文本')
     if body_root is not None:
         warnings.extend(_figure_plan_reconcile(doc, p, body_root))
     notes.extend((f"{loc}〔批注〕：{t[:50]}{('…' if len(t) > 50 else '')}" for loc, t in section_comments_labeled(doc)))

@@ -1,8 +1,9 @@
+import {Pager} from '../Pager';
 import {useConflictRecovery} from './ConflictRecovery';
 import React,{useEffect,useRef,useState} from 'react';
 import {BASE} from '../../api';
 import {SourcePreview} from '../SourcePreview';
-import {api,encode,stamp,cx,Tag,Pager,CompanySelect,type Company,type Representative,type Kb,type Page,type Metadata,type Overview,type Shared} from './shared';
+import {api,encode,stamp,cx,Tag,CompanySelect,type Company,type Representative,type Kb,type Page,type Metadata,type Overview,type Shared} from './shared';
 function detailItem(i:Kb):Kb{return {...i,business:i.business??{doc_type:i.doc_type??'other'},suggested:i.suggested??{},company_id:i.company_id??'',ocr:i.content,original_ocr:i.original_content,meta:i.meta??{},segments:[]}}
 export function Knowledge({overview,dirty,onDirty,onSaved,onError,epoch}:Shared){
  const [scope,setScope]=useState('all'),[q,setQ]=useState(''),[applied,setApplied]=useState(''),[type,setType]=useState(''),[status,setStatus]=useState(''),[pagination,setPagination]=useState({page:1,size:5}),[page,setPage]=useState<Page<Kb>>({items:[],total:0,page:1,pages:1,page_size:5}),[selected,setSelected]=useState(''),[detail,setDetail]=useState<Kb|null>(null),[loading,setLoading]=useState(true);

@@ -160,10 +160,21 @@ def compile_report(tid, value):
     if errors:
         raise ValueError('\n'.join(errors))
     compiled['coverage'] = basis['coverage']
+    checks = review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])
+    compiled['document_issues'] = review_method.check_issues(checks)
+    compiled['check_notes'] = [{'name': c['name'], 'notes': c.get('notes', []) if 'notes' in c else [c['detail']]}
+                               for c in checks if c.get('notes') or c['status'] == 'not_applicable']
+    all_issues = compiled['issues'] + compiled['document_issues']
+    labels = [('disqualification', '可能废标'), ('scoring', '评分失分风险'), ('confirmation', '需确认'), ('suggestion', '建议修改')]
+    counts = '、'.join(f'{label} {sum(i["risk_type"] == key for i in all_issues)} 条' for key, label in labels)
+    compiled['summary_items'] = [
+        f'本轮已逐项核查 {len(compiled["requirements"])} 项招标要点，涵盖' + '、'.join(c['category'] for c in compiled['coverage']) + '。',
+        f'本次形成 {len(all_issues)} 条审查意见：{counts}。' if all_issues else '本次已核查范围内未发现问题；未覆盖事项及待人工核验内容见下方说明。',
+    ]
     return compiled
 
 def validate_saved_report(tid, value):
-    refs = {'summary': value['summary'], 'issues': value['issues'], 'limitations': value['limitations'],
+    refs = {'issues': value['issues'], 'limitations': value['limitations'],
             'requirements': [{'basis_id': r['id'], 'status': r['status'],
                 **{kind: [{k: e[k] for k in ('document_id', 'start', 'end')} for e in r[kind]] for kind in ('tender', 'bid')}} for r in value['requirements']]}
     compiled = compile_report(tid, refs)
@@ -194,7 +205,7 @@ def save_report(tid, session, value):
             report['limitations'].append('当前平台目录尚有未生成章节：' + '、'.join(missing) + '；本次只核查现有正文。')
     envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': documents(tid), 'report': report, 'decisions': {}, 'method': {'name': '灵燕能力整合审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'analysis': review_basis(tid, True), 'checks': review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])}
     write_atomic(_report_path(tid, session), json.dumps(envelope, ensure_ascii=False))
-    return {'saved': True, 'requirements': len(report['requirements']), 'issues': len(report['issues'])}
+    return {'saved': True, 'requirements': len(report['requirements']), 'issues': len(report['issues']) + len(report['document_issues'])}
 
 def finish(tid, session):
     path = _report_path(tid, session)
@@ -205,6 +216,8 @@ def finish(tid, session):
         raise ValueError('审查文件版本已变化，请重新审核')
     from . import review_batches
     rows = review_batches.completed(tid, session)
+    if report.get('audit') != review_batches.audit_view(rows, len(review_batches.read(tid, session)[0]['batches'])):
+        raise ValueError('报告说明或原文限定与已保存批次不一致')
     expected_issues = [p | {'id': f'{r["id"]}:issue:{n + 1}', 'requirement_id': r['id']} for r in rows for n, p in enumerate(r['problems'])]
     if report['report']['issues'] != expected_issues:
         raise ValueError('报告问题与已保存批次不一致')
@@ -217,6 +230,12 @@ def finish(tid, session):
     report['completed'] = True
     write_atomic(path, json.dumps(report, ensure_ascii=False))
     return {'ok': True}
+
+def list_state(tid):
+    if not _record(tid):
+        return {'status': 'unreviewed', 'mode': selection(tid)['mode']}
+    value = snapshot(tid)
+    return {k: value[k] for k in ('status', 'mode')}
 
 def snapshot(tid):
     config = selection(tid)
@@ -251,7 +270,7 @@ def decide(tid, session, issue_id, status, note):
         raise BusinessError(409, '当前报告已变化，请重新审核或读取最新报告')
     if status not in ('pending', 'confirmed', 'fixed', 'ignored') or not isinstance(note, str) or len(note) > 4000:
         raise BusinessError(422, '处理状态或备注无效')
-    if not any(i['id'] == issue_id for i in report['report']['issues']):
+    if not any(i['id'] == issue_id for i in [*report['report']['issues'], *report['report']['document_issues']]):
         raise BusinessError(422, '问题不属于当前报告')
     report['decisions'][issue_id] = {'status': status, 'note': note, 'updated_at': datetime.now(timezone.utc).isoformat()}
     write_atomic(_report_path(tid, session), json.dumps(report, ensure_ascii=False))

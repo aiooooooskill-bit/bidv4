@@ -1,8 +1,9 @@
+import {Pager} from '../Pager';
 import {useConflictRecovery} from './ConflictRecovery';
 import React,{useEffect,useRef,useState} from 'react';
 import {BASE} from '../../api';
 import {SourcePreview} from '../SourcePreview';
-import {api,encode,stamp,cx,Tag,Pager,CompanySelect,type Company,type Representative,type Kb,type Page,type Metadata,type Overview,type Shared} from './shared';
+import {api,encode,stamp,cx,Tag,CompanySelect,type Company,type Representative,type Kb,type Page,type Metadata,type Overview,type Shared} from './shared';
 export function Representatives({overview,dirty,onDirty,onSaved,onError}:Shared){
  const [scope,setScope]=useState('all'),[selected,setSelected]=useState(''),[creating,setCreating]=useState(false),[pagination,setPagination]=useState({page:1,size:5});
  const filtered=overview.representatives.filter(r=>scope==='all'||r.company_id===scope);

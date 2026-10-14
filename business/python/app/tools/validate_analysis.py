@@ -35,7 +35,7 @@ _REQUIRED_HEADERS = {
 }
 _COVERAGE_RE = re.compile('^(?:[一二三四五]+、\\s*)?coverage\\s*声明\\s*$')
 _FILENAME_LIKE = re.compile(r'^(?P<fn>.+?\.(?:docx|pdf|txt|md|png|jpe?g|gif|webp))(?=[\s（(]|$)', re.IGNORECASE)
-_L_NUM = re.compile('L(\\d+)')
+_L_RANGE = re.compile(r'L(\d+)(?:\s*[-–]\s*L?(\d+))?')
 
 def _excerpt(cell: str, limit: int=40) -> str:
     return cell if len(cell) <= limit else cell[:limit - 1] + '…'
@@ -92,10 +92,12 @@ _FILENAME_END = re.compile(r'\.[A-Za-z][A-Za-z0-9]{1,7}(?=\s|[（(，,；;、/]|
 def _citation_events(seg: str, known: list[str]):
     spans = _known_file_spans(seg, known)
     events = [(start, 'file', name) for start, _, name in spans]
-    for pattern, kind in ((re.compile('同文件'), 'same'), (_FILENAME_END, 'unknown'), (_L_NUM, 'line')):
+    for pattern, kind in ((re.compile('同文件'), 'same'), (_FILENAME_END, 'unknown'), (_L_RANGE, 'line')):
         for match in pattern.finditer(seg):
             if not any(start <= match.start() < end for start, end, _ in spans):
                 events.append((match.start(), kind, int(match.group(1)) if kind == 'line' else None))
+                if kind == 'line' and match.group(2):
+                    events.append((match.start() + 1, kind, int(match.group(2))))
     return sorted(events), spans
 
 
@@ -141,6 +143,32 @@ def _expand_citation_cell(cell: str, known: list[str], table_anchor: dict) -> st
             table_anchor['file'] = previous
             result.append(seg)
     return '；'.join(result)
+
+
+def citation_ranges(cell: str, known: list[str], table_anchor: dict):
+    """Use the same segment inheritance and filename exclusions as validation."""
+    ranges = []
+    for part in _split_top(cell.strip(), '；;', known):
+        anchor = None
+        for raw in _split_top(part, '/', known):
+            seg = raw.strip()
+            if not seg:
+                continue
+            refs, anchor, previous, unknown, ambiguous, spans = _citation_segment(seg, known, anchor, table_anchor['file'])
+            if unknown or ambiguous:
+                raise ValueError('出处包含未知或歧义来源')
+            table_anchor['file'] = previous
+            index = 0
+            for match in _L_RANGE.finditer(seg):
+                if any(start <= match.start() < end for start, end, _ in spans):
+                    continue
+                source = refs[index][0]
+                lo, hi = int(match[1]), int(match[2] or match[1])
+                index += 2 if match[2] else 1
+                if not source or lo < 1 or hi < lo:
+                    raise ValueError('出处来源或行号区间无效')
+                ranges.append((source, lo, hi))
+    return ranges
 
 
 def _check_citation_cell(cell: str, known: list[str], src_lines: dict[str, int], table_anchor: dict) -> list[str]:

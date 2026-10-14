@@ -38,6 +38,11 @@ def analysis_directory(tid, docs):
     return root / 'review/analysis', False
 
 def platform_analysis_current(tid, docs):
+    from ..config import data_dir
+    records = [json.loads(p.read_text()) for p in (data_dir() / 'actions' / tid).glob('*.json') if p.name != 'latest.json']
+    record = max((r for r in records if r['kind'] == 'analyse'), key=lambda r: r['created_at'], default=None)
+    if not record or record.get('analysis_sources') != page_flow.analysis_source_version(tid) or not record.get('analysis_progress') or any(p['done'] != p['total'] for p in record['analysis_progress']):
+        return False
     root = artifact_store.work_dir(tid)
     files = [root / 'analysis' / (k + '.md') for k in _SECTIONS]
     if not all(p.is_file() for p in files):
@@ -86,19 +91,36 @@ def previous_flow(tid, mode):
 def analysis_context(tid, docs, mode):
     directory, reused = analysis_directory(tid, docs)
     directory.mkdir(parents=True, exist_ok=True)
+    stale = []
+    if not reused:
+        stamp = directory / 'sources.json'
+        source = page_flow.analysis_source_version(tid)
+        saved = json.loads(stamp.read_text()) if stamp.is_file() else None
+        if not saved or saved['source_version'] != source:
+            saved = {'source_version': source, 'before': {k: (directory / (k + '.md')).stat().st_mtime_ns for k in _SECTIONS if (directory / (k + '.md')).is_file()}}
+            from ..parse import write_atomic
+            write_atomic(stamp, json.dumps(saved, ensure_ascii=False))
+        stale = [k for k, mtime in saved['before'].items() if (directory / (k + '.md')).is_file() and (directory / (k + '.md')).stat().st_mtime_ns == mtime]
     return {'directory': str(directory), 'reused_platform_analysis': reused,
         'sections': [{'key': k, 'title': LABELS[k], 'path': str(directory / (k + '.md')),
                      'reference': f'skills/tender-analysis/references/{k}.md',
-                     'exists': (directory / (k + '.md')).is_file()} for k in _SECTIONS],
+                     'exists': (directory / (k + '.md')).is_file() and k not in stale, 'stale': k in stale} for k in _SECTIONS],
         'tender_documents': [d for d in docs if d['kind'] == 'tender'], 'previous_flow': previous_flow(tid, mode)}
 
 def analysis_catalog(tid, docs, mode):
-    from ..tools.validate_analysis import _REQUIRED_HEADERS, _CITATION_COLUMNS, _citation_segment, validate_analysis_files
+    from ..tools.validate_analysis import _REQUIRED_HEADERS, _CITATION_COLUMNS, citation_ranges, validate_analysis_files
     directory, reused = analysis_directory(tid, docs)
     missing = [k for k in _SECTIONS if not (directory / (k + '.md')).is_file()]
     if missing:
         raise ValueError('招标要点未完成：' + '、'.join(LABELS[k] for k in missing))
     if not reused:
+        stamp = directory / 'sources.json'
+        saved = json.loads(stamp.read_text()) if stamp.is_file() else None
+        if not saved or saved['source_version'] != page_flow.analysis_source_version(tid):
+            raise ValueError('招标来源集合或版本已变化，请先读取本轮要点路径并按原技能重新提取')
+        stale = [k for k, mtime in saved['before'].items() if (directory / (k + '.md')).stat().st_mtime_ns == mtime]
+        if stale:
+            raise ValueError('旧审查要点过期，须按本轮来源重新提取：' + '、'.join(LABELS[k] for k in stale))
         oldest = min((directory / (k + '.md')).stat().st_mtime for k in _SECTIONS)
         for d in docs:
             if d['kind'] != 'tender': continue
@@ -126,17 +148,12 @@ def analysis_catalog(tid, docs, mode):
             if tuple(header) not in _REQUIRED_HEADERS[key]:
                 continue
             col = next(i for i, name in enumerate(header) if name in _CITATION_COLUMNS[key])
-            previous = None
+            table_anchor = {'file': None}
             for line, cells in rows:
                 if not any(c.strip(' —-') for c in cells):
                     continue
-                refs, _, previous, *_ = _citation_segment(cells[col], list(by_name), previous, previous)
-                evidence = []
-                index = 0
-                for match in re.finditer(r'L(\d+)(?:\s*[-–]\s*L?(\d+))?', cells[col]):
-                    filename = refs[index][0]
-                    index += len(re.findall(r'L\d+', match[0]))
-                    evidence.append({'document_id': by_name[filename]['id'], 'start': int(match[1]), 'end': int(match[2] or match[1])})
+                evidence = [{'document_id': by_name[filename]['id'], 'start': start, 'end': end}
+                            for filename, start, end in citation_ranges(cells[col], list(by_name), table_anchor)]
                 if not evidence:
                     raise ValueError(f'{key}.md L{line}：要求没有可定位招标依据')
                 text = '；'.join(f'{header[i]}：{v}' for i, v in enumerate(cells) if i != col and v)
@@ -148,7 +165,7 @@ def analysis_catalog(tid, docs, mode):
             'validation': result, 'reused_platform_analysis': reused, 'clarifications': clarifications, 'previous_flow': previous_flow(tid, mode)}
 
 def original_checks(tid, inputs, mode):
-    from ..tools.validate_body import validate_body, validate_docx_file, _parse_guide_rows
+    from ..tools.validate_body import body_global_checks, validate_docx_file, _parse_guide_rows
     from .build_state import sections as body_sections, snapshot as build_snapshot
     from ..tools.body_contract import multi_volume
     checks = []
@@ -179,11 +196,31 @@ def original_checks(tid, inputs, mode):
         issues, warnings, notes = validate_docx_file(item['file'], plan, body_root if guide_current else None)
         details = issues + warnings + notes
         checks.append({'name': item['name'] + ' · 灵燕正文检查', 'status': 'warning' if issues or warnings or notes else 'passed',
+                       'document_ids': [item['id']], 'issues': issues, 'warnings': warnings, 'notes': notes,
                        'detail': '\n'.join(details) or '终稿视角未发现占位、格式残字问题。'})
     if mode == 'platform':
         current = state['build_preparation']['promises'] == 'ready'
-        checks.append({'name': '灵燕全局承诺比对与节间查重', 'status': 'completed' if current else 'warning', 'detail': ('' if current else '前序承诺清单未就绪或已过期，下方只检查现有文本，不代表当前承诺校验通过。\n') + validate_body('body')})
+        result = body_global_checks(body_root, [item['file'] for item in inputs if item['kind'] == 'bid'], check_promises=current)
+        checks.append({'name': '灵燕全局承诺比对与节间查重', 'status': 'warning' if result['warnings'] else 'completed',
+                       'document_ids': [item['id'] for item in inputs if item['kind'] == 'bid'], 'issues': [],
+                       'warnings': result['warnings'], 'notes': result['notes'],
+                       'detail': '\n'.join([result['summary'], *result['warnings'], *result['notes']])})
     else:
         checks.append({'name': '灵燕制作过程检查', 'status': 'not_applicable',
             'detail': '外部文件没有平台写作指引、已确认承诺清单和素材使用计划，不能验证素材使用率或将不存在的承诺清单当作已比对。承诺、旧名及前后冲突由全文原文对照核查。'})
     return checks
+
+
+def check_issues(checks):
+    """Keep LingYan's terminal-view findings as suggestions, without inventing
+    a tender obligation or a disqualification/scoring consequence."""
+    findings = []
+    for ci, check in enumerate(checks):
+        for n, message in enumerate([*check.get('issues', []), *check.get('warnings', [])], 1):
+            location = re.match(r'^(P\d+|T\d+R\d+)(?:：|〔)', message)
+            fact, _, advice = message.partition('——')
+            findings.append({'id': f'document-check:{ci}:{n}',
+                'document_ids': check['document_ids'], 'location': location[1] if location else '',
+                'risk_type': 'suggestion', 'title': fact, 'explanation': message,
+                'suggestion': advice or '请按终稿检查提示核对并修改；实际后果以本项目招标条款为准。'})
+    return findings
