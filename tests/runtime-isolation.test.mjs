@@ -124,7 +124,7 @@ test('官方pi-ai发送宿主附件字节，业务卸载后宿主模型仍可使
  }finally{await f.close();await new Promise(resolve=>endpoint.close(resolve))}
 });
 
-test('业务运行时使用官方压缩插件，长工具回执缩减且原始证据和宿主会话保留',async()=>{
+test('官方压缩组件夹具：长工具回执缩减且原始证据和隔离会话保留',async()=>{
  const f=await fixture();
  try{
   assert.ok(f.scope.ctx.compaction);assert.ok(f.scope.ctx.tokenMeter);assert.ok(f.scope.ctx.toolResultPruner);

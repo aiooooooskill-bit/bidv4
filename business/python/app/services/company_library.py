@@ -1,6 +1,6 @@
 """Formal library management, separate from generation-time company scope."""
 import json
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from .. import company_store as cs, db
 from ..knowledge.types import TYPES
 from .errors import BusinessError
@@ -14,9 +14,9 @@ class CompanyBody(BaseModel):
     profile: dict[str,str]=Field(default_factory=dict)
 
 class RepresentativeBody(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     id: str | None=None
     revision: int=Field(default=0,ge=0)
-    company_id: str
     name: str=Field(min_length=1,max_length=100)
     title: str=Field(default='',max_length=100)
     phone: str=Field(default='',max_length=100)
@@ -44,7 +44,6 @@ async def save_company(body: CompanyBody):
 
 async def save_representative(body: RepresentativeBody):
     if body.id and not cs.read('SELECT id FROM representatives WHERE id=?',(body.id,)):raise BusinessError(404,'授权代表不存在，请重新读取资料库')
-    cs.require_company(body.company_id)
     if not body.name.strip():raise BusinessError(422,'请填写代表姓名')
     values=body.model_dump(exclude={'id','revision'})
     values['name']=body.name.strip()

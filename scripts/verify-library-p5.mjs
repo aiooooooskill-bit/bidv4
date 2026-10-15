@@ -45,7 +45,7 @@ if(!process.env.P5_ISOLATED){
   if(!resume){
   const task=(await api('/tasks',{title:'P5 验收演示 · 真实赣州银行招标文件 · 非正式投标',request_id:randomUUID()})).task;tid=task.id;report.taskId=tid;
   const company=await api('/library/companies',{name:'杭州研数科技有限公司（验收演示）',credit_code:'DEMO-ONLY-20261012',note:report.identityMode,profile:{registered_address:'杭州市滨江区演示路100号（验收演示）',address:'杭州市滨江区演示路100号（验收演示）',phone:'0571-00000000（验收演示）',fax:'无',email:'bid@example.test',legal_name:'陈演示',legal_title:'总经理',bank_name:'演示银行',bank_account:'DEMO-0001'}});
-  const rep=await api('/library/representatives',{company_id:company.id,name:'王验收',title:'投标负责人',phone:'0571-00000001（验收演示）',email:'representative@example.test',note:'仅用于软件流程验收，非真实授权'});
+  const rep=await api('/library/representatives',{name:'王验收',title:'投标负责人',phone:'0571-00000001（验收演示）',email:'representative@example.test',note:'仅用于软件流程验收，非真实授权'});
   await record('维护主体与授权代表',{companyId:company.id,representativeId:rep.id});
   const cert=await upload('/kb/files?company_id='+company.id,join(original,'data/workspace/knowledge/files/图片1.png'));
   for(let n=0;n<240;n++){

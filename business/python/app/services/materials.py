@@ -10,7 +10,6 @@ import uuid
 from pathlib import Path
 from pydantic import BaseModel, Field
 from .. import db
-from ..config import MAX_UPLOAD_BYTES
 from ..knowledge import materials_lib as mlib
 
 class BlockUpdateBody(BaseModel):
@@ -54,8 +53,6 @@ async def upload_file(file: IncomingFile=None):
                 if not chunk:
                     break
                 size += len(chunk)
-                if size > MAX_UPLOAD_BYTES:
-                    raise BusinessError(status_code=413, detail='文件超过 100MB 上限')
                 h.update(chunk)
                 f.write(chunk)
         digest = h.hexdigest()
@@ -113,9 +110,22 @@ async def get_file_raw(fid: str):
         raise BusinessError(status_code=404, detail='原件缺失')
     return FileDownload(src, filename=f['file_name'])
 
-async def list_blocks(q: str='', file_id: str='', page: int=1, page_size: int=10):
-    from .library_query import page_result
-    files={f['id']:f for f in db.mt_list_files()}
+async def get_file_preview(fid: str):
+    from ..knowledge.material_preview import build_preview
+    f = db.mt_get_file(fid)
+    if not f:
+        raise BusinessError(404, '素材文件不存在')
+    if not (mlib.mt_files_dir() / f['file_name']).is_file():
+        raise BusinessError(404, '原件缺失')
+    if f['parse_status'] != 'ready':
+        raise BusinessError(422, '文件尚未解析完成，请先重新解析文件。')
+    try:
+        preview = build_preview(f)
+    except ValueError as error:
+        raise BusinessError(422, str(error)) from error
+    return FileDownload(preview, filename=f['file_name'], media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+
+def _matching_blocks(q: str, file_id: str, files: dict) -> list[dict]:
     from ..knowledge.fts import build_match_expr
     expr=build_match_expr(q) if q.strip() else None
     hits=db.kb_search_segments(expr,limit=100000,domain='mt') if expr else []
@@ -127,7 +137,25 @@ async def list_blocks(q: str='', file_id: str='', page: int=1, page_size: int=10
         if q.strip() and b['id'] not in ranks and q.strip().lower() not in (b['title']+' '+b['note']).lower():continue
         items.append({**b,'file_name':files[b['file_id']]['file_name']})
     if q.strip():items.sort(key=lambda b:ranks.get(b['id'],0))
-    return page_result(items,page,page_size,'blocks')
+    return items
+
+async def list_blocks(q: str='', file_id: str='', page: int=1, page_size: int=10):
+    from .library_query import page_result
+    files={f['id']:f for f in db.mt_list_files()}
+    return page_result(_matching_blocks(q,file_id,files),page,page_size,'blocks')
+
+async def list_items(q: str='', file_id: str='', page: int=1, page_size: int=10):
+    """资料库左侧清单：未建块原件与可用素材统一筛选、分页，原件不重复列出。"""
+    from .library_query import page_result
+    files={f['id']:f for f in db.mt_list_files()}
+    counts=db.mt_block_counts()
+    pending=[{**f,'kind':'file','block_count':0} for f in files.values()
+             if not counts.get(f['id'],0) and (not file_id or f['id']==file_id)
+             and (not q.strip() or q.strip().lower() in f['file_name'].lower())]
+    blocks=[{**b,'kind':'block','parse_status':files[b['file_id']]['parse_status'],
+             'source_error':files[b['file_id']].get('error')}
+            for b in _matching_blocks(q,file_id,files)]
+    return page_result(pending+blocks,page,page_size,'items')
 
 async def get_block(bid: str):
     block=db.mt_get_block(bid)
@@ -163,24 +191,6 @@ def _truncate_preview(content: dict, budget: int) -> dict:
         if used >= budget:
             break
     return {**content, 'sections': out}
-_PREVIEW_MAX_LINES = 2000
-
-async def get_file_content(fid: str, start: int, end: int):
-    """文件片段内容（挑章节实时预览）：点目录树节点按行号取该节正文。"""
-    f = db.mt_get_file(fid)
-    if not f:
-        raise BusinessError(status_code=404, detail='素材文件不存在')
-    if f['parse_status'] != 'ready':
-        raise BusinessError(status_code=422, detail='文件尚未解析完成，稍候再试')
-    if start < 1 or end < start:
-        raise BusinessError(status_code=422, detail='行号区间无效')
-    if end - start + 1 > _PREVIEW_MAX_LINES:
-        raise BusinessError(status_code=422, detail='预览区间过大，请选择更小的章节')
-    content = mlib.file_content(fid, start, end)
-    if content is None:
-        raise BusinessError(status_code=404, detail='解析产物缺失——请重新解析该文件')
-    return content
-
 async def create_block(fid: str, body: dict):
     """建块：{title, note, ranges: [[s,e],…]}——ranges 来自勾选节点的行号区间
     （可勾父子节点，服务端嵌套去重叠；区间须有效）。"""

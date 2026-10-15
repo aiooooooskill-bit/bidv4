@@ -132,7 +132,7 @@
 
 .bp-root .business-editor{display:grid;gap:18px;padding:24px}.business-editor label {display:grid;gap:6px}.business-editor label>span {font-size:12px;color:var(--bid-color-text-muted)}.business-editor textarea {width:100%;box-sizing:border-box;resize:vertical;border:1px solid var(--bid-color-border);border-radius:6px;padding:12px;font-family:inherit;font-size:14px;line-height:1.7;background:var(--bid-color-surface);color:var(--bid-color-text)}
 
-.bp-root .library-material-layout{display:grid;grid-template-columns:1fr 1fr;flex:1;min-height:0;overflow:hidden}.library-material-layout>.work-document{overflow:auto}.library-source{display:flex;flex:1;min-height:0;overflow:auto}.material-node{padding:8px;border-bottom:1px solid var(--bid-color-border)}.material-node>label{display:inline-flex;gap:8px;align-items:center}.material-node>.bp-btn{margin-left:12px}
+.library-source{display:flex;flex:1;min-height:0;overflow:auto}
 
 .bp-root .run-options fieldset{border:0;min-width:0;padding:0;margin:0}.bp-root .run-options legend{font-size:13px;margin-bottom:8px}.bp-root .run-options-title{grid-column:1/-1;display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--bid-color-border)}.bp-root .run-options-title span{color:var(--bid-color-text-muted);font-size:12px}.bp-root .run-options>button{grid-column:1/-1;justify-self:end}.run-options fieldset>label{display:flex;flex-direction:row;align-items:center;min-width:0;margin:8px 0}.run-options fieldset>textarea{display:block;width:100%;box-sizing:border-box}.source-toolbar .bp-btn{white-space:nowrap}
 

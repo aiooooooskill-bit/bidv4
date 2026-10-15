@@ -20,14 +20,18 @@ export interface DocxViewerHandle {
 }
 
 const HL = "bp-docx-hit";
+export type BookmarkLocation = {bookmark:string;requestId:number};
+export type LocationStatus = 'loading'|'located'|'missing'|'failed';
 
-export function DocxViewer({ src, onReady, locateRef, onFill, fitWidth = false, toolbarActions }: {
+export function DocxViewer({ src, onReady, locateRef, onFill, fitWidth = false, toolbarActions, location, onLocationChange }: {
   src: string;
   fitWidth?: boolean;
   toolbarActions?: ReactNode;
   onReady?: (pages: number) => void;
   locateRef?: (h: DocxViewerHandle | null) => void;
   onFill?: (key: string) => void;
+  location?: BookmarkLocation;
+  onLocationChange?: (status:LocationStatus) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -66,6 +70,7 @@ export function DocxViewer({ src, onReady, locateRef, onFill, fitWidth = false, 
       const count = pageH > 1 ? Math.max(1, Math.ceil(rect.height / pageH - 0.02)) : 1;
       for (let i = 0; i < count; i++) next.push(top + i * pageH);
     }
+    anchorsRef.current = next;
     setAnchors(next);
     setPage((p) => Math.min(Math.max(p, 1), Math.max(1, next.length)));
     return next.length;
@@ -139,6 +144,9 @@ export function DocxViewer({ src, onReady, locateRef, onFill, fitWidth = false, 
     return () => observer.disconnect();
   }, [measure]);
 
+  // CSS transforms do not trigger ResizeObserver; zoom changes need fresh page positions.
+  useEffect(() => { measure(); }, [zoom, measure]);
+
   // ── 当前页：按滚动位置推算 ───────────────────────────
   useEffect(() => {
     const box = scrollRef.current;
@@ -172,6 +180,24 @@ export function DocxViewer({ src, onReady, locateRef, onFill, fitWidth = false, 
     // 程序化滚动不保证触发 scroll 事件，页码要自己认；手动滚动仍由监听器纠正。
     setPage(target);
   }, []);
+
+  // Chapter navigation uses source bookmarks, so repeated titles never share a target.
+  useEffect(() => {
+    if (!location) return;
+    if (err) { onLocationChange?.('failed'); return; }
+    if (loading) { onLocationChange?.('loading'); return; }
+    const host = hostRef.current, box = scrollRef.current;
+    const bookmark = host?.querySelector<HTMLElement>(`[id="${CSS.escape(location.bookmark)}"]`);
+    const hit = bookmark?.closest<HTMLElement>('p');
+    if (!host || !box || !hit) { onLocationChange?.('missing'); return; }
+    host.querySelectorAll(`.${HL}`).forEach(el => el.classList.remove(HL));
+    hit.classList.add(HL);
+    const top = Math.max(0, box.scrollTop + hit.getBoundingClientRect().top - box.getBoundingClientRect().top - box.clientHeight / 4);
+    scrollBox(box, top);
+    const current = anchorsRef.current.filter(anchor => anchor <= top + box.clientHeight * .3).length;
+    setPage(Math.max(1, current));
+    onLocationChange?.('located');
+  }, [location, loading, err, onLocationChange]);
 
   // ── 定位：文本搜索 + 高亮 ────────────────────────────
   const locate = useCallback((quote: string, occurrence: "first" | "last" = "first"): boolean => {

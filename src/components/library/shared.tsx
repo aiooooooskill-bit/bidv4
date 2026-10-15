@@ -1,7 +1,7 @@
 import React from 'react';
 import {request,json,BASE} from '../../api';
 export type Company={id:string;name:string;credit_code:string;note:string;profile:Record<string,string>;revision:number};
-export type Representative={id:string;company_id:string;name:string;title:string;phone:string;email:string;note:string;revision:number};
+export type Representative={id:string;name:string;title:string;phone:string;email:string;note:string;revision:number};
 export type Metadata={doc_type:string;statement?:string;questions?:string[];fields?:Record<string,{value:string;source?:string}>;extra?:Record<string,{value:string;source?:string}>;confidence?:number};
 export type Kb={id:string;title:string;file_name:string;doc_type:string;company_id:string;review_status:string;parse_status:string;extract_status:string;updated_at:string;error?:string;business:Metadata;suggested:Metadata;ocr:string;original_ocr:string;content:string;original_content:string;revision:number;meta:Record<string,any>;segments:any[]};
 export type Overview={companies:Company[];representatives:Representative[];types:{code:string;name:string}[];field_labels:Record<string,string>};

@@ -33,3 +33,17 @@ export const bodyUrl=(tid:string,path:string,version:string)=>`${BASE}/workbench
 export const uploadExtensions=['.docx','.pdf','.png','.jpg','.jpeg','.gif','.webp'];
 export const MAX_UPLOAD_BYTES=100*1024*1024;
 export function validateUpload(file:Pick<File,'name'|'size'>,purpose:'source'|'bid'='source'){const ext=file.name.slice(file.name.lastIndexOf('.')).toLowerCase();if(!uploadExtensions.includes(ext))throw new ApiError(415,'仅支持 DOCX、PDF、PNG、JPG、JPEG、GIF、WebP');if(purpose==='source'&&file.size>MAX_UPLOAD_BYTES)throw new ApiError(413,'文件超过100MB上限')}
+
+export type UploadProgress={loaded:number;total:number;processing:boolean};
+export function uploadFile<T>(path:string,file:File,onProgress:(progress:UploadProgress)=>void):Promise<T>{
+ return new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest(),body=new FormData();body.append('file',file);
+  xhr.open('POST',BASE+path);xhr.responseType='json';
+  xhr.upload.onprogress=event=>{if(event.lengthComputable)onProgress({loaded:event.loaded,total:event.total,processing:event.loaded===event.total})};
+  xhr.upload.onload=()=>onProgress({loaded:file.size,total:file.size,processing:true});
+  xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300)resolve(xhr.response as T);else reject(new ApiError(xhr.status,typeof xhr.response?.detail==='string'?xhr.response.detail:`上传未完成（HTTP ${xhr.status}）`))};
+  xhr.onerror=()=>reject(new ApiError(0,'连接中断，上传未完成，请检查网络后重试。'));
+  xhr.onabort=()=>reject(new ApiError(0,'上传已取消，文件尚未确认保存。'));
+  xhr.send(body);
+ });
+}

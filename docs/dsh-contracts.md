@@ -5,6 +5,7 @@
 - `cordis.patch.yml`注册页面服务，业务运行时注册唯一客户预设 `ooo-bidpliot`（定义位于 `server/native/preset.mjs`），包含原角色方法、文件／搜索／技能／具体提问及原Python业务工具。没有独立执行或审查预设。
 - 正式服务与`cordis.patch.yml`均声明`webServer`、`connection`、`agents`、`llm`、`agentDefaultModel`、`subprocess`、`attachments`依赖。`/api/bidv4`由当前插件处理，经`connection.admit`验证dsh登录；没有引擎HTTP代理。
 - 业务子插件复用宿主官方 `agents/sessions/sessionPersistence/sessionQuery/agentLoop/agentPresets/subagents` 等服务。每个项目只绑定一个客户主会话及真实主 Agent，目录／正文与OCR沿用内部子任务，由原生会话控制器直接观察；不桥接、复制或重组消息。执行技能在对应预设中挂载，工具在 Agent 作用域限制为现有业务与文件工具，不将业务能力注入普通宿主会话。
+- 上下文计量复用宿主 `tokenMeter`；自动摘要和工具回执裁剪在客户预设的官方隔离组内挂载 `dsh-compaction-basic` 与 `dsh-compaction-tool-result-pruner`，沿用官方标准预设的归属方式。摘要预留及输出预算为8192 tokens，主会话、恢复会话和继承预设的子任务共用该策略，不修改普通宿主预设。Web／桌面宿主关闭全局压缩后端，因此仅声明依赖或复用宿主 Agent 不会自动启用压缩。`tests/preset-compaction.test.mjs` 使用完整官方Web配置验证自动摘要、裁剪、超限恢复及冷恢复；隔离底层组件测试不能替代此项验证。已发布0.1.1漏挂这组组件，该修复尚未包含在原发布包中。
 - 业务执行现在参与宿主官方事件策略与落盘屏障，不再建立独立事件总线。插件卸载停止自己发起的工作并释放所持句柄，宿主保留原生历史与会话生命周期。
 - 文件预设显式依赖`attachments`与`llm`，保证官方`read_image`注册；OCR只允许该工具，使用父级provider/model。原图片转写提示、PDF分页和转换文件契约保留。
 - 主会话与原有子任务均位于宿主当前配置的官方会话存储；图片复用宿主配置的`DSH_HOME/attachments/v1`，不建立第二个私有附件库；业务输出位于各项目`work`。fs默认完整访问，业务工具落盘仍按项目/章节契约。
