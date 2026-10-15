@@ -59,6 +59,7 @@ export function BuildWorkspace({tid,mode,flow,input,artifacts,disabled,busy,onCh
   <div className="build-status-metrics" aria-label="制作进度"><span className="build-status-group"><span className="build-status-dot" data-state={flow.directory?'ready':'missing'} aria-hidden="true"/><span>{flow.directory?'目录已保存':'目录未生成'}</span>{flow.directory?<small>{directoryCount} 项</small>:null}</span><span className="build-status-group" aria-label={`正文生成进度：${generated} / ${total} 章`}><span>正文</span><strong>{generated} / {total}</strong><span>章</span></span><span className="build-status-group" aria-label={`整册就绪：${readyVolumes} / ${currentVolumes.length} 册`}><span>整册就绪</span><strong>{readyVolumes} / {currentVolumes.length}</strong><span>册</span></span><span className="build-status-group">{flow.directory?(flow.directory.content.page_target==null?'不限篇幅':`目标 ${flow.directory.content.page_target} 页`):'篇幅待设置'}</span></div>
   {unfinished||affected.length||hasDirty||flow.execution?.state==='failed'?<div className="build-status-notes">{unfinished?<span>{unfinished} 章待完成</span>:null}{affected.length?<span data-tone="warning">{affected.length} 章待核对或更新</span>:null}{hasDirty?<strong data-tone="warning">请先保存当前修改，再发起制作操作。</strong>:null}{flow.execution?.state==='failed'?<strong data-tone="error">制作未完成，请查看错误提示</strong>:null}</div>:null}
  </>});
+ const tabs=<div className="bp-tabs">{[['directory','目录与章节'],['guide','写作指引'],['promises','关键事实与承诺'],].map(([key,label])=><button className="bp-tab" data-active={tab===key} key={key} onClick={()=>{if(tab!==key)navigate(()=>setTab(key))}}>{label}</button>)}</div>;
  return <>
   {mode==='build'?<div className="build-toolbar"><BidderSetup tid={tid} flow={flow} onChanged={onChanged}/><button className="bp-btn" disabled={locked} onClick={()=>setOutlineOpen(true)}>{flow.directory?'智能调整目录':'智能生成目录'}</button>
    <span className="bp-spacer"/><button className="bp-btn" data-kind="primary" disabled={locked||!flow.bidder?.confirmed||flow.bidder?.stale||!flow.directory||!total||complete||!!stalePreparation.length} onClick={()=>void execute('build',[])}>{complete?'标书已制作':generated?'继续制作标书':'开始制作标书'}</button>
@@ -67,9 +68,11 @@ export function BuildWorkspace({tid,mode,flow,input,artifacts,disabled,busy,onCh
   {controls}
   {panelNeeded?<div className="preparation-summary" role="status"><div><strong>{needsInput?'制作需要补充信息':'写作准备需要核对'}</strong><span>{needsInput?`请在核对面板填写${questionCount?` ${questionCount} 项`:''}制作信息后继续。`:'编写依据已变化，请核对写作准备后继续。'}</span></div><button ref={panelToggle} className="bp-btn" aria-expanded={panelOpen} aria-controls={panelId} onClick={()=>setPanelOpen(open=>!open)}>{panelOpen?'收起核对面板':'打开核对面板'}</button></div>:null}
   <div className="build-workspace" data-panel-open={panelNeeded&&panelOpen}><div className="build-content">
-  <div className="bp-tabs">{[['directory','目录与章节'],['guide','写作指引'],['promises','关键事实与承诺'],].map(([key,label])=><button className="bp-tab" data-active={tab===key} key={key} onClick={()=>{if(tab!==key)navigate(()=>setTab(key))}}>{label}</button>)}</div>
+  {tab!=='directory'?tabs:null}
   {tab==='directory'?<div className="build-layout">
+   <div className="directory-pane">{tabs}
    {flow.directory?<DirectoryPanel tid={tid} value={flow.directory} onSaved={onChanged} locked={disabled} onSelect={pick} selected={selected} statuses={flow.body_sections}/>:<div className="bp-empty">点击“智能生成目录”，选择目标篇幅与编号方式。</div>}
+   </div>
    <div className="chapter-pane"><div className="document-toolbar"><strong>{volume?.display_name??orphan?.split('/').pop()??selected?.title??'Word 文档预览'}</strong><span className="bp-spacer"/>
     {volumeId||orphan?<button className="bp-btn" onClick={()=>{setVolumeId(null);setOrphan(null)}}>返回章节预览</button>:selected?<>
      <button className="bp-btn" disabled={locked||!section||!!stalePreparation.length} title={hasDirty?'请先保存当前修改':running?'当前操作尚未结束':stalePreparation.length?'请先核对过期的写作准备':!prepared?'自动补齐写作准备后，只生成所选章':undefined} onClick={()=>void execute('body',[selected],{instruction:selectedBody?'更新当前章，按当前目录与写作指引重新编写；仅更新此章，保留其他正文。':''})}>{selectedBody?'更新当前章':'生成当前章'}</button>
