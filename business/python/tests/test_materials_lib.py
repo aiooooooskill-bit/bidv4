@@ -253,3 +253,87 @@ def test_crlf_source_line_numbers_stable(tmp_path, monkeypatch):
     ch1 = mlib.read_outline(fid)[0]
     b = mlib.create_block(fid, '章一块', '', [[ch1['start_line'], ch1['end_line']]])
     assert db.mt_get_block(b['id'])['chars'] > 0
+
+
+def test_material_upload_has_no_file_size_limit(tmp_path,monkeypatch):
+    import asyncio
+    from app.services import materials
+    _setup(tmp_path,monkeypatch)
+    parsed=[]
+    monkeypatch.setattr(mlib,'schedule_parse',lambda fid:parsed.append(fid))
+    class LargeUpload:
+        filename='超大写作素材.docx'
+        remaining=101*1024*1024
+        async def read(self,n):
+            size=min(n,self.remaining);self.remaining-=size
+            return b'0'*size
+    result=asyncio.run(materials.upload_file(LargeUpload()))
+    assert result['size']==101*1024*1024
+    assert (mlib.mt_files_dir()/result['file_name']).stat().st_size==result['size']
+    assert parsed==[result['id']]
+
+
+def test_chapter_preview_uses_source_bookmarks_without_changing_original(tmp_path, monkeypatch):
+    import asyncio
+    import hashlib
+    from zipfile import ZipFile
+    from docx import Document
+    from docx.oxml.ns import qn
+    from app.services import materials
+    _setup(tmp_path, monkeypatch)
+    source = mlib.mt_files_dir() / '同名章节.docx'
+    doc = Document()
+    doc.add_paragraph('服务方式')  # Same text in the body must not become the first heading target.
+    doc.add_heading('第一章', 1)
+    doc.add_heading('服务方式', 2)
+    doc.add_paragraph('第一处正文').runs[0].bold = True
+    doc.add_table(rows=2, cols=2).cell(0, 0).text = '跨行表格'
+    doc.add_page_break()
+    doc.add_heading('第二章', 1)
+    doc.add_heading('服务方式', 2)
+    doc.add_paragraph('第二处正文')
+    doc.save(source)
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    fid = db.mt_insert_file(file_name=source.name, file_hash=digest)['id']
+    run_parse(fid)
+    outline = mlib.read_outline(fid)
+    first, second = outline[0]['children'][0], outline[1]['children'][0]
+    assert first['标题'] == second['标题'] == '服务方式'
+    output = asyncio.run(materials.get_file_preview(fid))
+    preview = Document(output.path)
+    anchors = {node.get(qn('w:name')): node.getparent() for node in preview.element.iter(qn('w:bookmarkStart'))}
+    assert anchors[f'bid_{fid}_{first["start_line"]}'] is not anchors[f'bid_{fid}_{second["start_line"]}']
+    for chapter in (first, second):
+        paragraph = anchors[f'bid_{fid}_{chapter["start_line"]}']
+        assert ''.join(paragraph.itertext()).count('服务方式') >= 1
+    assert len(anchors) == 4
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == digest
+    # Only the main document part changes; formatting, tables, media and package relationships remain intact.
+    with ZipFile(source) as before, ZipFile(output.path) as after:
+        assert before.namelist() == after.namelist()
+        assert all(before.read(name) == after.read(name) for name in before.namelist() if name != 'word/document.xml')
+    assert len(preview.tables) == 1
+    assert preview.paragraphs[3].runs[0].bold is True
+    assert preview.element.find('.//' + qn('w:br')).get(qn('w:type')) == 'page'
+    # Repeated preview requests rebuild from the original, without accumulating bookmarks.
+    again = Document(asyncio.run(materials.get_file_preview(fid)).path)
+    assert len(list(again.element.iter(qn('w:bookmarkStart')))) == 4
+
+
+def test_chapter_preview_rejects_missing_or_unparsed_source(tmp_path, monkeypatch):
+    import asyncio
+    import pytest
+    from app.services import materials
+    from app.services.errors import BusinessError
+    _setup(tmp_path, monkeypatch)
+    with pytest.raises(BusinessError, match='素材文件不存在'):
+        asyncio.run(materials.get_file_preview('missing'))
+    file = db.mt_insert_file(file_name='未解析.docx', file_hash='pending')
+    with pytest.raises(BusinessError, match='原件缺失'):
+        asyncio.run(materials.get_file_preview(file['id']))
+    (mlib.mt_files_dir() / file['file_name']).write_bytes(b'not a Word file')
+    with pytest.raises(BusinessError, match='尚未解析完成'):
+        asyncio.run(materials.get_file_preview(file['id']))
+    db.mt_update_file(file['id'], parse_status='ready')
+    with pytest.raises(BusinessError, match='章节位置数据缺失'):
+        asyncio.run(materials.get_file_preview(file['id']))

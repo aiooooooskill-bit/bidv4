@@ -7,7 +7,7 @@ const button=(view,text)=>find(view,n=>n.type==='button'&&(Array.isArray(n.props
 
 for(const [component,extra] of [
  ['CompanyDetail',{company:overview.companies[0]}],
- ['RepresentativeDetail',{rep:{id:'r',name:'张三',company_id:'a',revision:1,title:'经理',phone:'123',email:'',note:''},companies:overview.companies,initialCompany:'a'}],
+ ['RepresentativeDetail',{rep:{id:'r',name:'张三',revision:1,title:'经理',phone:'123',email:'',note:''}}],
  ['KnowledgeDetail',{item:{id:'k',revision:1,title:'证件',company_id:'a',business:{doc_type:'other'},suggested:{},ocr:'核对文字',original_ocr:'机器文字',meta:{},parse_status:'ready'}}],
  ['MaterialDetail',{item:{id:'m',title:'方案',note:'用途',file_id:'f',file_name:'方案.docx'}}],
 ])test(component+' 保存期间锁定输入并保留离开保护',async()=>{
@@ -78,12 +78,12 @@ for(const key of ['规范#1.docx','规范?1.docx','带 空格&符号.docx'])test
 });
 
 test('授权代表409恢复使用新revision并保留人员输入',async()=>{
- const rep={id:'r',company_id:'a',revision:1,name:'张三',title:'经理',phone:'123',email:'',note:''};let conflict=true;const bodies=[];
+ const rep={id:'r',revision:1,name:'张三',title:'经理',phone:'123',email:'',note:''};let conflict=true;const bodies=[];
  const f=await fixture(async(_url,options={})=>{
   if(options.method){bodies.push(JSON.parse(options.body));if(conflict){conflict=false;return response({detail:'版本冲突'},409)}return response({id:'r'})}
   return response({...overview,representatives:[{...rep,revision:2,phone:'456'}]});
  });
- const view=f.mount('RepresentativeDetail',{...shared(),rep,companies:overview.companies,initialCompany:'a'});
+ const view=f.mount('RepresentativeDetail',{...shared(),rep});
  try{
   find(view,n=>n.props['aria-label']==='代表姓名').props.onChange({target:{value:'我的代表草稿'}});
   await button(view,'保存授权代表').props.onClick();await view.settle();

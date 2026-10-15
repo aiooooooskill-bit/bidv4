@@ -278,3 +278,12 @@ a.bp-btn { text-decoration: none; display: inline-block; line-height: 1.5; }
 .bp-root .pager>div{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .bp-root .pager button{padding:4px 8px;font-size:11px;white-space:nowrap}
 .bp-root .pager select{padding:4px;font-size:11px;width:auto;max-width:100%}
+
+.bp-confirm-dialog{padding:26px;overflow:auto;box-sizing:border-box}
+.bp-confirm-heading{display:flex;align-items:center;gap:12px}
+.bp-confirm-heading>span{display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;background:var(--bid-color-warning-bg);color:var(--bid-color-warning-text);font-size:20px;font-weight:600}
+.bp-confirm-heading h2{margin:0;font-size:18px;font-weight:600;line-height:1.5}
+.bp-confirm-dialog>p{margin:16px 0 24px;color:var(--bid-color-text-secondary);font-size:14px;line-height:1.7}
+.bp-confirm-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.bp-confirm-actions .bp-btn{min-height:36px}
+@media(max-width:480px){.bp-confirm-dialog{padding:20px}.bp-confirm-actions{flex-direction:column-reverse}.bp-confirm-actions .bp-btn{width:100%}}

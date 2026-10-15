@@ -22,8 +22,8 @@ def current(tid,cid,sid,sign_date):
         if not company['profile'].get('legal_name'):raise BusinessError(422,'请先在主体档案维护法定代表人姓名')
         signer={'id':'legal','name':company['profile']['legal_name'],'title':company['profile'].get('legal_title',''),'revision':company['revision']}
     else:
-        reps=cs.read('SELECT * FROM representatives WHERE id=? AND company_id=?',(sid,cid))
-        if not reps:raise BusinessError(422,'签字代表必须属于当前投标主体')
+        reps=cs.read('SELECT * FROM representatives WHERE id=?',(sid,))
+        if not reps:raise BusinessError(422,'签字代表不存在，请从授权代表名单重新选择')
         signer=reps[0]
     sources={}
     for key,kid in company['profile'].items():

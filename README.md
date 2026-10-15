@@ -4,7 +4,7 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前发行版本为 **0.1.3**，修改内容见 [版本说明](CHANGELOG.md)。采用固定本地目录安装；数据库与生成文件保存在该目录的 `data/`。交付组成与验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前发行版本为 **0.1.4**，修改内容见 [版本说明](CHANGELOG.md)。采用固定本地目录安装；数据库与生成文件保存在该目录的 `data/`。交付组成与验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
 
 ## 项目 Agent 对话
 
@@ -19,7 +19,7 @@
 在 DeepSeek Harness 客户端的「插件 → 添加插件」中填写以下发布附件地址：
 
 ```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.3/ooo-bidpliot-0.1.3.tgz
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.4/ooo-bidpliot-0.1.4.tgz
 ```
 
 宿主下载包并安装 Node 依赖；安装脚本调用 uv 根据锁文件准备 Python 业务环境。若宿主提示构建脚本待授权，按提示允许本插件的安装脚本后重试。需要本机已有 Node.js 24+、Python 3.12+ 和 uv，安装时可联网访问依赖仓库。安装后检查插件版本、页面入口和同名 Agent 预设均正常。
@@ -74,7 +74,7 @@ npm run build
 node scripts/delivery.mjs export /absolute/new-delivery
 ```
 
-白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。GitHub [v0.1.3 发布页](https://github.com/aiooooooskill-bit/bidv4/releases/tag/v0.1.3) 提供完整插件安装包（客户端 URL 安装用 TGZ / 本地目录安装用 ZIP）与 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；GitHub 自动生成的 Source code 压缩包不包含已构建的 dist，请使用发布页附件。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
+白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。GitHub [v0.1.4 发布页](https://github.com/aiooooooskill-bit/bidv4/releases/tag/v0.1.4) 提供完整插件安装包（客户端 URL 安装用 TGZ / 本地目录安装用 ZIP）与 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；GitHub 自动生成的 Source code 压缩包不包含已构建的 dist，请使用发布页附件。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
 
 ## 页面流程
 
@@ -85,6 +85,10 @@ node scripts/delivery.mjs export /absolute/new-delivery
 数字DOCX/PDF使用原确定性解析器；扫描页与图片由dsh同一模型转写。扫描页逐页渲染识别，无128页硬上限；单张图片2000万像素预算保留。识别输出必须齐备，不换模型、不把部分OCR标成成功。大文件范围与审核方法见 [当前审核实现](docs/REVIEW-CURRENT.md)。
 
 解读、目录与规划直接展示原生文件，隐藏内部来源编号并保留关联。手动保存/取消、冲突和草稿保护沿用现有页面。错误集中到顶部操作提示；只有实际缺少具体值才出现页面选项，无结果确认门或聊天“回复继续”。
+
+资料库中的授权代表独立维护、全库共用，不归属于企业。项目确认制作信息时，选择本次投标主体、授权代表（或法定代表人）和签署日期，选择结果仅保存到该项目。
+
+资料库的公司资料、写作素材与 Word 版式共用分步上传窗口，保留各自的主体归属、章节选择与版式确认流程。写作素材不限制文件大小，公司资料限 100 MB，Word 版式限 20 MB；上传显示真实传输进度，并区分传输完成与服务器处理。写作素材统一在左侧展示，使用待选章节、可用素材、解析失败和待复核标签区分状态。选章窗口顶部填写名称与用途，目录支持全选和逐项取消，点击章节标题直接定位并高亮左侧原文，复选框仅负责勾选；勾选章节并保存后才进入写作检索。
 
 ## 存储与运行
 
@@ -124,6 +128,6 @@ npm run verify:delivery
 
 `node scripts/verify-delivery.mjs --keep-open` 会在通过后保留临时宿主供浏览器验收；只使用临时项目，不读取正式模型凭证或修改用户数据。输出的本机 `/login` 地址用于该临时宿主。测试结果写入 `docs/evidence/plugin-delivery-validation-20261013.json`。
 
-0.1.3 修改内容与验证范围见 [版本说明](CHANGELOG.md)；历史交付结果记录在 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。记录是带日期的快照；代码变化后重新执行受影响的检查，不沿用旧结果作为通过依据。检查不审核模型生成内容，双插件调整按用户要求暂缓。
+0.1.4 修改内容与验证范围见 [版本说明](CHANGELOG.md)；历史交付结果记录在 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。记录是带日期的快照；代码变化后重新执行受影响的检查，不沿用旧结果作为通过依据。检查不审核模型生成内容，双插件调整按用户要求暂缓。
 
 原灵燕MIT版权保留于 [business/LICENSE](business/LICENSE)，源码与改动来源见 [UPSTREAM](docs/UPSTREAM.md)。

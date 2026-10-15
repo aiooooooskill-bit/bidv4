@@ -72,14 +72,15 @@ def test_recursive_library_ancestors_denied_but_project_and_global_materials_all
     with pytest.raises(BusinessError,match='不属于'):cs.require_asset_path(tid,store.kb_files_dir()/item['file_name'])
 
 
-@pytest.mark.parametrize('invalid',['representative_owner','legal_name'])
+@pytest.mark.parametrize('invalid',['representative_missing','legal_name'])
 def test_invalid_binding_state_readable_and_reconfirmation_recovers(tmp_path,monkeypatch,invalid):
     company,item,meta=setup(tmp_path,monkeypatch);company=legal(company)
     foreign=asyncio.run(lib.save_company(lib.CompanyBody(name='乙公司',profile={'legal_name':'乙法人'})))
-    rep=asyncio.run(lib.save_representative(lib.RepresentativeBody(company_id=company['id'],name='代表')))
+    rep=asyncio.run(lib.save_representative(lib.RepresentativeBody(name='代表')))
     tid=db.create_task('绑定恢复')['id'];artifact_store.ensure_task_skeleton(tid)
-    bind(tid,company,rep['id'] if invalid=='representative_owner' else 'legal')
-    if invalid=='representative_owner':asyncio.run(lib.save_representative(lib.RepresentativeBody(**{**rep,'company_id':foreign['id']})))
+    bind(tid,company,rep['id'] if invalid=='representative_missing' else 'legal')
+    if invalid=='representative_missing':
+        with cs.transaction() as connection:connection.execute('DELETE FROM representatives WHERE id=?',(rep['id'],))
     else:asyncio.run(lib.save_company(lib.CompanyBody(**{**company,'profile':{}})))
     assert bidder.status(tid)['stale']
     assert 'invalid' in bidder.basis(tid)['current']

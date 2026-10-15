@@ -148,6 +148,20 @@
   },
   {
     "method": "GET",
+    "path": "/materials/files/{fid}/preview",
+    "module": "materials",
+    "function": "get_file_preview",
+    "status": 200
+  },
+  {
+    "method": "GET",
+    "path": "/materials/items",
+    "module": "materials",
+    "function": "list_items",
+    "status": 200
+  },
+  {
+    "method": "GET",
     "path": "/materials/blocks",
     "module": "materials",
     "function": "list_blocks",
@@ -165,13 +179,6 @@
     "path": "/materials/blocks/{bid}/content",
     "module": "materials",
     "function": "get_block_content",
-    "status": 200
-  },
-  {
-    "method": "GET",
-    "path": "/materials/files/{fid}/content",
-    "module": "materials",
-    "function": "get_file_content",
     "status": 200
   },
   {

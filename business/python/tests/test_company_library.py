@@ -44,14 +44,15 @@ def test_scope_precedes_limit_and_unassigned_is_explicit(tmp_path,monkeypatch):
     assert asyncio.run(knowledge.list_items(company_id='unassigned'))['items'][0]['id']==unknown['id']
     assert cs.asset_state(unknown['id'])['company_id'] is None
 
-def test_entity_revision_and_representative_owner(tmp_path,monkeypatch):
+def test_entity_revision_and_independent_representative(tmp_path,monkeypatch):
     c,i,m=setup(tmp_path,monkeypatch)
-    r=asyncio.run(lib.save_representative(lib.RepresentativeBody(company_id=c['id'],name='张三')))
+    r=asyncio.run(lib.save_representative(lib.RepresentativeBody(name='张三')))
     assert r['revision']==1
     update=lib.RepresentativeBody(**{**r,'phone':'888'})
     asyncio.run(lib.save_representative(update))
     with pytest.raises(BusinessError):asyncio.run(lib.save_representative(update))
-    with pytest.raises(BusinessError):asyncio.run(lib.save_representative(lib.RepresentativeBody(company_id='unknown',name='误归属')))
+    assert 'company_id' not in r
+    assert asyncio.run(lib.overview())['representatives'][0]['id']==r['id']
     ingest.schedule_ingest(i['id'])
     with pytest.raises(BusinessError,match='正在识别'):asyncio.run(lib.review_asset(i['id'],lib.ReviewBody(revision=cs.asset_state(i['id'])['revision'],company_id=c['id'],title=i['title'],business=m)))
 
@@ -89,9 +90,11 @@ def test_project_snapshot_scope_source_versions_and_idle(tmp_path,monkeypatch):
     c=asyncio.run(lib.save_company(lib.CompanyBody(**{**c,'profile':{**c['profile'],'source-revision:bank_account':str(cs.asset_state(i['id'])['revision'])}})))
     binding.revision=saved['revision'];asyncio.run(bidder.save_bidder(tid,binding))
     b=asyncio.run(lib.save_company(lib.CompanyBody(name='其他公司',profile={'legal_name':'乙法人'})))
-    rep=asyncio.run(lib.save_representative(lib.RepresentativeBody(company_id=b['id'],name='乙代表')))
-    with pytest.raises(BusinessError,match='必须属于'):asyncio.run(bidder.save_bidder(tid,bidder.BidderBody(company_id=c['id'],signer_id=rep['id'],sign_date='2026-10-12',revision=binding.revision+1)))
-    binding.company_id=b['id'];binding.signer_id='legal';binding.revision+=1
+    rep=asyncio.run(lib.save_representative(lib.RepresentativeBody(name='通用代表')))
+    shared=asyncio.run(bidder.save_bidder(tid,bidder.BidderBody(company_id=c['id'],signer_id=rep['id'],sign_date='2026-10-12',revision=binding.revision+1)))
+    assert shared['snapshot']['signer']['id']==rep['id']
+    assert 'company_id' not in shared['snapshot']['signer']
+    binding.company_id=b['id'];binding.signer_id=rep['id'];binding.revision=shared['revision']
     asyncio.run(bidder.save_bidder(tid,binding))
     assert '许可证.png' not in search_company_assets('开户银行')
     assert '不属于' in read_company_asset(i['id'])
@@ -135,3 +138,45 @@ def test_confirmed_identity_fills_actual_tender_letter_docx(tmp_path,monkeypatch
     assert all(value in accepted for value in identity.values())
     assert len(generated.tables)==1 and len(generated.tables[0].rows)==len(identity)+1
     runctx.clear_run()
+
+
+def test_representative_is_independent_and_shared_only_through_project_choices(tmp_path,monkeypatch):
+    from app.services import bidder
+    from pydantic import ValidationError
+    monkeypatch.setenv('DATA_DIR',str(tmp_path));db.init_db()
+    rep=asyncio.run(lib.save_representative(lib.RepresentativeBody(name='共用授权代表',phone='123')))
+    assert cs.companies()==[]
+    assert 'company_id' not in rep
+    with pytest.raises(ValidationError):lib.RepresentativeBody(name='旧归属字段',company_id='obsolete')
+    companies=[asyncio.run(lib.save_company(lib.CompanyBody(name=name))) for name in ['甲公司','乙公司']]
+    tasks=[db.create_task('独立授权选择')['id'] for _ in companies]
+    for tid,company in zip(tasks,companies):
+        saved=asyncio.run(bidder.save_bidder(tid,bidder.BidderBody(company_id=company['id'],signer_id=rep['id'],sign_date='2026-10-15')))
+        assert saved['snapshot']['signer']['id']==rep['id'] and not saved['stale']
+        with pytest.raises(BusinessError,match='不存在'):
+            asyncio.run(bidder.save_bidder(tid,bidder.BidderBody(company_id=company['id'],signer_id='missing',sign_date='2026-10-15',revision=saved['revision'])))
+    asyncio.run(lib.save_representative(lib.RepresentativeBody(**{**rep,'phone':'456'})))
+    assert all(bidder.status(tid)['stale'] for tid in tasks)
+
+
+def test_material_inventory_unifies_pending_files_and_blocks_without_duplicates(tmp_path,monkeypatch):
+    setup(tmp_path,monkeypatch)
+    pending=db.mt_insert_file(file_name='售后服务.docx',file_hash='pending')
+    ready=db.mt_insert_file(file_name='实施方案.docx',file_hash='ready')
+    db.mt_update_file(pending['id'],parse_status='ready')
+    db.mt_update_file(ready['id'],parse_status='ready')
+    db.mt_replace_blocks(ready['id'],[{'id':f'mb_{n}','title':f'实施素材{n}','note':'交付','ranges':json.dumps([[1,2]]),'chars':100} for n in range(6)])
+    page=asyncio.run(materials.list_items(page=1,page_size=5))
+    assert page['total']==7 and len(page['items'])==5 and page['pages']==2
+    assert page['items'][0]['kind']=='file' and page['items'][0]['id']==pending['id']
+    assert all(i['kind']=='block' for i in page['items'][1:])
+    tail=asyncio.run(materials.list_items(page=2,page_size=5))
+    assert len(tail['items'])==2 and all(i['parse_status']=='ready' for i in tail['items'])
+    assert asyncio.run(materials.list_items(q='售后',page_size=5))['total']==1
+    assert asyncio.run(materials.list_items(file_id=ready['id'],page_size=5))['total']==6
+    db.mt_update_file(ready['id'],parse_status='failed',error='目录解析失败')
+    rows=asyncio.run(materials.list_items(file_id=ready['id'],page_size=5))['items']
+    assert all(i['source_error']=='目录解析失败' for i in rows)
+    db.mt_replace_blocks(pending['id'],[{'id':'mb_new','title':'售后方案','note':'','ranges':json.dumps([[1,2]]),'chars':20}])
+    fresh=asyncio.run(materials.list_items(file_id=pending['id'],page_size=5))
+    assert fresh['total']==1 and fresh['items'][0]['kind']=='block'

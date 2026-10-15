@@ -10,15 +10,15 @@ import {business,root,dataRoot,BusinessError} from './native/business.mjs';
 import {assertInstallation,claimHost} from './installation.mjs';
 export const name='ooo-bidpliot';
 export const inject=['webServer','connection','agents','llm','agentDefaultModel','subprocess','attachments','sessions','sessionPersistence','sessionQuery','agentPresets','sessionTitle','sessionProjections','agentLoop','tools','skills','userQuestions','fs','systemPrompt','subagents'];
-async function input(req,unlimitedBid=false){
+async function input(req,unlimitedUpload=false){
  const type=req.headers['content-type']??'';
  if(type.startsWith('multipart/form-data')){
   const dir=join(dataRoot,'uploads',randomUUID());await mkdir(dir,{recursive:true});let upload,fields={},writes=[],failure;
   try{
-   const parser=Busboy({headers:req.headers,defParamCharset:'utf8',limits:{files:1,...(unlimitedBid?{}:{fileSize:100*1024*1024+1}),fields:8,fieldSize:65536}});
+   const parser=Busboy({headers:req.headers,defParamCharset:'utf8',limits:{files:1,...(unlimitedUpload?{}:{fileSize:100*1024*1024+1}),fields:8,fieldSize:65536}});
    parser.on('file',(_name,stream,info)=>{const path=join(dir,'file');upload={path,filename:info.filename};stream.on('limit',()=>{failure=new BusinessError(413,'文件超过100MB上限')});writes.push(pipeline(stream,createWriteStream(path)).catch(e=>{failure=e}))});
    parser.on('field',(name,value)=>{fields[name]=value});parser.on('filesLimit',()=>{failure=new BusinessError(422,'每次只能上传一个文件')});
-   await pipeline(req,parser);await Promise.all(writes);if(!unlimitedBid&&upload&&(await stat(upload.path)).size>100*1024*1024)failure=new BusinessError(413,'文件超过100MB上限');if(failure)throw failure;return {body:fields,upload,cleanup:()=>rm(dir,{recursive:true,force:true})};
+   await pipeline(req,parser);await Promise.all(writes);if(!unlimitedUpload&&upload&&(await stat(upload.path)).size>100*1024*1024)failure=new BusinessError(413,'文件超过100MB上限');if(failure)throw failure;return {body:fields,upload,cleanup:()=>rm(dir,{recursive:true,force:true})};
   }catch(e){await Promise.all(writes);await rm(dir,{recursive:true,force:true});throw e}
  }
  let bytes=0,chunks=[];for await(const chunk of req){bytes+=chunk.length;if(bytes>1024*1024)throw new BusinessError(413,'操作内容超过1MB上限');chunks.push(chunk)}
@@ -47,7 +47,7 @@ export async function apply(ctx){
   try{
    const url=new URL((req.url??'/').slice('/api/bidv4'.length)||'/', 'http://localhost');const path=url.pathname,method=req.method??'GET',query=Object.fromEntries(url.searchParams);
    if(path.startsWith('/assets/')){if(!['GET','HEAD'].includes(method))throw new BusinessError(405,'操作不支持');const dir=resolve(root,'dist'),asset=resolve(dir,decodeURIComponent(path.slice('/assets/'.length)));if(!asset.startsWith(dir+sep))throw new BusinessError(404,'文件不存在');const mime={'.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm'};await file(res,asset,null,mime[extname(asset)],method==='HEAD');return}
-   parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req,path==='/files'&&method==='POST'&&query.purpose==='bid'):{body:{},cleanup:async()=>{}};
+   parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req,method==='POST'&&(path==='/materials/files'||(path==='/files'&&query.purpose==='bid'))):{body:{},cleanup:async()=>{}};
    const body=parsed.body;
    if(path==='/tasks'&&method==='GET'){send(res,await runtime.tasks());return}
    if(path==='/tasks'&&method==='POST'){send(res,await business(scope.ctx,'create_task',body),201);return}

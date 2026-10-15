@@ -315,26 +315,6 @@ def block_content(bid: str) -> dict | None:
     }
 
 
-def file_content(fid: str, start: int, end: int) -> dict | None:
-    """文件片段内容（挑章节实时预览）：按行号闭区间切片，单节 sections。
-
-    行号夹紧到实际行数（越界不报错）；文件不存在或解析 md 缺失返回 None
-    （API 层转 404 提示重新解析）。与 block_content 同形状。
-    """
-    f = db.mt_get_file(fid)
-    if not f:
-        return None
-    md_path, _, _ = mt_parse_paths(f["file_name"])
-    if not md_path.is_file():
-        return None
-    total = len(md_path.read_text(encoding="utf-8").splitlines())
-    s, e = max(1, int(start)), min(total, int(end))
-    if e < s:
-        return {"chars": 0, "sections": []}
-    sections = slice_sections(md_path, [[s, e]])
-    return {"chars": sum(len(sec["text"]) for sec in sections), "sections": sections}
-
-
 def search_block_ids(q: str, limit: int = 48) -> set[str]:
     """FTS 检索命中的素材块 id（块的标题+备注+正文都在检索段里）。
 
