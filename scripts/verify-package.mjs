@@ -19,5 +19,5 @@ try{
  const created=await invoke(request);assert.equal(created.result.task.title,request.args.title);
  const schemas=await invoke({...request,operation:'schemas',args:{}});assert.ok(schemas.result.some(s=>s.name==='docx_section_create'));
  const report={passed:true,platform:process.platform,version:pkg.version,unicodeAndSpaceInstallationPath:true,python:doctor.python,createdTask:created.result.task.title,toolCount:schemas.result.length};
- await mkdir(join(root,'docs/evidence'),{recursive:true});await writeFile(join(root,'docs/evidence/cross-platform-package.json'),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
+ await mkdir(join(root,'docs/evidence'),{recursive:true});await writeFile(join(root,`docs/evidence/release-${pkg.version}-package-installation.json`),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }finally{await rm(temporary,{recursive:true,force:true})}

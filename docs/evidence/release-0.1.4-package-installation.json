@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "platform": "darwin",
+  "version": "0.1.4",
+  "unicodeAndSpaceInstallationPath": true,
+  "python": {
+    "version": "3.13.13",
+    "prefix": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/bid Windows 中文 q2jTgl/ooo-bidpliot-0.1.4/business/python/.venv"
+  },
+  "createdTask": "Windows 中文路径安装验收",
+  "toolCount": 28
+}

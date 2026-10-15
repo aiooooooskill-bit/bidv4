@@ -1,0 +1,18 @@
+{
+  "version": "0.1.4",
+  "files": 606,
+  "tgzAndZipFileBytesIdentical": true,
+  "noSymlinks": true,
+  "assets": [
+    {
+      "name": "ooo-bidpliot-0.1.4.tgz",
+      "bytes": 5371365,
+      "sha256": "93913e26fc08b368a0cc3f0e5b727426d32d0098fda669deaf841186a776a265"
+    },
+    {
+      "name": "ooo-bidpliot-0.1.4.zip",
+      "bytes": 5691302,
+      "sha256": "02ebd0d38026be8bbf6feb15a88ebecdeb03e0e734a5ac5322d994fc59552f5d"
+    }
+  ]
+}
