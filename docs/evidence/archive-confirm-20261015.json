@@ -1,0 +1,43 @@
+{
+  "goal": "将用户选定的简洁确认方案接入项目归档弹窗，并按 AGENTS.md 复审",
+  "date": "2026-10-15",
+  "implementation_verdict": "PASS",
+  "scope": ["src/components/ArchiveProjectDialog.tsx", "src/screens/TenderList.tsx", "src/styles.css"],
+  "critical_review": {
+    "primary_risk": "不同项目可能有相同的前五个字，单独缩略名称会增加误归档风险",
+    "mitigation": "保留悬停全称和点击展开全称；取消按钮获得初始焦点；请求进行期间禁止再次确认与关闭",
+    "supporting_evidence": "用户已选择简洁确认；沿用现有归档接口、Modal 焦点管理和主题变量即可完成完整交互",
+    "conclusion": "该方案满足当前需求，未发现本次改动的阻断问题",
+    "reversal_condition": "若取消全称查看能力，或后续归档语义改为不可恢复删除，需要重新评估确认交互"
+  },
+  "principles": [
+    {"rule": "删除旧实现，不保留兼容层", "result": "PASS", "evidence": "删除 TenderList 内原归档弹窗与临时标题截断，使用唯一 ArchiveProjectDialog"},
+    {"rule": "最简单实现", "result": "PASS", "evidence": "一个业务组件和局部样式；无方案切换配置，无通用确认框抽象"},
+    {"rule": "最小端到端切片", "result": "PASS", "evidence": "实际 TenderList 点击归档、确认、DELETE 请求、列表更新已在内存夹具中跑通"},
+    {"rule": "模块化和职责分离", "result": "PASS", "evidence": "弹窗负责展示与确认交互；列表保留 API、错误处理与刷新职责"},
+    {"rule": "优先成熟库", "result": "PASS", "evidence": "沿用现有 React 与 Modal；未增加 UI 或图标依赖"},
+    {"rule": "实现前检查现有依赖", "result": "PASS", "evidence": "已检查 package.json、Modal、主题变量与现有测试工具"},
+    {"rule": "长期架构与渐进实现", "result": "PASS", "evidence": "分析、制作、审查列表共享同一业务组件，无临时路由或后端分支"},
+    {"rule": "先调研成熟产品模式", "result": "PASS", "evidence": "设计阶段已参考 Ant Design 确认弹窗和 Atlassian 的明确按钮文案与右对齐操作模式，并经用户选择"}
+  ],
+  "verification": {
+    "typescript": "PASS: npm run check",
+    "build": "PASS: 在独立临时副本运行 npm run build；使用现有依赖，不复制正式 data",
+    "node_regression": {"command": "npm test", "passed": 129, "failed": 0},
+    "browser": [
+      "长名称默认前五字加省略号，悬停可读全称，点击可展开和收起",
+      "恰好五字与四字名称完整展示，不追加省略号",
+      "初始焦点在取消；Esc 关闭后焦点恢复到归档按钮",
+      "取消与 Esc 不产生 DELETE 请求",
+      "提交显示正在归档，关闭和操作按钮禁用，Esc 不关闭",
+      "完成一次请求后项目移出列表，统计同步更新，夹具记录 DELETE 次数为 1",
+      "320px 宽度下弹窗左右边界为 20px/300px；展开全称后 clientWidth 与 scrollWidth 均为 278px"
+    ],
+    "browser_data": "实际列表与弹窗组件使用内存任务和 fetch 夹具，无正式项目读写",
+    "screenshot": "docs/previews/archive-confirm/implemented.png"
+  },
+  "deployment": {
+    "production_assets_replaced": false,
+    "reason": "正式宿主仍在使用安装目录；遵守项目运行保护，在隔离副本完成构建验收，未停止宿主或绕过运行锁"
+  }
+}
