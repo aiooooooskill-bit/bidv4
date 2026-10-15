@@ -11,7 +11,7 @@ import {mkdir,rm,writeFile,readFile,readdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
-import {createBusinessScope} from '../server/native/scope.mjs';
+import {createBusinessScope} from './helpers/runtime-host.mjs';
 import {BusinessRuntime} from '../server/native/runtime.mjs';
 import {business,dataRoot} from '../server/native/business.mjs';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
@@ -42,12 +42,12 @@ if(process.env.BIDV4_NATIVE_FIXTURE==='1')test('正式预设与官方dsh会话�
  for(const event of ['agent/pre-step','agent/request','tools/execute','session/created','session/event','session/flush','subagent/start','subagent/end','user-questions/request','llm/stream'])hostScope.ctx.on(event,(_payload,next)=>{hostLeaks++;return typeof next==='function'?next():undefined},{global:true});
  const tid='t_'+randomUUID().replaceAll('-',''),scopeRoot=join(dataRoot,'.validation',tid);let scope,runtime,knowledgeId;
  try{
-  scope=await createBusinessScope(hostScope.ctx,scopeRoot);runtime=new BusinessRuntime(scope.ctx);await runtime.init();
+  scope=await createBusinessScope(hostScope.ctx,scopeRoot);runtime=new BusinessRuntime(scope.ctx);await runtime.init();scope.ctx.reflect.provide('bidBusiness',runtime);scope.ctx.reflect.provide('webServer',{port:0});
   assert.notEqual(scope.ctx.events,hostScope.ctx.events);
   assert.equal(scope.ctx.llm[symbols.original],host.llm[symbols.original]);assert.equal(scope.ctx.attachments[symbols.original],host.attachments[symbols.original]);
-  const roster=await scope.ctx.agentPresets.list();assert.ok(roster.find(r=>r.id==='ooo-bidpliot-execution'&&!r.broken),JSON.stringify(roster));
+  const roster=await scope.ctx.agentPresets.list();assert.ok(roster.find(r=>r.id==='ooo-bidpliot'&&!r.broken),JSON.stringify(roster));
   const task=await business(scope.ctx,'create_task',{title:'一次性工程验证',request_id:tid.slice(2)});assert.equal(task.task.id,tid);await runtime.skillsLink(join(dataRoot,'workspace',tid));
-  const id='native-'+randomUUID();const h=await scope.ctx.agents.create({sessionId:id,meta:{cwd:join(dataRoot,'workspace',tid),agentPreset:'ooo-bidpliot-execution'},agentOptions:await runtime.select(),setup:async c=>{await scope.ctx.agentPresets.mount(c,'ooo-bidpliot-execution')}});runtime.handles.set(id,h);
+  const id='native-'+randomUUID();const h=await scope.ctx.agents.create({sessionId:id,meta:{cwd:join(dataRoot,'workspace',tid),agentPreset:'ooo-bidpliot'},agentOptions:await runtime.select(),setup:async c=>{await scope.ctx.agentPresets.mount(c,'ooo-bidpliot')}});runtime.handles.set(id,h);
   h.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-subagent-fixture'}]}));await h.agent.whenIdle();await scope.ctx.sessions.flush(h.agent.session);
   assert.equal(h.agent.session.snapshotEvents().findLast(e=>e.type==='turn/end').data.reason.kind,'completed');assert.ok(requests.length>=3,JSON.stringify({requests:requests.map(o=>({last:o.messages.findLast(m=>m.role==='tool'||['human','user','user-question-reply'].includes(m.source?.kind)),tools:o.tools?.map(t=>t.name)})),events:h.agent.session.snapshotEvents().filter(e=>e.type==='tool/result')}));assert.ok(requests[0].tools.some(t=>t.name==='read_image'));assert.ok(requests.every(o=>o.provider==='fixture'&&o.model==='configured-model'));
   await writeFile(join(dataRoot,'workspace',tid,'sources','工程源.png'),Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64'));
@@ -57,11 +57,11 @@ if(process.env.BIDV4_NATIVE_FIXTURE==='1')test('正式预设与官方dsh会话�
   const company=await business(scope.ctx,'route',{method:'POST',path:'/library/companies',body:{name:'工程公司'}});
   const kb=await business(scope.ctx,'route',{method:'POST',path:'/kb/files',query:{company_id:company.id},upload:{path:join(dataRoot,'workspace',tid,'sources','工程源.png'),filename:'工程入库-'+tid+'.png'}});knowledgeId=kb.id;await runtime.ingestKnowledge(kb.id);const kbState=await business(scope.ctx,'route',{method:'GET',path:'/kb/items/'+kb.id});assert.equal(kbState.parse_status,'ready');assert.equal(kbState.extract_status,'done');assert.equal(kbState.review_status,'processed');assert.ok(requests.every(o=>o.provider==='fixture'&&o.model==='configured-model'));
   h.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-question-fixture'}]}));await h.agent.whenIdle();await scope.ctx.sessions.flush(h.agent.session);
-  const record={task_id:tid,session_id:id,kind:'probe',model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(record));await writeFile(join(dataRoot,'actions',tid,'probe.json'),JSON.stringify(record));
+  const record={action_id:'probe',start_seq:0,created_at:Date.now(),task_id:tid,session_id:id,kind:'probe',model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(record));await writeFile(join(dataRoot,'actions',tid,'probe.json'),JSON.stringify(record));
   let state=await runtime.state(tid);assert.equal(state.execution.state,'needs_input');assert.equal(state.execution.questions[0].callId,'question-call');
   await assert.rejects(runtime.answer(tid,id,{call_ids:['question-call'],batches:[{call_id:'question-call',answers:[]}]}),/问题与回答不一致/);
   await business(scope.ctx,'route',{method:'POST',path:'/kb/items/'+knowledgeId+'/retrigger'});await writeFile(join(dataRoot,'knowledge-jobs',knowledgeId+'.json'),JSON.stringify({id:knowledgeId,pid:2147483647}));
-  await runtime.close();await scope.close();scope=await createBusinessScope(hostScope.ctx,scopeRoot);runtime=new BusinessRuntime(scope.ctx);await runtime.init();state=await runtime.state(tid);assert.equal(state.execution.state,'needs_input');
+  await runtime.close();await scope.close();scope=await createBusinessScope(hostScope.ctx,scopeRoot);runtime=new BusinessRuntime(scope.ctx);await runtime.init();scope.ctx.reflect.provide('bidBusiness',runtime);scope.ctx.reflect.provide('webServer',{port:0});state=await runtime.state(tid);assert.equal(state.execution.state,'needs_input');
   const recoveredKb=await business(scope.ctx,'route',{method:'GET',path:'/kb/items/'+knowledgeId});assert.equal(recoveredKb.parse_status,'failed');assert.match(recoveredKb.error,/中断/);
   await runtime.answer(tid,id,{call_ids:['question-call'],batches:[{call_id:'question-call',answers:[{id:'service',selected:['三年']}]}]});await runtime.handles.get(id).agent.whenIdle();assert.equal((await runtime.state(tid)).execution.state,'completed');assert.ok(runtime.handles.get(id).agent.session.snapshotEvents().some(e=>e.type==='user/message'&&e.data.source?.kind==='user-question-reply'));
   const started=new Promise(resolve=>{childStarted=resolve});runtime.handles.get(id).agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-cancel-fixture'}]}));await started;
@@ -71,7 +71,7 @@ if(process.env.BIDV4_NATIVE_FIXTURE==='1')test('正式预设与官方dsh会话�
   const payload={kind:'analyse',request_id:randomUUID(),input_version:first.input_versions.analyse,main_file:'工程源.png',supplements:[]};const admitted=await runtime.action(tid,payload);await runtime.handles.get(admitted.session_id).agent.whenIdle();await runtime.settling.get(tid);assert.equal((await runtime.state(tid)).execution.state,'failed');assert.match((await runtime.state(tid)).execution.error,/未产出所需文件/);
   assert.equal((await runtime.state(tid)).analysis_progress.find(p=>p.key==='basic').done,0,'旧解读不计入本轮');
   await writeFile(analysisPath,'工程旧解读');assert.equal((await runtime.state(tid)).analysis_progress.find(p=>p.key==='basic').done,0,'结束后的人工写入不计为本轮产出');
-  assert.deepEqual(await runtime.action(tid,payload),{session_id:admitted.session_id,replayed:true});await assert.rejects(runtime.action(tid,{...payload,main_file:'other.png'}),/同一请求/);const stateNow=await runtime.state(tid);await assert.rejects(runtime.action(tid,{kind:'outline',request_id:randomUUID(),input_version:stateNow.input_versions.outline}),/八份招标解读/);
+  assert.deepEqual(await runtime.action(tid,payload),{session_id:admitted.session_id,action_id:admitted.action_id,replayed:true});await assert.rejects(runtime.action(tid,{...payload,main_file:'other.png'}),/同一请求/);const stateNow=await runtime.state(tid);await assert.rejects(runtime.action(tid,{kind:'outline',request_id:randomUUID(),input_version:stateNow.input_versions.outline}),/八份招标解读/);
   const logs=await readdir(join(scopeRoot,'sessions'),{recursive:true});assert.ok(logs.some(p=>p.endsWith('.jsonl')));
   const closingChild=new Promise(resolve=>{childStarted=resolve});runtime.handles.get(id).agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-cancel-fixture'}]}));await closingChild;await runtime.close();assert.equal(childSignal.aborted,true);businessLeaksAtShutdown=hostLeaks;
   const hostProbe=await hostScope.ctx.agents.create({sessionId:'host-after-business-close',meta:{cwd:scopeRoot},agentOptions:{provider:'fixture',model:'configured-model'}});

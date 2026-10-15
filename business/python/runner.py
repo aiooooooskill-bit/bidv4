@@ -47,6 +47,10 @@ async def dispatch():
         return snapshot_for_task(args['task_id'])
     if op=='review_prepare':return review.prepare(args['task_id'])
     if op=='review_documents':return {'documents':review.documents(args['task_id'])}
+    if op=='review_progress':
+        if not review_batches.path(args['task_id'],args['session_id']).is_file():return {'accepted':0,'batches':0,'total_batches':0}
+        value,groups=review_batches.read(args['task_id'],args['session_id'])
+        return {'accepted':sum(len(b['comparisons']) for b in value['batches']),'batches':len(value['batches']),'total_batches':len(groups)}
     if op=='review_accept_batch':return review_batches.accept(args['task_id'],args['session_id'],args['candidate'])
     if op=='review_finish':return review.finish(args['task_id'],args['session_id'])
     if op=='review_input':return review.set_input(args['task_id'],args['bids'])
@@ -116,6 +120,10 @@ async def dispatch():
         target = artifact_store.work_dir(request['task_id']) / section_path if section_path else None
         before = page_flow.file_hash(target) if target and target.is_file() else None
         result = TOOL_MAP[args['name']](**parameters)
+        if args['name'] == 'finish_review_report':
+            # Publish only after the existing complete-batch/report checks pass,
+            # so the same Agent can read its final report before ending its reply.
+            review.finish(request['task_id'], request['session_id'])
         if target and target.is_file() and page_flow.file_hash(target) != before:
             build_state.record_write(request['task_id'], section_path, request.get('session_id'), replace=args['name']=='docx_section_create')
         if args['name'] == 'validate_body' and str(result).startswith('[校验通过]'):

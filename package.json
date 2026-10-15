@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -21,7 +21,8 @@
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-layout",
-        "@deepseek-ai/dsh-client-locale"
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-workspace"
       ]
     },
     "manifestVersion": 1
@@ -38,7 +39,8 @@
     "directory:check": "node scripts/doctor.mjs",
     "delivery:export": "node scripts/delivery.mjs export",
     "delivery:update": "node scripts/delivery.mjs update",
-    "verify:delivery": "node scripts/verify-delivery.mjs"
+    "verify:delivery": "node scripts/verify-delivery.mjs",
+    "postinstall": "uv sync --locked --project business/python"
   },
   "dependencies": {
     "busboy": "1.6.0",
@@ -122,6 +124,7 @@
     "business/python/app",
     "business/python/tests",
     "README.md",
+    "CHANGELOG.md",
     "docs/ui/tokens.css",
     "docs/UPSTREAM.md",
     "docs/dsh-contracts.md",

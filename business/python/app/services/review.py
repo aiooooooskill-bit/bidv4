@@ -191,7 +191,7 @@ def _record(tid):
 def _report_path(tid, session):
     if not session or Path(session).name != session:
         raise ValueError('审查会话编号无效')
-    return _root(tid) / 'runs' / (session + '.json')
+    return _root(tid) / 'runs' / (session + '-' + str(_record(tid)['created_at']) + '.json')
 
 def save_report(tid, session, value):
     record = _record(tid)
@@ -203,7 +203,7 @@ def save_report(tid, session, value):
         missing = [s['title'] for s in sections(tid) if not (artifact_store.work_dir(tid) / s['path']).is_file()]
         if missing:
             report['limitations'].append('当前平台目录尚有未生成章节：' + '、'.join(missing) + '；本次只核查现有正文。')
-    envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': documents(tid), 'report': report, 'decisions': {}, 'method': {'name': '灵燕能力整合审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'analysis': review_basis(tid, True), 'checks': review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])}
+    envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': documents(tid), 'report': report, 'decisions': {}, 'method': {'name': '标书审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'analysis': review_basis(tid, True), 'checks': review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])}
     write_atomic(_report_path(tid, session), json.dumps(envelope, ensure_ascii=False))
     return {'saved': True, 'requirements': len(report['requirements']), 'issues': len(report['issues']) + len(report['document_issues'])}
 
@@ -259,7 +259,7 @@ def snapshot(tid):
         adir = artifact_store.work_dir(tid) / ('analysis' if envelope['analysis']['reused_platform_analysis'] else 'review/analysis')
         version = page_flow.digest({k: page_flow.file_hash(adir / (k + '.md')) if (adir / (k + '.md')).is_file() else None for k in review_method.LABELS})
         if version != envelope['analysis']['analysis_version']: status = 'stale'
-    return {'method': {'name': '灵燕能力整合审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'mode': config['mode'], 'bids': config['bids'], 'status': status, 'input_version': current, 'report': envelope if envelope and envelope['completed'] else None}
+    return {'method': {'name': '标书审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'mode': config['mode'], 'bids': config['bids'], 'status': status, 'input_version': current, 'report': envelope if envelope and envelope['completed'] else None}
 
 def decide(tid, session, issue_id, status, note):
     from .edit_guard import require_idle

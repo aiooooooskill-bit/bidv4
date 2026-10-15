@@ -12,7 +12,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
 import {createHash} from 'node:crypto';
-import {createBusinessScope} from '../server/native/scope.mjs';
+import {createBusinessScope} from './helpers/runtime-host.mjs';
 import {BusinessRuntime} from '../server/native/runtime.mjs';
 import {subagentFailure} from '../server/native/tools.mjs';
 import {inject} from '../server/plugin.mjs';
@@ -145,7 +145,7 @@ test('业务关闭等待已开始的冷恢复，释放官方会话后不留下�
  let runtime;
  try{
   const original=await f.agent(f.scope.ctx,'shutdown-resume');original.followup(message('resume prefix'));await original.whenIdle();await f.handles.pop().dispose();
-  const ctx={agents:{async resume(){resumeEntered.resolve();await resumeReleased.promise;const h=await f.scope.ctx.agents.resume({resumeSessionId:'shutdown-resume',agentOptions:model});f.handles.push(h);return h}},agentPresets:{async mount(){}},sessions:f.scope.ctx.sessions};
+  const ctx={agents:{get(){return undefined},async resume(){resumeEntered.resolve();await resumeReleased.promise;const h=await f.scope.ctx.agents.resume({resumeSessionId:'shutdown-resume',agentOptions:model});f.handles.push(h);return h}},agentPresets:{async mount(){}},sessions:f.scope.ctx.sessions};
   runtime=new BusinessRuntime(ctx);
   const resuming=runtime.handle({session_id:'shutdown-resume',model});await resumeEntered.promise;
   let closed=false;const closing=runtime.close().then(()=>{closed=true});await new Promise(resolve=>setImmediate(resolve));

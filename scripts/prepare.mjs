@@ -8,7 +8,6 @@ const pkg=JSON.parse(await readFile(join(directory,'package.json'),'utf8'));if(p
 await assertStopped(directory);
 async function run(program,args){await new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd:directory,stdio:'inherit'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(program+' 准备失败（退出 '+code+'）')))})}
 await run('npm',['ci','--no-fund','--no-audit']);
-await run('uv',['sync','--locked','--project',join(directory,'business/python')]);
 await run('npm',['run','check']);
 await run(process.execPath,[join(directory,'scripts/build.mjs')]);
 await assertInstallation(directory);

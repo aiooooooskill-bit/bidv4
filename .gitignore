@@ -15,3 +15,7 @@ __pycache__/
 # Local backups and generated delivery packages
 /backups/
 /deliveries/
+
+# Local planning documents are not published
+[Pp][Ll][Aa][Nn]*.md
+*计划*.md

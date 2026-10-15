@@ -2,6 +2,7 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {basename,join,resolve} from 'node:path';
 import {business,dataRoot,BusinessError} from './business.mjs';
+import {taskForAgent} from './conversations.mjs';
 import {normalizeWorkPath} from './work-paths.mjs';
 
 const planningFiles={'body/写作指引.md':'guide','body/关键事实与承诺.md':'promises'};
@@ -15,8 +16,8 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
  const seed=ctx.on('agent/pre-step',async({agent,signal,step},next)=>{
   const {cwd,parentSession,origin}=agent.session.header;
   if(step===1&&origin==='subagent'&&parentSession){
-   const tid=basename(cwd??'');
-   if(resolve(cwd??'')===resolve(join(dataRoot,'workspace',tid))){
+   const tid=taskForAgent(agent)??basename(cwd??'');
+   if(taskForAgent(agent)||resolve(cwd??'')===resolve(join(dataRoot,'workspace',tid))){
     let record;try{record=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'))}catch(error){if(error.code!=='ENOENT')throw error}
     if(['body','revise','build','guide','promises'].includes(record?.kind))await business(ctx,'inherit_asset_reads',{task_id:tid,session_id:agent.session.id,from_session_id:parentSession,seed:true},{signal});
    }
@@ -25,8 +26,8 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
  },{global:true});
  const guard=ctx.on('tools/execute',async(exec,next)=>{
   if(!exec.agent||(!mutations.has(exec.name)&&!['read','read_image','glob','grep','review_basis','review_batch','save_review_batch','finish_review_report'].includes(exec.name))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
-  const tid=basename(exec.agent.session.header.cwd??''),cwd=join(dataRoot,'workspace',tid);
-  if(resolve(exec.agent.session.header.cwd??'')!==resolve(cwd))return next();
+  const tid=taskForAgent(exec.agent)??basename(exec.agent.session.header.cwd??''),cwd=join(dataRoot,'workspace',tid);
+  if(!taskForAgent(exec.agent)&&resolve(exec.agent.session.header.cwd??'')!==resolve(cwd))return next();
   let record;try{record=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'))}catch(e){if(e.code==='ENOENT')return next();throw e}
   if(record.kind==='review'){
    let owner=exec.agent;

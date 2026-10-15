@@ -14,6 +14,30 @@ from docx.package import Package
 from docx.parts.document import DocumentPart
 from docx.parts.styles import StylesPart
 from docx.parts.comments import CommentsPart
+from docx.oxml.ns import qn
+
+TEXT_VIEW = 'current-revisions'
+
+
+def paragraph_text(element):
+    """Read the current Word text, including insertions and excluding deletions.
+
+    Do not flatten the XML: source element indexes must remain stable for injection.
+    """
+    parts = []
+    def collect(node):
+        if node.tag in (qn('w:del'), qn('w:moveFrom')):
+            return
+        if node.tag == qn('w:t'):
+            parts.append(node.text or '')
+        elif node.tag == qn('w:tab'):
+            parts.append('\t')
+        elif node.tag in (qn('w:br'), qn('w:cr')):
+            parts.append('\n')
+        for child in node:
+            collect(child)
+    collect(element)
+    return ''.join(parts)
 
 
 def _relationships(archive, member):

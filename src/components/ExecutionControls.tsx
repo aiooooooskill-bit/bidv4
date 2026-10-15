@@ -3,7 +3,7 @@ import {request,json,ApiError,type Flow,type Execution} from '../api';
 import {reportError,clearNotice} from './NoticeCenter';
 import {businessText} from './MarkdownDocument';
 const labels={running:'正在执行',needs_input:'填写具体选项',completed:'本轮已结束',failed:'本轮未完成',stopped:'已停止'};
-const identityOf=(e:Execution|null)=>JSON.stringify([e?.session_id,e?.questions]);
+const identityOf=(e:Execution|null)=>JSON.stringify([e?.session_id,e?.action_id,e?.questions]);
 // 草稿随项目详情存活；执行栏因页面布局切换重挂时仍使用同一份答案。
 export function useExecutionInput(tid:string,execution:Execution|null){
  const [answers,setAnswers]=useState<Record<string,string[]>>({}),[notes,setNotes]=useState<Record<string,string>>({});
@@ -31,7 +31,7 @@ export function useExecutionControls({tid,execution,input,onChanged,progress,sta
  };
  const stop=async()=>{
   if(!execution||lock.current||stopping)return;lock.current=true;setStopping(true);const id=tid+':stop:'+execution.session_id;
-  try{await request(`/page-flow/${tid}/stop`,json('POST',{session_id:execution.session_id}));clearNotice(id);await onChanged()}
+  try{await request(`/page-flow/${tid}/stop`,json('POST',{session_id:execution.session_id,action_id:execution.action_id}));clearNotice(id);await onChanged()}
   catch(e){setStopping(false);await onChanged();reportError(e,{id,scope:tid,title:'停止操作未完成',retry:stop,retryLabel:'再次停止'})}finally{lock.current=false}
  };
  const stopButton=['running','needs_input'].includes(execution?.state??'')?<button className="bp-btn" disabled={busy||stopping} onClick={()=>void stop()}>{stopping?'正在停止…':'停止'}</button>:null;

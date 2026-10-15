@@ -11,7 +11,7 @@ from docx.oxml.ns import qn
 
 from . import ParseResult, register, _normalize_md
 from .numbering import numbered_heading_level
-from .docx_text import load_text_document
+from .docx_text import load_text_document, paragraph_text, TEXT_VIEW
 
 
 def _heading_level(p) -> int:
@@ -47,7 +47,7 @@ def _numbered_heading_level(text: str) -> int:
 
 
 def _cell_text(cell) -> str:
-    txt = cell.text.replace("\n", " ").strip()
+    txt = '\n'.join(paragraph_text(p._p) for p in cell.paragraphs).replace("\n", " ").strip()
     txt = txt.replace('\\', '\\\\').replace('|', '\\|')
     return txt if txt else " "
 
@@ -87,7 +87,7 @@ def convert(path: Path) -> ParseResult:
             from docx.text.paragraph import Paragraph
 
             p = Paragraph(child, doc)
-            text = _normalize_md(p.text).strip()
+            text = _normalize_md(paragraph_text(child)).strip()
             lvl = _heading_level(p)
             start = len(lines) + 1
             if lvl > 0:
@@ -149,5 +149,5 @@ def convert(path: Path) -> ParseResult:
             element_lines.append([el_idx, min(kept), max(kept)])
     return ParseResult(
         "\n".join(out),
-        {"conversion": conversion, "tables": tables, "image_count": image_count, "element_lines": element_lines},
+        {"conversion": conversion, "text_view": TEXT_VIEW, "tables": tables, "image_count": image_count, "element_lines": element_lines},
     )

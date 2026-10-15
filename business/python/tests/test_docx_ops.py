@@ -1507,7 +1507,7 @@ def test_comment_add_anchor_view_and_errors(env):
 def test_revision_and_comment_authors_are_branded(env):
     """修订/批注署名钉在 _AUTHOR/_COMMENT_AUTHOR 单点上（Word 审阅侧栏用户可见）。"""
     from app.tools.docx_ops import _AUTHOR, _COMMENT_AUTHOR
-    assert _AUTHOR == _COMMENT_AUTHOR == '灵燕智能', (_AUTHOR, _COMMENT_AUTHOR)
+    assert _AUTHOR == _COMMENT_AUTHOR == 'ooo-bidpliot', (_AUTHOR, _COMMENT_AUTHOR)
     section, _ = _injected_section(env)
     view = docx_section_read(**{'path': section})
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))

@@ -18,7 +18,9 @@ const installation=join(workspace,'fixed-install'),source=join(workspace,'clean-
 const reportPath=resolve(option('--report')??join(project,'docs/evidence/plugin-delivery-validation-20261013.json'));
 const environment={...process.env,DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1',BID_DELIVERY_INSTALL:installation};
 delete environment.DSH_TOOLS_MODE;delete environment.NODE_TEST_CONTEXT;
-const report={name:'ooo-bidpliot',releaseVersion:null,startedAt:new Date().toISOString(),workspace,installation,hostHome:home,system:{platform:process.platform,arch:process.arch,node:process.version,dsh:'0.2.0-rc.2'},stages:[],passed:false};
+const releaseVersion=JSON.parse(await readFile(join(project,'package.json'),'utf8')).version;
+assert.match(releaseVersion,/^\d+\.\d+\.\d+$/);
+const report={name:'ooo-bidpliot',releaseVersion,startedAt:new Date().toISOString(),workspace,installation,hostHome:home,system:{platform:process.platform,arch:process.arch,node:process.version,dsh:'0.2.0-rc.2'},stages:[],passed:false};
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const redact=text=>String(text).replace(/([?&]token=)[^\s)"']+/g,'$1[redacted]');
 let active;
@@ -101,8 +103,8 @@ try{
  await stage('干净白名单目录与空环境',async()=>{
   const exported=await script('delivery',['export',installation]);
   for(const name of ['node_modules','business/python/.venv','data','backups'])await assert.rejects(stat(join(installation,name)),{code:'ENOENT'});
-  assert.equal(JSON.parse(await readFile(join(installation,'package.json'),'utf8')).version,undefined);
-  return {exportOutput:exported.output,emptyNodeEnvironment:true,emptyPythonEnvironment:true,containsUserData:false,releaseVersion:null};
+  assert.equal(JSON.parse(await readFile(join(installation,'package.json'),'utf8')).version,releaseVersion);
+  return {exportOutput:exported.output,emptyNodeEnvironment:true,emptyPythonEnvironment:true,containsUserData:false,releaseVersion};
  });
  await stage('全新Node与Python依赖准备及构建',async()=>{
   const result=await script('prepare',[installation]);
@@ -121,7 +123,7 @@ try{
  await stage('宿主其他Agent工具与聊天不受影响',()=>host.command('host'));
  await script('delivery',['export',source]);
  const beforeCodeHash=sha(await readFile(join(installation,'server/agent.mjs')));
- const candidateCode=await readFile(join(source,'server/agent.mjs'),'utf8');await writeFile(join(source,'server/agent.mjs'),candidateCode+'\n// Isolated directory update acceptance marker; no release version is assigned.\n');
+ const candidateCode=await readFile(join(source,'server/agent.mjs'),'utf8');await writeFile(join(source,'server/agent.mjs'),candidateCode+'\n// Isolated directory update acceptance marker; release version is unchanged.\n');
  const candidateCodeHash=sha(await readFile(join(source,'server/agent.mjs')));assert.notEqual(candidateCodeHash,beforeCodeHash);
  await stage('活宿主拒绝原位更新',async()=>{
   const result=await script('delivery',['update',source,installation],{allowFailure:true});assert.notEqual(result.code,0);assert.match(result.output,/宿主|host|运行|活跃|停止/i);return {rejected:true,diagnostic:result.output.slice(-4500)};
@@ -140,7 +142,7 @@ try{
  await stage('固定目录原位更新及全部数据保留',async()=>{
   const result=await script('delivery',['update',source,installation]);const retained=await exactRetention(before,'Original directory update');
   assert.equal(sha(await readFile(join(installation,'server/agent.mjs'))),candidateCodeHash);
-  assert.equal(JSON.parse(await readFile(join(installation,'package.json'),'utf8')).version,undefined);return {updateOutput:result.output.slice(-12000),changedCode:{previousSha256:beforeCodeHash,updatedSha256:candidateCodeHash},retained};
+  assert.equal(JSON.parse(await readFile(join(installation,'package.json'),'utf8')).version,releaseVersion);return {updateOutput:result.output.slice(-12000),changedCode:{previousSha256:beforeCodeHash,updatedSha256:candidateCodeHash},retained};
  });
  host=await startHost();await stage('更新后重启页面与独立Agent冷恢复',()=>host.command('retained',report.business));
  await stage('更新后宿主其他Agent正常',()=>host.command('host'));
@@ -168,7 +170,7 @@ try{
  host=await startHost();await stage('最终重启验证页面与独立Agent',()=>host.command('retained',report.business));
  await stage('页面任务停止会取消子Agent并清理锁',()=>host.command('cancel',report.business));
  report.passed=true;report.completedAt=new Date().toISOString();report.browser={base:host.state.base,loginUrl:host.state.loginUrl};await save();
- console.log('交付验收全部通过；发行版本继续留空。');console.log('证据：'+reportPath);
+ console.log('交付验收全部通过；发行版本 '+releaseVersion+'。');console.log('证据：'+reportPath);
  if(keepOpen){console.log('BID_DELIVERY_BROWSER='+host.state.loginUrl);console.log('BID_DELIVERY_WORKSPACE='+workspace);await writeFile(join(workspace,'browser.json'),JSON.stringify(report.browser,null,2)+'\n');await new Promise(resolve=>process.once('SIGTERM',resolve));await host.close();active=undefined;}
  else{await host.close();active=undefined;await rm(workspace,{recursive:true,force:true});}
 }catch(error){report.passed=false;report.completedAt=new Date().toISOString();report.error=redact(error.stack??error.message);await save();console.error(redact(error.stack??error.message));process.exitCode=1;}

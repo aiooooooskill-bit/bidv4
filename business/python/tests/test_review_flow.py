@@ -760,3 +760,19 @@ def test_conflict_needs_opposing_literal_source_pair(setup):
     result['conflicts'][0]['bid']['fact']['text'] = '本项目只提供单次培训且不承担费用'
     with pytest.raises(ValueError, match='逐字摘录'):
         review_batches.candidate(tid, 'review-test', batch['batch_id'], [result])
+
+
+def test_new_review_in_same_main_session_keeps_prior_report_and_batches(setup):
+    tid = finish(setup)
+    _, _, action_path, original = setup
+    report_path = review._report_path(tid, original['session_id'])
+    batch_path = review_batches.path(tid, original['session_id'])
+    old_report, old_batches = report_path.read_bytes(), batch_path.read_bytes()
+    new_record = {**original, 'created_at': original['created_at'] + 1}
+    action_path.with_name('two.json').write_text(json.dumps(new_record))
+    assert review._report_path(tid, original['session_id']) != report_path
+    assert review_batches.path(tid, original['session_id']) != batch_path
+    assert review.snapshot(tid)['report'] is None
+    assert review_batches.read(tid, original['session_id'])[0]['batches'] == []
+    assert report_path.read_bytes() == old_report
+    assert batch_path.read_bytes() == old_batches

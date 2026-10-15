@@ -176,16 +176,13 @@ async def read_docx_view(task_id: str, path: str):
 _DOCX_MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 async def read_raw(task_id: str, path: str):
-    """docx 原始字节：面板版式预览用（docx-preview 在浏览器本地渲染，文件不出本机）。
-    限 .docx（markdown 走 /workbench/content 文本端点）；只读，不参与恢复点语义。
-    不进 dto 契约（与 docx-view 同先例）。"""
+    """Download the exact Markdown or DOCX work file; DOCX also feeds local preview."""
     _require_task(task_id)
     target = _resolve(task_id, path)
     if not target.is_file():
         raise BusinessError(status_code=404, detail='工作文件不存在')
-    if target.suffix != '.docx':
-        raise BusinessError(status_code=400, detail='本端点只服务 .docx（markdown 用 /workbench/content）')
-    return FileDownload(target, filename=target.name, media_type=_DOCX_MEDIA_TYPE, headers={'X-Content-Type-Options': 'nosniff'})
+    media_type = _DOCX_MEDIA_TYPE if target.suffix == '.docx' else 'text/markdown; charset=utf-8'
+    return FileDownload(target, filename=target.name, media_type=media_type)
 
 class WorkbenchWrite(BaseModel):
     task_id: str

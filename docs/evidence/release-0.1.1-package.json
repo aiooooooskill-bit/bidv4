@@ -1,0 +1,35 @@
+{
+  "version": "0.1.1",
+  "passed": true,
+  "fileCount": 593,
+  "requiredComponents": [
+    "cordis.patch.yml",
+    "server/agent.mjs",
+    "server/native/preset.mjs",
+    "server/native/chat-tools.mjs",
+    "server/native/conversations.mjs",
+    "server/native/workflow.mjs",
+    "dist/client.js",
+    "dist/renderer/figureRenderer.js",
+    "dist/pdfjs/pdf.worker.min.mjs",
+    "business/python/uv.lock",
+    "business/python/app/resources/tender_base_template.docx",
+    "business/python/app/skills/tender-review/SKILL.md",
+    "server/native/roles.json"
+  ],
+  "identicalArchiveContents": true,
+  "sourceFilesMatchWorkingTree": true,
+  "noLocalDataOrEnvironments": true,
+  "archives": [
+    {
+      "name": "ooo-bidpliot-0.1.1.tgz",
+      "bytes": 5445833,
+      "sha256": "6864aa1a6afe0e27e1467e3868565cca706ec1433d8bf327f01590b6963c632e"
+    },
+    {
+      "name": "ooo-bidpliot-0.1.1.zip",
+      "bytes": 5698052,
+      "sha256": "a58e974f66a0d01a25fbf957c67b8e8decd619aac03629002ae6a8cae69be2ca"
+    }
+  ]
+}

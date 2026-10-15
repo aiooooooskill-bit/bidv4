@@ -54,8 +54,7 @@ def context(tid, session):
 
 
 def path(tid, session):
-    review._report_path(tid, session)  # Validate session basename.
-    return review._root(tid) / 'comparisons' / (session + '.json')
+    return review._root(tid) / 'comparisons' / review._report_path(tid, session).name
 
 
 def read(tid, session):

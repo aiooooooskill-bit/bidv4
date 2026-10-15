@@ -17,6 +17,7 @@ export function TenderList({mode,onOpen}:{mode:ListMode;onOpen:(id:string,target
  const [tasks,setTasks]=useState<Task[]>([]),[filter,setFilter]=useState('all'),[page,setPage]=useState(1),[pageSize,setPageSize]=useState(10),[busy,setBusy]=useState(false),[loaded,setLoaded]=useState(false),[loading,setLoading]=useState(true),[remove,setRemove]=useState<Task|null>(null);const active=useRef(true),sequence=useRef(0),lock=useRef(false),uploadAttempt=useRef<UploadAttempt|null>(null);
  const load=useCallback(async()=>{const seq=++sequence.current;setLoading(true);try{const result=await request<{tasks:Task[]}>('/tasks');if(!active.current||seq!==sequence.current)return;setTasks(result.tasks);setLoaded(true);clearNotice('task-list')}catch(e){if(active.current&&seq===sequence.current)reportError(e,{id:'task-list',scope:'list',title:'项目列表读取未完成'})}finally{if(active.current&&seq===sequence.current)setLoading(false)}},[]);
  useEffect(()=>{active.current=true;void load();return()=>{active.current=false;sequence.current++}},[load]);
+ useEffect(()=>{const changed=()=>void load();window.addEventListener('ooo-bidpliot:changed',changed);return()=>window.removeEventListener('ooo-bidpliot:changed',changed)},[load]);
  const filtered=useMemo(()=>tasks.filter(t=>taskMatches(t,filter)),[tasks,filter]);const totalPages=Math.max(1,Math.ceil(filtered.length/pageSize));
  useEffect(()=>setPage(1),[filter,pageSize,mode]);useEffect(()=>{setPage(p=>Math.min(p,totalPages))},[totalPages]);
  const upload=async(file:File,originalAttempt?:UploadAttempt)=>{

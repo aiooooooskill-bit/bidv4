@@ -9,7 +9,7 @@ import {BusinessRuntime} from './native/runtime.mjs';
 import {business,root,dataRoot,BusinessError} from './native/business.mjs';
 import {assertInstallation,claimHost} from './installation.mjs';
 export const name='ooo-bidpliot';
-export const inject=['webServer','connection','agents','llm','agentDefaultModel','subprocess','attachments'];
+export const inject=['webServer','connection','agents','llm','agentDefaultModel','subprocess','attachments','sessions','sessionPersistence','sessionQuery','agentPresets','sessionTitle','sessionProjections','agentLoop','tools','skills','userQuestions','fs','systemPrompt','subagents'];
 async function input(req,unlimitedBid=false){
  const type=req.headers['content-type']??'';
  if(type.startsWith('multipart/form-data')){
@@ -29,7 +29,7 @@ async function file(res,path,name,media,head=false){const info=await stat(path);
 export async function apply(ctx){
  await assertInstallation(root);
  const releaseHost=await claimHost(root);let scope,runtime,routes;
- try{scope=await createBusinessScope(ctx,join(dataRoot,'dsh'));runtime=new BusinessRuntime(scope.ctx);await runtime.init();routes=await business(scope.ctx,'routes')}
+ try{scope=await createBusinessScope(ctx);runtime=new BusinessRuntime(scope.ctx);await runtime.init();routes=await business(scope.ctx,'routes')}
  catch(error){try{await runtime?.close()}finally{try{await scope?.close()}finally{await releaseHost()}}throw error}
  ctx.reflect.provide('bidBusiness',runtime);
  const requests=new Set();let closing=false;
@@ -53,15 +53,17 @@ export async function apply(ctx){
    if(path==='/tasks'&&method==='POST'){send(res,await business(scope.ctx,'create_task',body),201);return}
    let match;
    if((match=path.match(/^\/tasks\/([^/]+)$/))&&method==='DELETE'){await runtime.assertIdle(match[1]);send(res,await business(scope.ctx,'archive_task',{task_id:match[1]}));return}
-   if((match=path.match(/^\/page-flow\/([^/]+)(?:\/(action|sources|checks|export|stop|answer|accept-section|review-input|review-decision))?$/))){
+   if((match=path.match(/^\/page-flow\/([^/]+)(?:\/(action|sources|checks|export|stop|answer|workflow|accept-section|review-input|review-decision))?$/))){
     const [,tid,operation]=match;
     if(!operation&&method==='GET'){send(res,await runtime.state(tid));return}
+    if(operation==='workflow'&&method==='POST'){send(res,await runtime.workflows.start(tid,body),202);return}
+    if(operation==='workflow'&&method==='DELETE'){send(res,await runtime.workflows.stop(tid,{workflow_id:body.workflow_id}));return}
     if(operation==='action'&&method==='POST'){send(res,await runtime.action(tid,body),202);return}
     if(operation==='review-input'&&method==='PUT'){send(res,await runtime.saveReviewInput(tid,body));return}
     if(operation==='review-decision'&&method==='PUT'){send(res,await runtime.reviewDecision(tid,body));return}
     if(operation==='sources'&&method==='PUT'){send(res,await runtime.saveSources(tid,body));return}
-    if(operation==='stop'&&method==='POST'){send(res,await runtime.stop(tid,body.session_id));return}
-    if(operation==='answer'&&method==='POST'){send(res,await runtime.answer(tid,body.session_id,body));return}
+    if(operation==='stop'&&method==='POST'){if(typeof body.session_id!=='string'||typeof body.action_id!=='string')throw new BusinessError(409,'当前执行已变化');send(res,runtime.workflows.active(tid)?await runtime.workflows.stop(tid,{session_id:body.session_id,action_id:body.action_id}):await runtime.stop(tid,body.session_id,body.action_id));return}
+    if(operation==='answer'&&method==='POST'){const result=await runtime.answer(tid,body.session_id,body);const workflow=await runtime.workflows.snapshot(tid);if(workflow?.state==='needs_input')void runtime.workflows.start(tid,{resume:true}).catch(e=>console.error(e.message));send(res,result);return}
     if(operation==='checks'&&method==='GET'){send(res,await business(scope.ctx,'checks',{}, {taskId:tid,signal:controller.signal}));return}
     if(operation==='accept-section'&&method==='POST'){const state=await runtime.assertIdle(tid);if(body.input_version!==state.input_versions.revise)throw new BusinessError(409,'章节依据已变化，请读取最新内容');send(res,await business(scope.ctx,'accept_section',{task_id:tid,volume:body.volume,title:body.title}));return}
     if(operation==='export'&&method==='POST'){const state=await runtime.assertIdle(tid);if(body.input_version!==state.input_versions.revise)throw new BusinessError(409,'合册依据已变化，请刷新页面后继续');send(res,await business(scope.ctx,'export',{}, {taskId:tid,signal:controller.signal}));return}

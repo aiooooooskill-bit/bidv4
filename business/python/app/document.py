@@ -6,12 +6,15 @@ from PIL import Image
 from .parse import convert,outline_with_lines,count_nodes,sha256_file,write_atomic
 from .parse.pdf import render_page_png,insert_page_text
 from .parse.image import IMAGE_EXTS,_TRANSCRIBE_PROMPT
+from .parse.docx_text import TEXT_VIEW
 
 def prepare(src,out):
     src=Path(src);out=Path(out);out.mkdir(parents=True,exist_ok=True)
     digest=sha256_file(src);paths=[out/(src.name+s) for s in ['.md','.outline.json','.meta.json']]
-    if all(p.is_file() for p in paths) and json.loads(paths[2].read_text()).get('sha256')==digest:
-        return {'cached':True,'paths':[str(p) for p in paths],'meta':json.loads(paths[2].read_text())}
+    if all(p.is_file() for p in paths):
+        meta=json.loads(paths[2].read_text())
+        if meta.get('sha256')==digest and (src.suffix.lower()!='.docx' or meta.get('text_view')==TEXT_VIEW):
+            return {'cached':True,'paths':[str(p) for p in paths],'meta':meta}
     pages=[]
     if src.suffix.lower() in IMAGE_EXTS:
         md='';info={'conversion':'vision','pages':1,'tables':0};scan=[1]
@@ -52,7 +55,10 @@ def finish(plan,outputs):
     for p in outputs:
         md=insert_page_text(md,p['page'],p['text']) if src.suffix.lower()=='.pdf' else p['text']
     if outputs:info={**info,'conversion':'pdf-mixed' if src.suffix.lower()=='.pdf' else 'vision','ocr_pages':expected}
-    if len(md.strip())<100:raise ValueError('解析内容不足100字符，无法继续；请检查文件是否完整')
+    # Native Word chapters may legitimately be a short cover or declaration.
+    # OCR and PDF conversions still require enough content to detect failed extraction.
+    if not md.strip() or (not info.get('conversion','').startswith('docx-') and len(md.strip())<100):
+        raise ValueError('解析内容为空或识别内容不足100字符，无法继续；请检查文件是否完整')
     outline=outline_with_lines(md)
     meta={'source':src.name,'sha256':plan['sha256'],'bytes':src.stat().st_size,'chars':len(md),'headings':count_nodes(outline),'generated_at':datetime.now(timezone.utc).isoformat(timespec='seconds'),**info}
     paths=[out/(src.name+s) for s in ['.md','.outline.json','.meta.json']]

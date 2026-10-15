@@ -31,8 +31,10 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    let raw='';for await(const chunk of req)raw+=chunk;
    const request=JSON.parse(raw);requestCount++;
    const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
-   const payloadText=text.match(/页面输入：(\{[^\n]+\})/)?.[1],payload=payloadText?JSON.parse(payloadText):null,kind=payload?.kind;
-   const cwd=text.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+   const anchor=request.messages.findLastIndex(m=>m.role==='user'&&String(m.content).includes('页面输入：'));
+   const currentText=request.messages[anchor]?.content??'';
+   const payloadText=currentText.match(/页面输入：(\{[^\n]+\})/)?.[1],payload=payloadText?JSON.parse(payloadText):null,kind=payload?.kind;
+   const cwd=currentText.match(/当前任务绝对路径：([^；]+)；/)?.[1];
    if(mode==='real'&&(!payload||kind==='body')){
     if(++realCount>100)throw new Error('Real-model verification exceeded 100 requests');
     const timing={request:realCount,startedAt:new Date().toISOString()};modelRequests.push(timing);
@@ -47,16 +49,16 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
     console.log('REAL request '+realCount+' finished '+timing.elapsedMs+'ms '+timing.finishReasons.join(','));
     await writeFile(reportPath.replace('.json','-progress.json'),JSON.stringify({modelRequests,results},null,2));return;
    }
-   const step=request.messages.filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
+   const step=request.messages.slice(anchor).filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
    const write=(path,content)=>call('write',{file_path:join(cwd,'work',path),content});
-   const initial=JSON.parse(text.match(/制作状态：(\{[^；]+\})；/)[1]);
-   const replied=text.includes('answer_to_pending_question');
+   const initial=JSON.parse(currentText.match(/制作状态：(\{[^；]+\})；/)[1]);
+   const replied=JSON.stringify(request.messages.slice(anchor).filter(m=>m.role==='user')).includes('answer_to_pending_question');
    let sequence=[];
    if(kind==='analyse')sequence=[analysis.map(n=>write('analysis/'+n+'.md','# 工程夹具 '+n+'\n本项目需要实施方案，维护期由用户确定。'))];
    if(kind==='outline')sequence=[[call('write',{file_path:join(cwd,'_meta/staging/directory.json'),content:JSON.stringify(directory)})],[call('publish_artifact',{contract:'tender.directory/tender-response-docs@1',draft_path:join(cwd,'_meta/staging/directory.json')})]];
    if(kind==='guide')sequence=[[write('body/写作指引.md',guide)],[call('validate_body',{section:'body/写作指引.md'})]];
    const question=[call('ask_user_question',{questions:[{id:'term',question:'维护期是多少？',options:[{label:'三年'},{label:'五年'}]}]})];
-   if(kind==='promises'&&mode==='duplicate-repair')sequence=[[write('body/关键事实与承诺.md',promises('五年'))]];
+   if(kind==='promises'&&mode==='duplicate-repair')sequence=[[call('read',{file_path:join(cwd,'work/body/关键事实与承诺.md')})],[write('body/关键事实与承诺.md',promises('五年'))]];
    else if(kind==='promises'&&mode==='pipe-leak')sequence=[[write('body/关键事实与承诺.md',servicePromises('5×8'))]];
    else if(kind==='promises'&&mode==='value-edit-leak')sequence=[[call('read',{file_path:join(cwd,'work/body/关键事实与承诺.md')})],[call('edit',{file_path:join(cwd,'work/body/关键事实与承诺.md'),old_string:'五年',new_string:'一年',replace_all:true})]];
    else if(kind==='promises')sequence=mode==='value-leak'?[[write('body/关键事实与承诺.md',promises('一年'))]]:[question,replied?[write('body/关键事实与承诺.md',promises('三年'))]:[]];
@@ -80,7 +82,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    }
    traces.push({kind,step,calls:calls.map(c=>c.name),writes:calls.filter(c=>c.name==='write').map(c=>c.args.file_path.split('/work/')[1])});
    res.writeHead(200,{'Content-Type':'text/event-stream'});
-   const delta=calls.length?{tool_calls:calls.map((c,index)=>({index,id:'fixture-'+step+'-'+index,type:'function',function:{name:c.name,arguments:JSON.stringify(c.args)}}))}:{content:'工程夹具执行结束'};
+   const delta=calls.length?{tool_calls:calls.map((c,index)=>({index,id:'fixture-'+randomUUID(),type:'function',function:{name:c.name,arguments:JSON.stringify(c.args)}}))}:{content:'工程夹具执行结束'};
    for(const [chunk,finish]of [[delta,null],[{},calls.length?'tool_calls':'stop']])res.write('data: '+JSON.stringify({id:'fixture',object:'chat.completion.chunk',created:1,model:'fixture',choices:[{index:0,delta:chunk,finish_reason:finish}]})+'\n\n');
    res.end('data: [DONE]\n\n');
   }catch(e){res.destroy(e)}
@@ -136,14 +138,14 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
     assert.equal(s.execution.session_id,run.session_id);assert.match(await readFile(join(dataRoot,'workspace',tid,'work/body/关键事实与承诺.md'),'utf8'),/三\s*年|3\s*年/);
     record('real-model-assertions',{pass:true,sameSession:true,preparationReady:true,selectedDocxValidated:true,otherDocxBytesUnchanged:true,userValueRecorded:true});
    }else{
-    assert.equal(s.execution.state,'needs_input');assert.equal(s.execution.session_id,run.session_id);assert.deepEqual(s.build_preparation,{guide:'ready',promises:'missing'});assert.equal(s.body_sections[0].status,'missing');
+    assert.equal(s.execution.state,'needs_input');assert.equal(s.execution.session_id,run.session_id);assert.deepEqual(s.build_preparation,{guide:'ready',promises:'missing'},JSON.stringify({traces,questions:s.execution.questions}));assert.equal(s.body_sections[0].status,'missing');
     s=await answer(tid,s);assert.equal(s.execution.state,'completed',s.execution.error);assert.equal(s.execution.session_id,run.session_id);assert.equal(s.body_sections[0].status,'ready');assert.equal(sha(await readFile(other)),before);
     record('auto-preparation-and-question',{pass:true,actionSubmissions:1,questionSubmissions:1,sameSession:true,otherUnchanged:true,nonselectedStatus:s.body_sections[1].status});
     const planning=['写作指引.md','关键事实与承诺.md'],hashes=await Promise.all(planning.map(n=>readFile(join(dataRoot,'workspace',tid,'work/body',n)).then(sha))),traceStart=traces.length;
     await settle(tid,await start(tid,'body'));assert.deepEqual(await Promise.all(planning.map(n=>readFile(join(dataRoot,'workspace',tid,'work/body',n)).then(sha))),hashes);
     assert.ok(!traces.slice(traceStart).some(t=>t.writes.length));record('ready-planning-reuse',{pass:true,planningWrites:0});
     const stopId=await seed();mode='stop';const entered=new Promise(resolve=>{stopEntered=resolve});const stoppedRun=await start(stopId,'body');await entered;
-    await api('/page-flow/'+stopId+'/stop',{session_id:stoppedRun.session_id});s=await state(stopId);assert.equal(s.execution.state,'stopped');assert.deepEqual(s.build_preparation,{guide:'ready',promises:'missing'});
+    await api('/page-flow/'+stopId+'/stop',{session_id:stoppedRun.session_id,action_id:stoppedRun.action_id});s=await state(stopId);assert.equal(s.execution.state,'stopped');assert.deepEqual(s.build_preparation,{guide:'ready',promises:'missing'});
     const guideFile=join(dataRoot,'workspace',stopId,'work/body/写作指引.md'),guideHash=sha(await readFile(guideFile));mode='normal';s=await settle(stopId,await start(stopId,'body'));s=await answer(stopId,s);assert.equal(s.execution.state,'completed');assert.equal(sha(await readFile(guideFile)),guideHash);record('stop-and-resume',{pass:true,guideReused:true});
     const content=await readFile(join(dataRoot,'workspace',tid,'work/body/关键事实与承诺.md'),'utf8');
     await api('/workbench/content',{task_id:tid,path:'body/关键事实与承诺.md',content:promises('五年'),base_hash:sha(Buffer.from(content))},'PUT');

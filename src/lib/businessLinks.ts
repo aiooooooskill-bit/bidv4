@@ -10,7 +10,7 @@ export function startBusinessLinks(): () => void {
     let url: URL;
     try { url = new URL(anchor.href); } catch { return; }
     if (url.origin !== window.location.origin) return;
-    if (!/^\/api\/bidv4\/artifacts\/[^/]+\/file$/.test(url.pathname) && url.pathname !== '/api/bidv4/workbench/content') return;
+    if (!/^\/api\/bidv4\/artifacts\/[^/]+\/file$/.test(url.pathname) && !['/api/bidv4/workbench/content','/api/bidv4/workbench/raw'].includes(url.pathname)) return;
     // Leave the native anchor default intact, including target and downloads.
     event.stopPropagation();
   };

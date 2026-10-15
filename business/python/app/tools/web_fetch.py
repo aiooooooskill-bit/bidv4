@@ -24,7 +24,7 @@ _MAX_REDIRECTS = 5
 _TIMEOUT = httpx.Timeout(15.0)
 _TOTAL_BUDGET = 30.0
 _ALLOWED_CONTENT_TYPES = ('text/html', 'text/plain', 'text/xml', 'application/xml', 'application/rss+xml', 'application/atom+xml', 'application/json')
-_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) LingYanBidAgent/0.1 (research sidecar)'
+_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ooo-bidpliot/0.1'
 
 class _FetchDenied(Exception):
     """目标被安全策略/协议限制拒绝（信息返回给模型，不抛出工具异常）。"""

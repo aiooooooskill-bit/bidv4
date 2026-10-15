@@ -14,6 +14,41 @@ def test_docx_cache_and_changed_source(tmp_path):
     assert prepare(src,out)['cached'] is True
     d.add_paragraph('补充来源说明');d.save(src);assert prepare(src,out)['meta']['sha256']!=result['meta']['sha256']
 
+
+def test_short_native_word_chapter_and_empty_document(tmp_path):
+    source=tmp_path/'封面.docx';d=Document();d.add_paragraph('采购项目投标文件（验收演示）');d.save(source)
+    result=prepare(source,tmp_path/'cover-parse')
+    assert Path(result['paths'][0]).read_text()=='采购项目投标文件（验收演示）'
+    empty=tmp_path/'空文件.docx';Document().save(empty)
+    with pytest.raises(ValueError,match='内容为空'):prepare(empty,tmp_path/'empty-parse')
+
+
+def test_word_parser_reads_current_revision_text_without_changing_source_indexes(tmp_path):
+    from docx.oxml import OxmlElement
+    source=tmp_path/'修订标书.docx';d=Document();p=d.add_paragraph('供应商：')
+    def change(p,kind,text):
+        node=OxmlElement('w:'+kind);run=OxmlElement('w:r');value=OxmlElement('w:delText' if kind=='del' else 'w:t');value.text=text;run.append(value);node.append(run);p._p.append(node)
+    change(p,'del','旧公司');change(p,'ins','新公司（验收演示）')
+    table=d.add_table(rows=1,cols=1);p=table.cell(0,0).paragraphs[0]
+    change(p,'del','旧承诺');change(p,'ins','三年维护')
+    d.add_paragraph('签署日期：2026年8月19日');d.save(source);original=source.read_bytes()
+    result=prepare(source,tmp_path/'parse');md=Path(result['paths'][0]).read_text()
+    assert '新公司（验收演示）' in md and '三年维护' in md
+    assert '旧公司' not in md and '旧承诺' not in md
+    assert [row[0] for row in result['meta']['element_lines']]==[0,1,2]
+    assert source.read_bytes()==original
+
+
+def test_native_word_cache_requires_current_text_view(tmp_path):
+    source=tmp_path/'声明.docx';d=Document();d.add_paragraph('当前有效声明文字');d.save(source)
+    out=tmp_path/'parse';result=prepare(source,out)
+    meta_path=Path(result['paths'][2]);meta=json.loads(meta_path.read_text());meta.pop('text_view');meta_path.write_text(json.dumps(meta))
+    Path(result['paths'][0]).write_text('遗漏新增文字的旧缓存')
+    refreshed=prepare(source,out)
+    assert not refreshed.get('cached')
+    assert Path(refreshed['paths'][0]).read_text()=='当前有效声明文字'
+    assert prepare(source,out)['cached']
+
 def test_docx_text_and_terminal_checks_do_not_read_binary_parts(tmp_path,monkeypatch):
     from zipfile import ZipFile
     from app.tools.validate_body import validate_docx_file

@@ -270,7 +270,7 @@ test('同项目问答草稿跨解读制作审查保留，问题变化才清空',
  const props={tid:'t1',mode:'analysis',onBack(){},onMode(){}};
  const project=f.mount('ProjectWorkbench',props);let controls;
  const inputProps=()=>{
-  const entry=find(project,n=>n.props.tid==='t1'&&(n.props.execution||n.props.flow));
+  const entry=find(project,n=>n.props.tid==='t1'&&n.props.input&&(n.props.execution||n.props.flow));
   return entry.props.flow?{tid:'t1',execution:entry.props.flow.execution,input:entry.props.input,onChanged:entry.props.onChanged}:entry.props;
  };
  const sync=()=>{controls?.unmount();controls=f.mount('ExecutionControls',inputProps());controls.render()};

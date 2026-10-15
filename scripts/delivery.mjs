@@ -20,7 +20,7 @@ async function run(program,args,cwd){await new Promise((resolve,reject)=>{const 
 const [command,sourceArg,targetArg]=process.argv.slice(2);
 if(command==='export'){
  if(!sourceArg)throw new Error('用法：node scripts/delivery.mjs export <新交付目录>');const target=resolve(sourceArg);if(target===root||target.startsWith(join(root,'data')+sep))throw new Error('不能导出到源码根或用户数据目录');await absent(target);await mkdir(target,{recursive:true});
- try{await copyDelivery(root,target);console.log('无版本本地目录已导出：'+target)}catch(error){await rm(target,{recursive:true,force:true});throw error}
+ try{await copyDelivery(root,target);console.log('插件交付目录已导出：'+target)}catch(error){await rm(target,{recursive:true,force:true});throw error}
 }else if(command==='update'){
  if(!sourceArg||!targetArg)throw new Error('用法：node scripts/delivery.mjs update <干净交付来源> <固定安装目录>');
  const source=resolve(sourceArg),target=resolve(targetArg);if(source===target||source.startsWith(target+sep)||target.startsWith(source+sep))throw new Error('更新来源与安装目录必须互相独立');

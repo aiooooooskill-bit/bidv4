@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {symbols} from '@deepseek-ai/cordis';
 import assert from 'node:assert/strict';
 import {mkdir,readFile,readdir,writeFile,symlink} from 'node:fs/promises';
 import {join} from 'node:path';
@@ -7,6 +8,7 @@ import {randomUUID,createHash} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {loadLayeredEnv} from '@deepseek-ai/dsh-app-boot';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
+import {chatToolNames} from '../server/agent.mjs';
 import {root,dataRoot,business} from '../server/native/business.mjs';
 
 const testName='完整官方Web插件：六阶段HTTP执行、卸载取消子Agent、宿主存活与重新加载';
@@ -28,9 +30,11 @@ else test(testName,{timeout:80000},async()=>{
    if(text.includes('web-cancel-child-fixture')){
     res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());started.resolve();return;
    }
-   const payload=text.match(/页面输入：(\{[^\n]+\})/),kind=payload?JSON.parse(payload[1]).kind:null;
-   const cwd=text.match(/当前任务绝对路径：([^；]+)；/)?.[1];
-   const step=request.messages.filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
+   const currentText=request.messages.findLast(m=>m.role==='user'&&String(m.content).includes('页面输入：'))?.content??'';
+   const payload=currentText.match(/页面输入：(\{[^\n]+\})/),kind=payload?JSON.parse(payload[1]).kind:null;
+   const cwd=currentText.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+   const anchor=request.messages.findLastIndex(m=>m.role==='user'&&String(m.content).includes('页面输入：'));
+   const step=request.messages.slice(anchor).filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
    const write=(path,content)=>call('write',{file_path:join(cwd,'work',path),content});
    let calls=[];
    if(text.includes('web-body-child-fixture')){
@@ -50,14 +54,14 @@ else test(testName,{timeout:80000},async()=>{
       [call('ask_user_question',{questions:[{id:'term',question:'维护期是多少？',options:[{label:'三年'},{label:'五年'}]}]})],
       replied?[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |')]:[],
       [call('build_preparation',{stage:'promises'})],
-      [call('task',{subagent_type:'tender-body-writer',description:'web-body-child-fixture'})],
+      [call('docx_section_create',{path:'body/工程验证章节.docx',title:'工程验证章节',paragraphs:'工程验证原段落'})],[call('validate_body',{section:'body/工程验证章节.docx'})],
       [call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})],
      ];calls=sequence[step]??[];
     }
-    if(kind==='body')calls=step===0?[call('task',{subagent_type:'tender-body-writer',description:blockChild?'web-cancel-child-fixture':'web-body-child-fixture'})]:step===1?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];
+    if(kind==='body'){if(blockChild&&step===0){res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());started.resolve();return;}calls=step===0?[call('docx_section_create',{path:'body/工程验证章节.docx',title:'工程验证章节',paragraphs:'工程验证原段落'})]:step===1?[call('validate_body',{section:'body/工程验证章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}
     if(kind==='revise')calls=step===0?[call('docx_section_revise',{path:'body/工程验证章节.docx',edits:JSON.stringify([{para:2,action:'replace',find:'工程验证原段落',text:'工程验证修订段落'}])})]:step===1&&!skipValidation?[call('validate_body',{section:'body/工程验证章节.docx'})]:[];
    }
-   const delta=calls.length?{tool_calls:calls.map((c,index)=>({index,id:'fixture-'+step+'-'+index,type:'function',function:{name:c.name,arguments:JSON.stringify(c.args)}}))}:{content:'工程夹具执行结束'};
+   const delta=calls.length?{tool_calls:calls.map((c,index)=>({index,id:'fixture-'+randomUUID(),type:'function',function:{name:c.name,arguments:JSON.stringify(c.args)}}))}:{content:'工程夹具执行结束'};
    for(const [chunk,finish]of [[delta,null],[{},calls.length?'tool_calls':'stop']])res.write('data: '+JSON.stringify({id:'fixture',object:'chat.completion.chunk',created:1,model:'fixture',choices:[{index:0,delta:chunk,finish_reason:finish}]})+'\n\n');
    res.end('data: [DONE]\n\n');
   }catch(error){res.destroy(error)}
@@ -78,8 +82,8 @@ else test(testName,{timeout:80000},async()=>{
   const {runProfile}=await import('../node_modules/@deepseek-ai/dsh/lib/profile-boot.js');
   ({ctx}=await runProfile({environment:loadLayeredEnv('dsh'),profile:'web',patchFiles:[],args:['--no-open','--host','127.0.0.1','--port','0']}));
   const runtime=ctx.get('bidBusiness');assert.ok(runtime,'Plugin entry must provide its business runtime');
-  assert.notEqual(runtime.ctx.events,ctx.events);
-  assert.ok((await runtime.ctx.agentPresets.list()).some(p=>p.id==='ooo-bidpliot-execution'&&!p.broken));
+  assert.equal(runtime.ctx.sessions[symbols.original],ctx.sessions[symbols.original]);
+  assert.ok((await runtime.ctx.agentPresets.list()).some(p=>p.id==='ooo-bidpliot'&&!p.broken));
   const displayPreset=(await ctx.agentPresets.list()).find(p=>p.id==='ooo-bidpliot');
   assert.ok(displayPreset&&!displayPreset.broken,JSON.stringify(displayPreset));
   const hostTools=ctx.get('tools'),defaultPreset=ctx.agentPresets.defaultId,model={provider:'fixture',model:'fixture'};
@@ -88,9 +92,9 @@ else test(testName,{timeout:80000},async()=>{
   const displaySetup=async c=>{await ctx.agentPresets.mount(c,'ooo-bidpliot')};
   const hostAgent=await ctx.agents.create({sessionId:'display-unrelated-host',meta:{cwd:root,agentPreset:defaultPreset},agentOptions:model,setup:async c=>{await ctx.agentPresets.mount(c,defaultPreset)}});
   const assertDisplay=async agent=>{
-   assert.deepEqual(hostTools.schemas(agent).map(t=>t.name),['ooo_bidpliot_status']);
+   assert.ok(chatToolNames.every(name=>hostTools.get(name,agent)));assert.ok(hostTools.get('docx_section_create',agent));assert.ok(hostTools.get('task',agent));
    const status=await hostTools.execute({callId:randomUUID(),name:'ooo_bidpliot_status',arguments:{},agent,signal:AbortSignal.timeout(10000)});
-   assert.equal(status.isError,false,JSON.stringify(status));assert.deepEqual(JSON.parse(status.value),{tasks:[]});
+   assert.equal(status.isError,false,JSON.stringify(status));assert.deepEqual(JSON.parse(status.value),{tasks:[],attachments:[]});
    const denied=await hostTools.execute({callId:randomUUID(),name:'bid_fixture_write',arguments:{},agent,signal:AbortSignal.timeout(10000)});
    assert.equal(denied.isError,true);assert.equal(denied.error.info.code,'UNKNOWN_TOOL');assert.equal(probeCalls,0);
   };
@@ -161,7 +165,7 @@ else test(testName,{timeout:80000},async()=>{
   const buildRun=await api('/page-flow/'+buildId+'/action',buildPayload);
   await runtime.handles.get(buildRun.session_id).agent.whenIdle();await runtime.settling.get(buildId);
   buildState=await api('/page-flow/'+buildId);assert.equal(buildState.execution.state,'needs_input');assert.equal(buildState.build_preparation.guide,'ready');assert.equal(buildState.build_preparation.promises,'missing');assert.equal(buildState.body_files.length,0);
-  assert.deepEqual(await api('/page-flow/'+buildId+'/action',buildPayload),{session_id:buildRun.session_id,replayed:true});
+  assert.deepEqual(await api('/page-flow/'+buildId+'/action',buildPayload),{session_id:buildRun.session_id,action_id:buildRun.action_id,replayed:true});
   const question=buildState.execution.questions[0];
   await api('/page-flow/'+buildId+'/answer',{session_id:buildRun.session_id,call_ids:[question.callId],batches:[{call_id:question.callId,answers:[{id:'term',selected:['三年']}]}]});
   await runtime.handles.get(buildRun.session_id).agent.whenIdle();await runtime.settling.get(buildId);
@@ -174,7 +178,7 @@ else test(testName,{timeout:80000},async()=>{
    const before=requests.length;
    const status=async task_id=>{const result=await hostTools.execute({callId:randomUUID(),name:'ooo_bidpliot_status',arguments:{task_id},agent:statusAgent.agent,signal:AbortSignal.timeout(10000)});assert.equal(result.isError,false,JSON.stringify(result));return JSON.parse(result.value)};
    const projectStatus=await status(tid);assert.equal(projectStatus.task_id,tid);assert.equal(projectStatus.execution.state,'completed');assert.equal(projectStatus.execution.session_id,sessions.at(-1));
-   const analysisDocument=projectStatus.documents.find(d=>d.name==='structure.md');assert.ok(analysisDocument);assert.equal(new URL(analysisDocument.link).origin,base);const documentResponse=await fetch(analysisDocument.link,{headers:{Cookie:cookie}});assert.equal(documentResponse.status,200);assert.match((await documentResponse.json()).content,/工程夹具 structure/);
+   const analysisDocument=projectStatus.documents.find(d=>d.name==='structure.md');assert.ok(analysisDocument);assert.equal(new URL(analysisDocument.link).origin,base);const documentResponse=await fetch(analysisDocument.link,{headers:{Cookie:cookie}});assert.equal(documentResponse.status,200);assert.match(await documentResponse.text(),/工程夹具 structure/);
    const volumeStatus=await status(buildId);assert.equal(volumeStatus.task_id,buildId);assert.equal(volumeStatus.execution.state,'completed');
    const output=volumeStatus.outputs.find(o=>o.link===base+'/api/bidv4/artifacts/'+volume.artifact_id+'/file');assert.equal(output.name,'工程验证册');
    const outputResponse=await fetch(output.link,{headers:{Cookie:cookie}});assert.equal(outputResponse.status,200);assert.deepEqual(Buffer.from(await outputResponse.arrayBuffer()),publishedBytes);
@@ -232,7 +236,7 @@ else test(testName,{timeout:80000},async()=>{
   missingArtifacts=true;
   await rejectRequest('/page-flow/'+buildId+'/action',{kind:'build',request_id:randomUUID(),input_version:afterDirectoryEdit.input_versions.build,sections:[]},'POST');
   assert.equal((await api('/page-flow/'+buildId)).body_sections[0].status,'missing');missingArtifacts=false;
-  assert.equal(hostLeaks,0);detach();
+  assert.ok(hostLeaks>0,'Host native observers must receive business execution events');detach();
   const state=await api('/page-flow/'+tid);assert.ok(state.body_files.includes('body/工程验证章节.docx'));assert.equal(state.files.filter(f=>f.path.startsWith('analysis/')).length,8);
   const docx=await api('/workbench/docx-view?task_id='+tid+'&path='+encodeURIComponent('body/工程验证章节.docx'));assert.ok(JSON.stringify(docx).includes('工程验证修订段落'));
   assert.equal(createHash('sha256').update(await readFile(source)).digest('hex'),sourceHash);
@@ -247,7 +251,7 @@ else test(testName,{timeout:80000},async()=>{
   const current=await api('/page-flow/'+tid);await api('/page-flow/'+tid+'/action',{kind:'body',request_id:randomUUID(),input_version:current.input_versions.body,sections:current.body_sections});
   await bounded(started.promise,'Child request');
   const stopping=await api('/page-flow/'+tid);
-  await api('/page-flow/'+tid+'/stop',{session_id:stopping.execution.session_id});
+  await api('/page-flow/'+tid+'/stop',{session_id:stopping.execution.session_id,action_id:stopping.execution.action_id});
   assert.equal((await api('/page-flow/'+tid)).execution.state,'stopped');
   assert.ok(runtime.handles.get(stopping.execution.session_id).agent.session.snapshotEvents().every(e=>e.type!=='bid/action-stop'));
   await entry.update({disabled:true});await ctx.loader.await();await bounded(cancelled.promise,'Child cancellation');
@@ -256,7 +260,7 @@ else test(testName,{timeout:80000},async()=>{
   const host=await ctx.agents.create({sessionId:'host-after-plugin-unload',meta:{cwd:root},agentOptions:{provider:'fixture',model:'fixture'}});
   try{host.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'Host remains usable'}]}));await host.agent.whenIdle();assert.equal(host.agent.session.snapshotEvents().findLast(e=>e.type==='turn/end').data.reason.kind,'completed')}finally{await host.dispose()}
   await entry.update({disabled:false});await ctx.loader.await();
-  assert.ok(ctx.get('bidBusiness'));assert.notEqual(ctx.get('bidBusiness'),runtime);
+  assert.ok(ctx.get('bidBusiness'),JSON.stringify(ctx.logger.buffer.slice(-30).map(e=>({name:e.name,args:e.args.map(String)}))));assert.notEqual(ctx.get('bidBusiness'),runtime);
   assert.equal((await api('/tasks')).tasks.length,3);
   const recovered=await api('/page-flow/'+tid);assert.deepEqual(recovered.body_files.sort(),state.body_files.sort());assert.equal(recovered.execution.state,'stopped');
   assert.ok(requests.length>6);assert.equal(sessions.length,6);

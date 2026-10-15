@@ -35,7 +35,7 @@ function browser(){
 test('业务整册与MD链接保留原生打开和下载，绕过宿主同源嵌入浏览器',()=>{
  const b=browser(),dispose=b.start();
  try{
-  for(const path of ['/api/bidv4/artifacts/artifact-123/file','/api/bidv4/workbench/content?task_id=t1&path=analysis%2F%E8%AF%84%E5%88%86.md']){
+  for(const path of ['/api/bidv4/artifacts/artifact-123/file','/api/bidv4/workbench/raw?task_id=t1&path=body/test.docx','/api/bidv4/workbench/content?task_id=t1&path=analysis%2F%E8%AF%84%E5%88%86.md']){
    const anchor=new b.Anchor(path,{target:'_blank',download:'技术标.docx'}),before={href:anchor.href,target:anchor.target,download:anchor.download};
    const result=b.click(new b.Element(anchor));
    assert.equal(result.hostOpened,false);assert.equal(result.event.cancelBubble,true);assert.equal(result.nativeNavigation,true);

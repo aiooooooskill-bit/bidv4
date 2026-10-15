@@ -133,7 +133,21 @@ test('问题分类、待处理筛选和每页数量切换重置页码并保留�
   find(view,n=>n.props.className==='bp-tab'&&n.props.children?.[0]==='全部').props.onClick();await view.settle();
   props.flow.review.report.decisions={...props.flow.review.report.decisions,...Object.fromEntries(Array.from({length:10},(_,i)=>['issue'+i,{status:'confirmed',note:''}]))};await view.settle();
   find(view,n=>n.type==='input'&&n.props.type==='checkbox').props.onChange({target:{checked:true}});await view.settle();assert.equal(issuePager(view).props.page.total,3);assert.equal(issueCards(view).length,3);assert.match(JSON.stringify(view.render()),/已处理 /);
-  props.flow.review.report.session_id='new-report';await view.settle();assert.equal(issuePager(view).props.page.page,1);
+  props.flow.review.report.created_at='new-report';await view.settle();assert.equal(issuePager(view).props.page.page,1);
+ }finally{view.unmount();f.close()}
+});
+
+test('同一会话的新报告重置问题与备注，保存携带报告版本',async()=>{
+ const requests=[],f=await fixture(async(url,options)=>{requests.push(JSON.parse(options.body));return response({})}),props=pagedReviewProps(),view=f.mount('ReviewWorkspace',props);
+ props.flow.review.report.created_at='first-report';
+ try{
+  await view.settle();showIssues(view);await view.settle();issuePager(view).props.onChange(2,5);await view.settle();
+  find(view,n=>n.type==='textarea').props.onChange({target:{value:'旧报告草稿'}});await view.settle();
+  props.flow.review.report.created_at='second-report';await view.settle();
+  assert.equal(issuePager(view).props.page.page,1);assert.equal(find(view,n=>n.type==='h2').props.children,'问题0');assert.equal(find(view,n=>n.type==='textarea').props.value,'');
+  find(view,n=>n.type==='textarea').props.onChange({target:{value:'本轮备注'}});await view.settle();
+  find(view,n=>n.type==='button'&&n.props.children==='保存备注').props.onClick();await view.settle();
+  assert.deepEqual(requests,[{session_id:'r',report_created_at:'second-report',issue_id:'issue0',status:'pending',note:'本轮备注'}]);
  }finally{view.unmount();f.close()}
 });
 

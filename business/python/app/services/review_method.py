@@ -185,7 +185,7 @@ def original_checks(tid, inputs, mode):
             continue
         if item['file'].suffix.lower() != '.docx':
             checks.append({'name': item['name'] + ' · 正文格式检查', 'status': 'not_applicable',
-                           'detail': '灵燕DOCX终稿检查不适用于该格式；由原文对照核查，不冒充格式检查通过。'})
+                           'detail': 'DOCX终稿检查不适用于该格式；由原文对照核查，不冒充格式检查通过。'})
             continue
         chapter = chapters.get(item['file'])
         plan = None
@@ -195,18 +195,18 @@ def original_checks(tid, inputs, mode):
             plan = plans.get(key)
         issues, warnings, notes = validate_docx_file(item['file'], plan, body_root if guide_current else None)
         details = issues + warnings + notes
-        checks.append({'name': item['name'] + ' · 灵燕正文检查', 'status': 'warning' if issues or warnings or notes else 'passed',
+        checks.append({'name': item['name'] + ' · 正文检查', 'status': 'warning' if issues or warnings or notes else 'passed',
                        'document_ids': [item['id']], 'issues': issues, 'warnings': warnings, 'notes': notes,
                        'detail': '\n'.join(details) or '终稿视角未发现占位、格式残字问题。'})
     if mode == 'platform':
         current = state['build_preparation']['promises'] == 'ready'
         result = body_global_checks(body_root, [item['file'] for item in inputs if item['kind'] == 'bid'], check_promises=current)
-        checks.append({'name': '灵燕全局承诺比对与节间查重', 'status': 'warning' if result['warnings'] else 'completed',
+        checks.append({'name': '全局承诺比对与节间查重', 'status': 'warning' if result['warnings'] else 'completed',
                        'document_ids': [item['id'] for item in inputs if item['kind'] == 'bid'], 'issues': [],
                        'warnings': result['warnings'], 'notes': result['notes'],
                        'detail': '\n'.join([result['summary'], *result['warnings'], *result['notes']])})
     else:
-        checks.append({'name': '灵燕制作过程检查', 'status': 'not_applicable',
+        checks.append({'name': '制作过程检查', 'status': 'not_applicable',
             'detail': '外部文件没有平台写作指引、已确认承诺清单和素材使用计划，不能验证素材使用率或将不存在的承诺清单当作已比对。承诺、旧名及前后冲突由全文原文对照核查。'})
     return checks
 

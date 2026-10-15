@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import App from "./App";
+import {AGENT_OPEN_EVENT} from './lib/agentConversation';
 import baseCss from "./styles.css";
 import readerCss from "./reader.css";
 import workspaceCss from "./workspace.css";
@@ -76,6 +77,7 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => { mountStyle(); return unmountStyle; }, "ooo-bidpliot: style");
   ctx.effect(startRenderService, 'ooo-bidpliot: document rendering');
   ctx.effect(startBusinessLinks, 'ooo-bidpliot: authenticated document links');
+  ctx.effect(() => (ctx.get('sessions') as {list:{subscribe:(fn:()=>void)=>()=>void}}).list.subscribe(()=>window.dispatchEvent(new Event('ooo-bidpliot:changed'))), 'ooo-bidpliot: shared project updates');
   ctx.effect(() => {
     const deactivate = (event: Event) => {
       const detail = (event as CustomEvent<{ id?: string; activate:()=>void }>).detail;
@@ -87,6 +89,19 @@ export function apply(ctx: ClientContext): void {
     window.addEventListener(SURFACE_ACTIVATE_EVENT, deactivate);
     return () => window.removeEventListener(SURFACE_ACTIVATE_EVENT, deactivate);
   }, "ooo-bidpliot: surface coordination");
+
+
+  ctx.effect(() => {
+    const openExecution=(event:Event)=>{
+      const {sessionId}=(event as CustomEvent<{sessionId:string}>).detail;
+      const afterClose=()=>{
+        (ctx.get('uiWorkspace') as {openSession:(id:string)=>void}).openSession(sessionId);
+      };
+      window.dispatchEvent(new CustomEvent('ooo-bidpliot:request-close',{detail:{afterClose}}));
+    };
+    window.addEventListener(AGENT_OPEN_EVENT,openExecution);
+    return()=>window.removeEventListener(AGENT_OPEN_EVENT,openExecution);
+  }, 'ooo-bidpliot: open execution from workbench');
 
 
   ctx.effect(
@@ -114,4 +129,4 @@ export function apply(ctx: ClientContext): void {
   );
 }
 
-export const inject = ["slots"];
+export const inject = ["slots", "sessions", "uiWorkspace"];
