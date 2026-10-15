@@ -24,6 +24,8 @@ https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.1/ooo-bidpliot
 
 宿主下载包并安装 Node 依赖；安装脚本调用 uv 根据锁文件准备 Python 业务环境。若宿主提示构建脚本待授权，按提示允许本插件的安装脚本后重试。需要本机已有 Node.js 24+、Python 3.12+ 和 uv，安装时可联网访问依赖仓库。安装后检查插件版本、页面入口和同名 Agent 预设均正常。
 
+桌面客户端内置 pnpm `11.7.0` 时，重复解析压缩包 URL 可能出现 `ERR_PNPM_MISSING_TARBALL_INTEGRITY`，也可能在依赖安装完成后未结束安装任务。本机已通过同一 GitHub 地址完成安装并验证页面和 Agent；具体过程与边界见 [0.1.1 发布验收](docs/RELEASE-0.1.1-ACCEPTANCE.md)。完整包的 SHA-256 可在发布页核对。前述错误需处理宿主包管理器状态，不能据此认定安装包损坏。
+
 URL 安装的业务数据在宿主管理的插件安装目录内；卸载或更换 URL 版本前先备份该目录的 data 及宿主会话／附件。需要自行掌握固定目录及原位更新时，可使用下述 ZIP 解压安装。
 
 ## 本地目录安装

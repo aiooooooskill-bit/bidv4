@@ -1,0 +1,27 @@
+{
+  "version": "0.1.1",
+  "client": "/Applications/DeepSeek Harness.app",
+  "profile": "desktop",
+  "installSpec": "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.1/ooo-bidpliot-0.1.1.tgz",
+  "thirdPartyBundles": [
+    "ooo-bidpliot"
+  ],
+  "initialThirdPartyPluginsRemoved": true,
+  "installedViaGitHubReleaseAsset": true,
+  "bundledPnpmVersion": "11.7.0",
+  "observedBundledInstallerErrors": [
+    "ERR_PNPM_MISSING_TARBALL_INTEGRITY",
+    "pnpm printed Done but did not exit"
+  ],
+  "targetedCacheRecordsBackedUpAndCleared": 1,
+  "successfulPackageManagerVersion": "11.25.0",
+  "successfulInstallMethod": "Official DSH runPlugin desktop package-management function, with client stopped",
+  "doctorPassed": true,
+  "installedDeliveryFilesMatchGitHubPackage": 592,
+  "uiVersion": "0.1.1",
+  "uiPluginRunning": true,
+  "workbenchOpened": true,
+  "knowledgeLibraryOpened": true,
+  "publicAgentPresetSelectable": "ooo-bidpliot",
+  "realModelGenerationRunInDesktop": false
+}
