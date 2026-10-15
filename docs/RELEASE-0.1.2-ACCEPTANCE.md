@@ -2,6 +2,10 @@
 
 发行日期：2026-10-15。源码与安装包使用同一 `v0.1.2` 标签。本次合并已完成的上下文压缩修复与 Windows 适配；其他任务仍在编辑的资料库改动未纳入。计划文档不提交。
 
+## 发布后发现的问题
+
+发布后的本机桌面清理重装发现：profile 配置 autoInstallPeers=false 时，Agent 预设、React 和 React DOM 未安装，导致安装自检和插件组件异常。已在 0.1.3 将其声明为运行依赖。0.1.2 仅保留追溯记录，请直接安装 0.1.3。
+
 ## 验证边界
 
 **Windows 实机尚未验证，Linux 也未进行实机验收。** 按用户选择先发布修复包。本次所有执行验证都来自 macOS arm64、Node.js 24.15.0、Python 3.13.13、DSH 0.2.0-rc.2。
@@ -21,7 +25,7 @@
 - Node 全量回归 145/145 通过，包含正式 Web 预设上下文压缩测试；[日志](evidence/release-0.1.2-node.log)。安装准备脚本最终调整后，平台与交付测试 10/10 再次通过。
 - Python 回归 544/544 通过，含跨进程锁竞争与进程终止后释放；[日志](evidence/release-0.1.2-python.log)。
 - 官方隔离安装、页面/Agent业务、更新、卸载重装、数据保留与缺失环境拒绝共 23/23 项通过；[报告](evidence/release-0.1.2-delivery.json)。
-- 真实 TGZ 解压到含中文和空格的新目录，从空依赖环境准备、构建并自检成功，可创建中文项目并读取28个工具；[报告](evidence/cross-platform-package.json)。报告 platform=darwin，不代表 Windows 实机通过。
+- 真实 TGZ 解压到含中文和空格的新目录，从空依赖环境准备、构建并自检成功，可创建中文项目并读取28个工具；[报告](https://github.com/aiooooooskill-bit/bidv4/blob/v0.1.2/docs/evidence/cross-platform-package.json)。报告 platform=darwin，不代表 Windows 实机通过。
 
 安装地址：
 
