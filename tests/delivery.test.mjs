@@ -11,7 +11,7 @@ async function command(script,args=[]){return new Promise((resolve,reject)=>{con
 async function fixture(fn){const dir=await mkdtemp(join(tmpdir(),'ooo-bidpliot-delivery-unit-'));try{await fn(dir)}finally{await rm(dir,{recursive:true,force:true})}}
 async function sourceFixture(dir){
  const source=join(dir,'source');await mkdir(join(source,'scripts'),{recursive:true});await mkdir(join(source,'server'),{recursive:true});await mkdir(join(source,'dist'),{recursive:true});
- await cp(join(root,'scripts/delivery.mjs'),join(source,'scripts/delivery.mjs'));await cp(join(root,'server/installation.mjs'),join(source,'server/installation.mjs'));
+ await cp(join(root,'scripts/delivery.mjs'),join(source,'scripts/delivery.mjs'));await cp(join(root,'server/installation.mjs'),join(source,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(source,'server/platform.mjs'));
  await writeFile(join(source,'package.json'),JSON.stringify({name:'ooo-bidpliot',type:'module',files:['scripts','server','dist']}));await writeFile(join(source,'package-lock.json'),'{}');await writeFile(join(source,'dist/client.js'),'complete client');return source;
 }
 test('交付白名单包含运行资源，排除用户数据、环境、备份和缓存',()=>fixture(async dir=>{
@@ -27,7 +27,7 @@ test('错误交付白名单被拒绝，不能将 data 当运行文件发布',()=
 }));
 test('构建后段失败不破坏原 client 和 renderer，临时半成品清理',()=>fixture(async dir=>{
  await mkdir(join(dir,'scripts'));await mkdir(join(dir,'server'));await mkdir(join(dir,'src/lib'),{recursive:true});await mkdir(join(dir,'dist/renderer'),{recursive:true});
- await cp(join(root,'scripts/build.mjs'),join(dir,'scripts/build.mjs'));await cp(join(root,'server/installation.mjs'),join(dir,'server/installation.mjs'));await symlink(join(root,'node_modules'),join(dir,'node_modules'),'dir');
+ await cp(join(root,'scripts/build.mjs'),join(dir,'scripts/build.mjs'));await cp(join(root,'server/installation.mjs'),join(dir,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(dir,'server/platform.mjs'));await symlink(join(root,'node_modules'),join(dir,'node_modules'),process.platform==='win32'?'junction':'dir');
  await writeFile(join(dir,'package.json'),' {"name":"ooo-bidpliot","type":"module"}');await writeFile(join(dir,'src/plugin.tsx'),'export const apply=()=>{}');await writeFile(join(dir,'src/lib/figureRenderer.ts'),'export const broken = ;');
  await writeFile(join(dir,'dist/client.js'),'original client');await writeFile(join(dir,'dist/renderer/figureRenderer.js'),'original renderer');
  const result=await command(join(dir,'scripts/build.mjs'));assert.equal(result.code,1);assert.equal(await readFile(join(dir,'dist/client.js'),'utf8'),'original client');assert.equal(await readFile(join(dir,'dist/renderer/figureRenderer.js'),'utf8'),'original renderer');assert.ok((await readdir(dir)).every(name=>!name.startsWith('.dist-build-')));
@@ -46,7 +46,7 @@ test('目录已交换后验证失败，回滚恢复原代码和完整 data',()=>
  const target=join(dir,'fixed');await mkdir(join(target,'data/workspace'),{recursive:true});await writeFile(join(target,'package.json'),JSON.stringify({name:'ooo-bidpliot'}));await writeFile(join(target,'original.mjs'),'original code');await writeFile(join(target,'data/app.db'),'original database');await writeFile(join(target,'data/workspace/document.md'),'original document');
  const result=await command(join(source,'scripts/delivery.mjs'),['update',source,target]);assert.equal(result.code,1);assert.match(result.output,/relocated environment rejected/);assert.equal(await readFile(join(target,'original.mjs'),'utf8'),'original code');assert.equal(await readFile(join(target,'data/app.db'),'utf8'),'original database');assert.equal(await readFile(join(target,'data/workspace/document.md'),'utf8'),'original document');assert.ok((await readdir(dir)).every(name=>!name.startsWith('.ooo-bidpliot-next-')&&!name.includes('.previous-')));
 }));
-test('回滚自身被文件系统拒绝时，保留唯一 data 和原代码以供恢复',()=>fixture(async dir=>{
+test('回滚自身被文件系统拒绝时，保留唯一 data 和原代码以供恢复',{skip:process.platform==='win32'},()=>fixture(async dir=>{
  const source=await sourceFixture(dir);await writeFile(join(source,'scripts/prepare.mjs'),'// prepared failure fixture');await writeFile(join(source,'server/installation.mjs'),"import {readdir,chmod} from 'node:fs/promises'; import {dirname,join} from 'node:path'; export async function assertStopped(){}; export async function assertInstallation(target){const parent=dirname(target),backup=(await readdir(parent)).find(name=>name.startsWith('fixed.previous-')); await chmod(join(parent,backup),0o500); throw new Error('relocated environment rejected')}");
  const target=join(dir,'fixed');await mkdir(join(target,'data'),{recursive:true});await writeFile(join(target,'package.json'),JSON.stringify({name:'ooo-bidpliot'}));await writeFile(join(target,'original.mjs'),'original code');await writeFile(join(target,'data/app.db'),'only database');
  const result=await command(join(source,'scripts/delivery.mjs'),['update',source,target]);const names=await readdir(dir),backup=names.find(name=>name.startsWith('fixed.previous-')),stage=names.find(name=>name.startsWith('.ooo-bidpliot-next-'));

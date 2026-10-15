@@ -23,7 +23,7 @@ def method_version():
     paths = [root / 'tender-review/SKILL.md', root / '_shared/evidence-rules.md',
              root / '_shared/response-guidelines.md', root / 'document-parse/SKILL.md',
              root / 'tender-analysis/SKILL.md', *sorted((root / 'tender-analysis/references').glob('*.md'))]
-    hashes = {str(p.relative_to(root)): page_flow.file_hash(p) for p in paths}
+    hashes = {p.relative_to(root).as_posix(): page_flow.file_hash(p) for p in paths}
     hashes.update({p.name: page_flow.file_hash(p) for p in [Path(__file__), Path(__file__).with_name('review.py'), Path(__file__).with_name('review_batches.py'), Path(__file__).with_name('review_schema.py')]})
     return page_flow.digest(hashes)
 

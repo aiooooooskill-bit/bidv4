@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../server/platform.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Context} from '@deepseek-ai/cordis';
@@ -17,7 +18,7 @@ import {runIsolatedTest} from './helpers/isolated-app.mjs';
 const title='正式task派发在子Agent执行前传入父线程资料，并在返回后传回子线程资料';
 if(process.env.BIDV4_DELEGATED_ASSETS!=='1')test(title,{timeout:60000},()=>runIsolatedTest('delegated-assets.test.mjs','BIDV4_DELEGATED_ASSETS',new RegExp(title)));
 else test(title,{timeout:45000},async()=>{
- const python=source=>JSON.parse(execFileSync(join(root,'business/python/.venv/bin/python'),['-c',`import sys,os,json,asyncio
+ const python=source=>JSON.parse(execFileSync(pythonExecutable(root),['-X','utf8','-c',`import sys,os,json,asyncio
 sys.path.insert(0,${JSON.stringify(join(root,'business/python'))});os.environ['DATA_DIR']=${JSON.stringify(dataRoot)}
 from app import db,artifact_store,company_store as cs,publish
 from app.services import bidder,company_library as lib,build_state

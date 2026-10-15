@@ -1,0 +1,13 @@
+import {spawn} from 'node:child_process';
+import {mkdir,readFile} from 'node:fs/promises';
+import {resolve,join} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {pythonExecutable} from '../server/platform.mjs';
+const root=fileURLToPath(new URL('..',import.meta.url));
+const output=resolve(process.argv[2]??join(root,'deliveries'));
+const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
+const directory=join(output,manifest.name+'-'+manifest.version);
+const run=(program,args)=>new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd:root,stdio:'inherit'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error('打包失败：退出 '+code)))});
+await mkdir(output,{recursive:true});
+await run(process.execPath,[join(root,'scripts/delivery.mjs'),'export',directory]);
+await run(pythonExecutable(root),['-X','utf8',join(root,'scripts/package-release.py'),directory]);

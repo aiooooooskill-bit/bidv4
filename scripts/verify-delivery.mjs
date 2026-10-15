@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../server/platform.mjs';
 import assert from 'node:assert/strict';
 import {spawn,fork} from 'node:child_process';
 import {mkdtemp,mkdir,readFile,writeFile,readdir,lstat,readlink,rename,rm,stat} from 'node:fs/promises';
@@ -85,7 +86,7 @@ async function snapshotDirectory(directory){
 async function snapshot(){
  const data=await snapshotDirectory(join(installation,'data'));
  delete data.files['app.db'];data.sha256=sha(JSON.stringify(data.files));data.fileCount=Object.keys(data.files).length;
- const db=await run(join(installation,'business/python/.venv/bin/python'),['-c',`import sqlite3,json,sys\nc=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)\nprint(json.dumps({'user_version':c.execute('pragma user_version').fetchone()[0],'dump':list(c.iterdump())},ensure_ascii=False))\n`,join(installation,'data/app.db')]);
+ const db=await run(pythonExecutable(installation),['-X','utf8','-c',`import sqlite3,json,sys\nc=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True)\nprint(json.dumps({'user_version':c.execute('pragma user_version').fetchone()[0],'dump':list(c.iterdump())},ensure_ascii=False))\n`,join(installation,'data/app.db')]);
  const database=JSON.parse(db.output),sessions=await snapshotDirectory(join(home,'sessions')),attachments=await snapshotDirectory(join(home,'attachments'));
  return {data,database:{sha256:sha(JSON.stringify(database)),userVersion:database.user_version,statements:database.dump.length},sessions,attachments};
 }
@@ -163,7 +164,7 @@ try{
  await stage('缺完整dist明确拒绝激活',()=>negativeCase('dist',join(installation,'dist'),/dist|client|资源|构建/i));
  await stage('缺Node依赖明确拒绝激活',()=>negativeCase('node',join(installation,'node_modules/busboy'),/busboy|依赖|Node|MODULE_NOT_FOUND/i));
  await stage('缺Python环境明确拒绝激活',()=>negativeCase('python',join(installation,'business/python/.venv'),/Python|python|环境|venv/i));
- const pythonLibrary=(await run(join(installation,'business/python/.venv/bin/python'),['-c','import sysconfig; print(sysconfig.get_path("purelib"))'])).output.trim();
+ const pythonLibrary=(await run(pythonExecutable(installation),['-X','utf8','-c','import sysconfig; print(sysconfig.get_path("purelib"))'])).output.trim();
  await stage('缺Python运行依赖明确拒绝激活',()=>negativeCase('pythonModule',join(pythonLibrary,'docx'),/docx|Python|python|依赖/i));
  await stage('不支持的宿主版本明确拒绝',async()=>{const result=await script('doctor',[installation,'--json','--dsh-version','0.1.0'],{allowFailure:true});assert.notEqual(result.code,0);assert.match(result.output,/0\.1\.0|dsh|宿主/i);return {rejected:true,diagnostic:result.output.slice(-4500)};});
  await stage('全部拒绝检查结束后原件数据库会话完整',()=>exactRetention(before,'Rejected incomplete installations'));

@@ -13,7 +13,7 @@ async function copyDelivery(source,target){
   await cp(join(source,item),join(target,item),{recursive:true,dereference:false,filter:async path=>{const rel=relative(source,path),parts=rel.split(sep);if(parts.some(p=>excluded.has(p))||rel.endsWith('.pyc')||rel.endsWith('.bak')||rel.endsWith('.db'))return false;if((await lstat(path)).isSymbolicLink())throw new Error('交付源码不允许符号链接：'+rel);return true}});
  }
  const files=[];
- async function walk(dir){for(const entry of await readdir(dir,{withFileTypes:true})){const path=join(dir,entry.name);if(entry.isDirectory())await walk(path);else files.push(relative(target,path))}}await walk(target);
+ async function walk(dir){for(const entry of await readdir(dir,{withFileTypes:true})){const path=join(dir,entry.name);if(entry.isDirectory())await walk(path);else files.push(relative(target,path).split(sep).join('/'))}}await walk(target);
  await writeFile(join(target,'delivery-files.json'),JSON.stringify({name:pkg.name,version:pkg.version??null,files:files.sort()},null,2)+'\n');
 }
 async function run(program,args,cwd){await new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd,stdio:'inherit'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(program+' 更新准备失败（退出 '+code+'）')))})}

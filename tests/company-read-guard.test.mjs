@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../server/platform.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -18,7 +19,7 @@ t=db.create_task('原生读取校验');artifact_store.ensure_task_skeleton(t['id
 asyncio.run(bidder.save_bidder(t['id'],bidder.BidderBody(company_id=c['id'],signer_id='legal',sign_date='2026-10-12')))
 i=db.kb_insert_item(file_name='甲公司.png',file_hash='own',title='资质',ext='.png');cs.attach_asset(i['id'],c['id'])
 print(json.dumps({'tid':t['id'],'kid':i['id']}))`;
- const {tid,kid}=JSON.parse(execFileSync(join(root,'business/python/.venv/bin/python'),['-c',script],{encoding:'utf8'}));
+ const {tid,kid}=JSON.parse(execFileSync(pythonExecutable(root),['-X','utf8','-c',script],{encoding:'utf8'}));
  const cwd=join(dataRoot,'workspace',tid),action=join(dataRoot,'actions',tid);await mkdir(action,{recursive:true});await writeFile(join(action,'latest.json'),JSON.stringify({kind:'body',session_id:'s1'}));
  const subprocess={spawn(options){const p=spawn(options.argv[0],options.argv.slice(1),{cwd:options.cwd,stdio:'pipe'});let stdout='',stderr='';p.stdout.on('data',b=>stdout+=b);p.stderr.on('data',b=>stderr+=b);const done=new Promise((r,j)=>{p.on('error',j);p.on('close',exitCode=>r({exitCode}))});return {stdin:p.stdin,done,collected:{stdout:{readFrom:()=>({text:stdout})},stderr:{readFrom:()=>({text:stderr})}},terminate(){if(p.exitCode===null)p.kill()},waitForExit(){return done}}}};
  let handler;const ctx={subprocess,on(name,fn){if(name==='tools/execute')handler=fn;return ()=>{}},fs:{async resolve(path){return {targetKey:resolve(path)}}}};installExecutionGuard(ctx,()=>{});
@@ -29,6 +30,6 @@ print(json.dumps({'tid':t['id'],'kid':i['id']}))`;
  assert.equal(calls,0);
  const own=join(dataRoot,'workspace/knowledge/files/甲公司.png');
  assert.equal(await handler({name:'read',agent,arguments:{file_path:own},signal:new AbortController().signal},()=>{calls++;return 'own text'}),'own text');
- const state=JSON.parse(execFileSync(join(root,'business/python/.venv/bin/python'),['-c',`import json;print(open('${cwd}/work/body/.build-state.json').read())`],{encoding:'utf8'}));
+ const state=JSON.parse(execFileSync(pythonExecutable(root),['-X','utf8','-c','import sys;print(open(sys.argv[1], encoding="utf-8").read())',join(cwd,'work/body/.build-state.json')],{encoding:'utf8'}));
  assert.equal(state.asset_reads.s1.assets[kid].revision,1);assert.equal(calls,1);
 });

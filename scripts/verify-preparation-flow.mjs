@@ -14,11 +14,11 @@ process.once('SIGINT',()=>activeChild?.kill('SIGTERM'));
 try{
  for(const dir of ['server','shared','tests'])await cp(join(root,dir),join(temporary,dir),{recursive:true});
  for(const file of ['package.json','package-lock.json','cordis.patch.yml'])await cp(join(root,file),join(temporary,file));
- for(const dir of ['node_modules','dist'])await symlink(join(root,dir),join(temporary,dir),'dir');
+ for(const dir of ['node_modules','dist'])await symlink(join(root,dir),join(temporary,dir),process.platform==='win32'?'junction':'dir');
  await mkdir(join(temporary,'business/python'),{recursive:true});
  await cp(join(root,'business/python/app'),join(temporary,'business/python/app'),{recursive:true});
  await cp(join(root,'business/python/runner.py'),join(temporary,'business/python/runner.py'));
- await symlink(join(root,'business/python/.venv'),join(temporary,'business/python/.venv'),'dir');
+ await symlink(join(root,'business/python/.venv'),join(temporary,'business/python/.venv'),process.platform==='win32'?'junction':'dir');
  const env={...process.env,DSH_HOME:join(temporary,'dsh-home'),DSH_TELEMETRY_DISABLED:'1',PREPARATION_CANDIDATE:candidate,PREPARATION_REPORT:join(root,'docs/evidence/preparation-fixed-'+candidate+'.json')};
  delete env.NODE_TEST_CONTEXT;delete env.DSH_TOOLS_MODE;
  const code=await new Promise((resolve,reject)=>{

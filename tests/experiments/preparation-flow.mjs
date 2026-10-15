@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../../server/platform.mjs';
 // Deliberately outside tests/*.test.mjs: run through the disposable-copy runner.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -91,8 +92,8 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
  const record=(name,details)=>{results.push({name,...details});console.log('RESULT '+JSON.stringify({...results.at(-1),...(details.tools?{tools:details.tools.map(t=>t.name)}:{})}))};
  try{
   const profile=join(process.env.DSH_HOME,'profiles','web');await mkdir(join(profile,'node_modules'),{recursive:true});
-  await symlink(root,join(profile,'node_modules/ooo-bidpliot'),'dir');
-  await symlink(join(root,'node_modules/@deepseek-ai'),join(profile,'node_modules/@deepseek-ai'),'dir');
+  await symlink(root,join(profile,'node_modules/ooo-bidpliot'),process.platform==='win32'?'junction':'dir');
+  await symlink(join(root,'node_modules/@deepseek-ai'),join(profile,'node_modules/@deepseek-ai'),process.platform==='win32'?'junction':'dir');
   await writeFile(join(profile,'package.json'),JSON.stringify({name:'dsh-profile-web',private:true,dependencies:{'ooo-bidpliot':'file:'+root},dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app','ooo-bidpliot'],patchReload:'manual'}}}));
   await writeFile(join(profile,'cordis.patch.yml'),JSON.stringify([{id:'agent-default-model',config:{provider:'fixture',model:'fixture'}},{id:'llm-pi-ai',config:{providers:{fixture:{api:'openai-completions',apiKeyEnv:'PREPARATION_FIXTURE_KEY',baseURL:'http://127.0.0.1:'+endpoint.address().port+'/v1',models:[{id:'fixture',name:'fixture',contextWindow:131072,input:['text','image']}],retryPolicy:{mode:'normal',maxRetries:0}}}}},{id:'web-runtime',config:{openBrowser:false,printUrl:false,surfaceContext:true,trustedHosts:[]}},{id:'session-title-llm',disabled:true}]));
   process.env.PREPARATION_FIXTURE_KEY='local-test-only';
@@ -115,7 +116,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
   async function seed(){
    const {task}=await api('/tasks',{title:'隔离准备验证',request_id:randomUUID()});const company=await api('/library/companies',{name:'工程公司',profile:{legal_name:'工程法人',legal_title:'总经理'}});await api('/projects/'+task.id+'/bidder',{company_id:company.id,signer_id:'legal',sign_date:'2026-10-12',revision:0},'PUT');const source=join(dataRoot,'workspace',task.id,'sources',sourceName);
    if(real){
-    execFileSync(join(root,'business/python/.venv/bin/python'),['-c','from docx import Document; import sys; d=Document(); d.add_heading("工程验证采购项目",0); d.add_paragraph("本文件为独立技术验证的合成招标资料，用于验证投标工作台的写作准备、维护承诺问答及单章生成流程，不对应真实采购项目。工程验证章节应说明简要实施步骤和后续维护安排，包括需求梳理、实施交付、维护服务三个环节，正文约一百五十字即可。"); d.add_paragraph("维护期由投标人承诺，尚未提供具体年限，必须询问用户后按答复写入关键事实与承诺及章节正文，不得自行编造。保留章节为已经存在的人工正文，内容和文件必须保持原样，不得覆盖，不需要更新该章。仅生成工程验证章节，不扩展到全册，不需要合册或发布整本标书。本次不要求公司资质、人员数量、服务响应时限、报价、图表或图片，也不要求新增其他章节。"); d.save(sys.argv[1])',source]);
+    execFileSync(pythonExecutable(root),['-X','utf8','-c','from docx import Document; import sys; d=Document(); d.add_heading("工程验证采购项目",0); d.add_paragraph("本文件为独立技术验证的合成招标资料，用于验证投标工作台的写作准备、维护承诺问答及单章生成流程，不对应真实采购项目。工程验证章节应说明简要实施步骤和后续维护安排，包括需求梳理、实施交付、维护服务三个环节，正文约一百五十字即可。"); d.add_paragraph("维护期由投标人承诺，尚未提供具体年限，必须询问用户后按答复写入关键事实与承诺及章节正文，不得自行编造。保留章节为已经存在的人工正文，内容和文件必须保持原样，不得覆盖，不需要更新该章。仅生成工程验证章节，不扩展到全册，不需要合册或发布整本标书。本次不要求公司资质、人员数量、服务响应时限、报价、图表或图片，也不要求新增其他章节。"); d.save(sys.argv[1])',source]);
     await business(runtime.ctx,'prepare',{task_id:task.id,file_name:sourceName});
    }else await writeFile(source,'工程招标夹具：要求实施方案，维护期由投标人决定。');
    for(const kind of ['analyse','outline'])await settle(task.id,await start(task.id,kind,kind==='outline'?{page_target:null,numbering:'decimal'}:{}));

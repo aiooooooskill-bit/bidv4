@@ -69,8 +69,8 @@ else test(testName,{timeout:80000},async()=>{
  await new Promise(resolve=>endpoint.listen(0,'127.0.0.1',resolve));
  try{
   const profile=join(process.env.DSH_HOME,'profiles','web');await mkdir(join(profile,'node_modules'),{recursive:true});
-  await symlink(root,join(profile,'node_modules','ooo-bidpliot'),'dir');
-  await symlink(join(root,'node_modules','@deepseek-ai'),join(profile,'node_modules','@deepseek-ai'),'dir');
+  await symlink(root,join(profile,'node_modules','ooo-bidpliot'),process.platform==='win32'?'junction':'dir');
+  await symlink(join(root,'node_modules','@deepseek-ai'),join(profile,'node_modules','@deepseek-ai'),process.platform==='win32'?'junction':'dir');
   await writeFile(join(profile,'package.json'),JSON.stringify({name:'dsh-profile-web',private:true,dependencies:{'ooo-bidpliot':'file:'+root},dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app','ooo-bidpliot'],patchReload:'manual'}}}));
   await writeFile(join(profile,'cordis.patch.yml'),JSON.stringify([
    {id:'agent-default-model',config:{provider:'fixture',model:'fixture'}},

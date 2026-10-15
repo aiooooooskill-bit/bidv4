@@ -50,7 +50,7 @@ export class BusinessRuntime{
   const fiber=review?agent.ctx.inject(['tools'],ctx=>{ctx.tools.restrict({allow:[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','prepare_review_documents','review_basis','review_batch','save_review_batch','finish_review_report']})}):null;
   this.stageTools.set(agent.id,{agent,review,fiber});
  }
- async skillsLink(cwd){await mkdir(cwd,{recursive:true});try{await symlink(join(root,'business/python/app/skills'),join(cwd,'skills'),'dir')}catch(e){if(e.code!=='EEXIST')throw e}}
+ async skillsLink(cwd){await mkdir(cwd,{recursive:true});try{await symlink(join(root,'business/python/app/skills'),join(cwd,'skills'),process.platform==='win32'?'junction':'dir')}catch(e){if(e.code!=='EEXIST')throw e}}
  modelSelection(agent){
   const pending=this.ctx.sessionProjections.stateOf(agent.session,'modelSelection')?.pending,header=agent.session.requestHeader();
   const selection=pending??header?.config??agent.options;

@@ -1,9 +1,10 @@
+import {pythonExecutable} from '../../server/platform.mjs';
 // Deterministic comparison fixture over the actual parsed synthetic documents.
 import {readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {execFileSync} from 'node:child_process';
 export function reviewSequence(installation){
- const headers=JSON.parse(execFileSync(join(installation,'business/python/.venv/bin/python'),['-c','import sys,json;sys.path.insert(0,sys.argv[1]);from app.tools.validate_analysis import _REQUIRED_HEADERS;print(json.dumps(_REQUIRED_HEADERS))',join(installation,'business/python')],{encoding:'utf8'}));
+ const headers=JSON.parse(execFileSync(pythonExecutable(installation),['-X','utf8','-c','import sys,json;sys.path.insert(0,sys.argv[1]);from app.tools.validate_analysis import _REQUIRED_HEADERS;print(json.dumps(_REQUIRED_HEADERS))',join(installation,'business/python')],{encoding:'utf8'}));
  const call=(name,args)=>({name,args});
  return async(request,cwd,step)=>{
   if(step===0)return [call('prepare_review_documents',{})];

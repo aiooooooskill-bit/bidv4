@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -34,13 +34,14 @@
     "verify": "npm run check && npm run build && npm test && npm run test:business",
     "start": "dsh web --no-open --host 127.0.0.1 --port 3080",
     "tools:install": "uv sync --locked --project business/python",
-    "test:business": "business/python/.venv/bin/python -m pytest business/python/tests -q",
+    "test:business": "node scripts/test-business.mjs",
     "directory:prepare": "node scripts/prepare.mjs",
     "directory:check": "node scripts/doctor.mjs",
     "delivery:export": "node scripts/delivery.mjs export",
     "delivery:update": "node scripts/delivery.mjs update",
     "verify:delivery": "node scripts/verify-delivery.mjs",
-    "postinstall": "uv sync --locked --project business/python"
+    "postinstall": "uv sync --locked --project business/python",
+    "release:package": "node scripts/package-release.mjs"
   },
   "dependencies": {
     "busboy": "1.6.0",

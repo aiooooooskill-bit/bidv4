@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
-import {join} from 'node:path';
+import {join,basename} from 'node:path';
 import {mkdir,readFile,writeFile,readdir} from 'node:fs/promises';
 import {randomUUID,createHash} from 'node:crypto';
 import {reviewSequence} from './review-sequence.mjs';
@@ -110,7 +110,7 @@ const endpoint=createServer(async(req,res)=>{
     const tools=stageMessages.filter(m=>m.role==='tool');
     const answered=tools.some(m=>String(m.content).includes('答复已保存'));
     const adjustedStep=step-(answered?1:0);
-    if(!replied&&latestText.includes('维护期三年')){const questions=ctx.get('bidBusiness').ctx.sessionProjections.snapshot(ctx.agents.list().find(a=>a.status==='running').session,['userQuestions']).values.userQuestions.active;calls=[call('ooo_bidpliot_answer',{task_id:cwd.split('/').pop(),batches:questions.filter(q=>q.state==='continued').map(q=>({call_id:q.callId,answers:q.questions.map(question=>({id:question.id,selected:['三年']}))}))})];}
+    if(!replied&&latestText.includes('维护期三年')){const questions=ctx.get('bidBusiness').ctx.sessionProjections.snapshot(ctx.agents.list().find(a=>a.status==='running').session,['userQuestions']).values.userQuestions.active;calls=[call('ooo_bidpliot_answer',{task_id:basename(cwd),batches:questions.filter(q=>q.state==='continued').map(q=>({call_id:q.callId,answers:q.questions.map(question=>({id:question.id,selected:['三年']}))}))})];}
     else {
     const sequence=[
      [call('build_preparation',{})],
@@ -136,7 +136,7 @@ const endpoint=createServer(async(req,res)=>{
    res.write('data: '+JSON.stringify({id:'analysis-stream-fixture',object:'chat.completion.chunk',created:1,model:'fixture',choices:[{index:0,delta:{},finish_reason:'stop'}]})+'\n\n');res.end('data: [DONE]\n\n');return;
   }
   if(kind&&!calls.length&&!(kind==='build'&&!text.includes('answer_to_pending_question'))){
-   const tid=cwd.split('/').pop();
+   const tid=basename(cwd);
 
    if(kind==='analyse')content='# 招标文件解读完成\n\n'+await readFile(join(cwd,'work/analysis/structure.md'),'utf8')+'\n\n[解读下载]('+base+'/api/bidv4/workbench/raw?'+new URLSearchParams({task_id:tid,path:'analysis/structure.md'})+')';
    if(kind==='review'){const artifacts=await api('/artifacts?task_id='+tid);content='# 制作与审查已完成\n\n已按本轮真实原文完成审查，响应细节需确认。\n\n'+artifacts.artifacts.filter(a=>a.kind==='tender.volume').map(a=>'['+a.display_name+'下载]('+base+'/api/bidv4/artifacts/'+a.artifact_id+'/file)').join('\n');}

@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../server/platform.mjs';
 // Real local model + production Web APIs, with fictional identities only in a disposable application.
 import {cp,mkdtemp,mkdir,symlink,writeFile,readFile,readdir} from 'node:fs/promises';
 import {join,dirname} from 'node:path';
@@ -14,7 +15,7 @@ if(!process.env.P5_ISOLATED){
  if(resume&&!temporary.includes('bidv4-library-p5-'))throw new Error('Only the recorded disposable application can resume');
  for(const dir of ['server','shared','scripts'])await cp(join(root,dir),join(temporary,dir),{recursive:true});
  for(const file of ['package.json','package-lock.json','cordis.patch.yml'])await cp(join(root,file),join(temporary,file));
- if(!resume)for(const dir of ['node_modules','dist','business'])await symlink(join(root,dir),join(temporary,dir),'dir');
+ if(!resume)for(const dir of ['node_modules','dist','business'])await symlink(join(root,dir),join(temporary,dir),process.platform==='win32'?'junction':'dir');
  const child=spawn(process.execPath,['scripts/verify-library-p5.mjs'],{cwd:temporary,env:{...process.env,P5_ISOLATED:'1',P5_RESUME:resume?'1':'0',P5_SOURCE_ROOT:root,DSH_HOME:join(temporary,'dsh-home'),DSH_TELEMETRY_DISABLED:'1'},stdio:'inherit'});
  const code=await new Promise(r=>child.once('close',r));process.exitCode=code;
 }else{
@@ -26,7 +27,7 @@ if(!process.env.P5_ISOLATED){
  let ctx,timer,tid;
  try{
   const profile=join(process.env.DSH_HOME,'profiles/web');await mkdir(join(profile,'node_modules'),{recursive:true});
-  if(!resume)await symlink(root,join(profile,'node_modules/ooo-bidpliot'),'dir');if(!resume)await symlink(join(root,'node_modules/@deepseek-ai'),join(profile,'node_modules/@deepseek-ai'),'dir');
+  if(!resume)await symlink(root,join(profile,'node_modules/ooo-bidpliot'),process.platform==='win32'?'junction':'dir');if(!resume)await symlink(join(root,'node_modules/@deepseek-ai'),join(profile,'node_modules/@deepseek-ai'),process.platform==='win32'?'junction':'dir');
   await writeFile(join(profile,'package.json'),JSON.stringify({name:'dsh-profile-web',private:true,dependencies:{'ooo-bidpliot':'file:'+root},dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app','ooo-bidpliot'],patchReload:'manual'}}}));
   await writeFile(join(profile,'cordis.patch.yml'),JSON.stringify([{id:'agent-default-model',config:{provider:'p5-local',model:report.model}},{id:'llm-pi-ai',config:{providers:{'p5-local':{api:'openai-completions',reasoning:'off',apiKeyEnv:'P5_MODEL_KEY',baseURL:'http://127.0.0.1:8000/v1',models:[{id:report.model,name:'P5 local real model',contextWindow:131072,maxTokens:16384,reasoningEfforts:{off:null,minimal:'low'},compat:{thinkingFormat:'chat-template',chatTemplateKwargs:{enable_thinking:false},supportsReasoningEffort:false},input:['text','image']}],retryPolicy:{mode:'normal',maxRetries:0}}}}},{id:'web-runtime',config:{openBrowser:false,printUrl:false,surfaceContext:true,trustedHosts:[]}},{id:'session-title-llm',disabled:true}]));
   process.env.P5_MODEL_KEY='local-demo';
@@ -58,7 +59,7 @@ if(!process.env.P5_ISOLATED){
   }
   const material=await upload('/materials/files',join(original,'data/workspace/materials/files/服务方案.docx'));
   const outline=await api('/materials/files/'+material.id+'/outline');assert.equal(outline.parse_status,'ready');
-  const content=execFileSync(join(root,'business/python/.venv/bin/python'),['-c',`from pathlib import Path;print(len(Path(${JSON.stringify(join(root,'data/workspace/materials/parse/服务方案.docx/服务方案.docx.md'))}).read_text().splitlines()))`],{encoding:'utf8'}).trim();
+  const content=execFileSync(pythonExecutable(root),['-X','utf8','-c',`from pathlib import Path;print(len(Path(${JSON.stringify(join(root,'data/workspace/materials/parse/服务方案.docx/服务方案.docx.md'))}).read_text().splitlines()))`],{encoding:'utf8'}).trim();
   const block=await api('/materials/files/'+material.id+'/blocks',{title:'真实数据处理服务说明（验收复用）',note:'用于外部数据服务技术方案；仅拷贝适用章节，历史企业、客户、项目名称与承诺必须修订',ranges:[[1,Number(content)]]});
   const search=await api('/materials/blocks?q='+encodeURIComponent('数据')+'&page=1&page_size=5');assert.ok(search.total>0);await record('真实写作素材上传、建块、全文检索与分页',{fileId:material.id,blockId:block.id,total:search.total});
   await api('/projects/'+tid+'/bidder',{company_id:company.id,signer_id:rep.id,sign_date:'2026-08-19',revision:0},'PUT');
@@ -85,7 +86,7 @@ if(!process.env.P5_ISOLATED){
   timer=setInterval(()=>void state().then(async s=>{report.progress={time:new Date().toISOString(),execution:s.execution,sections:s.body_sections,volumes:s.volume_states};await save()}).catch(()=>{}),15000);timer.unref();
   if(!resume){await phase('analyse');await phase('outline',{page_target:20,numbering:'decimal'})}
   const {createHash}=await import('node:crypto');
-  const readyBefore=Object.fromEntries((await state()).body_sections.filter(s=>s.status==='ready').map(s=>[s.path,execFileSync(join(root,'business/python/.venv/bin/python'),['-c',`import hashlib;print(hashlib.sha256(open(${JSON.stringify(join(root,'data/workspace',tid,'work',s.path))},'rb').read()).hexdigest())`],{encoding:'utf8'}).trim()]));
+  const readyBefore=Object.fromEntries((await state()).body_sections.filter(s=>s.status==='ready').map(s=>[s.path,execFileSync(pythonExecutable(root),['-X','utf8','-c',`import hashlib;print(hashlib.sha256(open(${JSON.stringify(join(root,'data/workspace',tid,'work',s.path))},'rb').read()).hexdigest())`],{encoding:'utf8'}).trim()]));
   let result=await state();
   if(result.body_sections.some(s=>s.status!=='ready'))result=await phase('build');
   for(const [path,hash] of Object.entries(readyBefore))assert.equal(createHash('sha256').update(await readFile(join(root,'data/workspace',tid,'work',path))).digest('hex'),hash,'继续制作不能覆盖已校验的正文');

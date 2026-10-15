@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../server/platform.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
@@ -10,7 +11,7 @@ import {installExecutionGuard} from '../server/native/execution-guard.mjs';
 const title='实际指引写入绑定证据快照，局部修改与无变化写入不重新解释旧引用';
 if(process.env.BIDV4_GUIDE_EVIDENCE_FIXTURE!=='1')test(title,()=>runIsolatedTest('guide-evidence-guard.test.mjs','BIDV4_GUIDE_EVIDENCE_FIXTURE',new RegExp(title)));
 else test(title,async()=>{
- const python=source=>JSON.parse(execFileSync(join(root,'business/python/.venv/bin/python'),['-c',`import os,sys,asyncio,json
+ const python=source=>JSON.parse(execFileSync(pythonExecutable(root),['-X','utf8','-c',`import os,sys,asyncio,json
 sys.path.insert(0,${JSON.stringify(join(root,'business/python'))});os.environ['DATA_DIR']=${JSON.stringify(dataRoot)}
 from app import db,artifact_store,publish
 from app.services import company_library as lib,bidder,build_state

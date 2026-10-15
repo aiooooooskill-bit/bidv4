@@ -1,0 +1,29 @@
+{
+  "version": "0.1.2",
+  "files": 601,
+  "archivesIdenticalFiles": true,
+  "symbolicLinks": false,
+  "requiredFiles": [
+    "server/native/preset.mjs",
+    "cordis.patch.yml",
+    "dist/client.js",
+    "dist/pdfjs/pdf.worker.min.mjs",
+    "business/python/app/file_lock.py",
+    "business/python/app/resources/tender_base_template.docx",
+    "business/python/uv.lock",
+    "business/python/app/skills/tender-body/SKILL.md",
+    "server/native/roles.json"
+  ],
+  "assets": [
+    {
+      "name": "ooo-bidpliot-0.1.2.tgz",
+      "bytes": 5347003,
+      "sha256": "12f43118053eb3e54c34245fcaec66ca2de42ad3b64da19d0fe95c8771cfb308"
+    },
+    {
+      "name": "ooo-bidpliot-0.1.2.zip",
+      "bytes": 5664769,
+      "sha256": "4506d9cbea5233e51527e1816bac21ea8b4ecd3ad2c114caaba0ebb10844d68a"
+    }
+  ]
+}

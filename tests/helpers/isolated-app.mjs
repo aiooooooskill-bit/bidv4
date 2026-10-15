@@ -13,7 +13,7 @@ export async function runIsolatedTest(filename,flag,expected,timeout=60000){
  try{
   for(const dir of ['server','shared','tests'])await cp(join(root,dir),join(temporary,dir),{recursive:true});
   for(const file of ['package.json','package-lock.json','cordis.patch.yml'])await cp(join(root,file),join(temporary,file));
-  for(const dir of ['node_modules','business','dist','src'])await symlink(join(root,dir),join(temporary,dir),'dir');
+  for(const dir of ['node_modules','business','dist','src'])await symlink(join(root,dir),join(temporary,dir),process.platform==='win32'?'junction':'dir');
   await mkdir(join(temporary,'dsh-home'),{recursive:true});
   const env={...process.env,[flag]:'1',DSH_HOME:join(temporary,'dsh-home'),DSH_TELEMETRY_DISABLED:'1'};
   delete env.NODE_TEST_CONTEXT;delete env.DSH_TOOLS_MODE;

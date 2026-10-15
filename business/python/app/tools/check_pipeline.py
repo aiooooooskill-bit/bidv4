@@ -204,7 +204,7 @@ def check_pipeline_state() -> str:
                     lines.append('[body] 叶子对账一致（需正文节点均有文件，模板填充类按产出计）')
                 stale = [p for p in section_files if dir_mtime is not None and p.stat().st_mtime < dir_mtime]
                 if stale:
-                    lines.append('[body] 目录产物更新晚于正文最后修改（可能基于旧目录，重写范围由用户裁决）：' + '、'.join((str(p.relative_to(bdir)) for p in stale)))
+                    lines.append('[body] 目录产物更新晚于正文最后修改（可能基于旧目录，重写范围由用户裁决）：' + '、'.join((p.relative_to(bdir).as_posix() for p in stale)))
                 if guide_ok:
                     pending: dict[tuple[str, str], tuple[str, str, int]] = {}
                     try:

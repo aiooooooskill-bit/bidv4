@@ -1,3 +1,4 @@
+import {pythonExecutable} from '../../server/platform.mjs';
 // Disposable dsh profile and project data; only synthetic documents and a local model fixture.
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
@@ -12,7 +13,7 @@ import {runProfile} from '@deepseek-ai/dsh/profile-boot';
 if(process.env.BIDV4_REVIEW_PIPELINE_FIXTURE!=='1')throw Error('Review fixture requires the isolated test runner');
 const home=await mkdtemp(join(tmpdir(),'bid-review-dsh-'));
 process.env.DSH_HOME=home;process.env.DSH_TELEMETRY_DISABLED='1';process.env.REVIEW_FIXTURE_KEY='isolated-fixture-only';
-const headers=JSON.parse(execFileSync(join(root,'business/python/.venv/bin/python'),['-c','import sys,json;sys.path.insert(0,sys.argv[1]);from app.tools.validate_analysis import _REQUIRED_HEADERS;print(json.dumps(_REQUIRED_HEADERS))',join(root,'business/python')],{encoding:'utf8'}));
+const headers=JSON.parse(execFileSync(pythonExecutable(root),['-X','utf8','-c','import sys,json;sys.path.insert(0,sys.argv[1]);from app.tools.validate_analysis import _REQUIRED_HEADERS;print(json.dumps(_REQUIRED_HEADERS))',join(root,'business/python')],{encoding:'utf8'}));
 const reqs=['文件须包含投标函，缺少投标函将被否决。','投标人须提供营业执照复印件。','文件按资格文件、技术文件、报价文件三个部分组织。','团队至少四名人员，每增加一人得一分。','维护服务期限三年。','系统须支持接口加密传输。','投标有效期90天。'];
 const bids=['已提供投标函。','已提供营业执照复印件。','本文件按资格文件、技术文件、报价文件三个部分组织。','团队共三名人员。','维护服务期限一年。','系统支持接口加密传输。','投标有效期90天。'];
 const checks=[];let ctx,mode='normal',entered;
@@ -61,7 +62,7 @@ const endpoint=createServer(async(req,res)=>{
 });
 await new Promise(resolve=>endpoint.listen(0,'127.0.0.1',resolve));
 try{
- const profile=join(home,'profiles/web');await mkdir(join(profile,'node_modules'),{recursive:true});await symlink(root,join(profile,'node_modules/ooo-bidpliot'),'dir');await symlink(join(root,'node_modules/@deepseek-ai'),join(profile,'node_modules/@deepseek-ai'),'dir');
+ const profile=join(home,'profiles/web');await mkdir(join(profile,'node_modules'),{recursive:true});await symlink(root,join(profile,'node_modules/ooo-bidpliot'),process.platform==='win32'?'junction':'dir');await symlink(join(root,'node_modules/@deepseek-ai'),join(profile,'node_modules/@deepseek-ai'),process.platform==='win32'?'junction':'dir');
  await writeFile(join(profile,'package.json'),JSON.stringify({name:'review-isolated-profile',private:true,dependencies:{'ooo-bidpliot':'file:'+root},dsh:{profile:{bundles:['@deepseek-ai/dsh-base','@deepseek-ai/dsh-web-app','ooo-bidpliot'],patchReload:'manual'}}}));
  await writeFile(join(profile,'cordis.patch.yml'),JSON.stringify([{id:'agent-default-model',config:{provider:'fixture',model:'fixture'}},{id:'llm-pi-ai',config:{providers:{fixture:{api:'openai-completions',apiKeyEnv:'REVIEW_FIXTURE_KEY',baseURL:'http://127.0.0.1:'+endpoint.address().port+'/v1',models:[{id:'fixture',name:'本机审查夹具',contextWindow:131072,input:['text','image']}],retryPolicy:{mode:'normal',maxRetries:0}}}}},{id:'web-runtime',config:{openBrowser:false,printUrl:false,surfaceContext:true,trustedHosts:[]}},{id:'session-title-llm',disabled:true}]));
  ({ctx}=await runProfile({environment:loadLayeredEnv('dsh'),profile:'web',patchFiles:[],args:['--no-open','--host','127.0.0.1','--port','0']}));
@@ -73,7 +74,7 @@ try{
  async function seed(external){
   const {task}=await api('/tasks',{title:external?'外部审查技术验证':'平台制作审查技术验证',request_id:randomUUID()});
   const folder=join(dataRoot,'workspace',task.id),tender=join(folder,'sources/工程招标.docx'),bid=join(folder,external?'sources/外部投标.docx':'work/body/审查章节.docx');
-  execFileSync(join(root,'business/python/.venv/bin/python'),['-c','from docx import Document;import json,sys;\nfor path,lines in json.loads(sys.argv[1]):\n d=Document();d.add_heading("工程审查项目（合成材料）",0)\n for i,text in enumerate(lines):\n  d.add_heading("核查章节"+str(i+1),1);d.add_paragraph(text)\n d.add_paragraph("本材料仅用于隔离技术验证，核对输入角色、真实解析、报告保存和版本变化，不用于正式投标。"*3);d.save(path)',JSON.stringify([[tender,reqs],[bid,bids]])]);
+  execFileSync(pythonExecutable(root),['-X','utf8','-c','from docx import Document;import json,sys;\nfor path,lines in json.loads(sys.argv[1]):\n d=Document();d.add_heading("工程审查项目（合成材料）",0)\n for i,text in enumerate(lines):\n  d.add_heading("核查章节"+str(i+1),1);d.add_paragraph(text)\n d.add_paragraph("本材料仅用于隔离技术验证，核对输入角色、真实解析、报告保存和版本变化，不用于正式投标。"*3);d.save(path)',JSON.stringify([[tender,reqs],[bid,bids]])]);
   for(const file of [tender,...(external?[bid]:[])]){const form=new FormData();form.append('file',new Blob([await readFile(file)]),file.split('/').at(-1));await api('/files?task_id='+task.id,form)}
   let s=await state(task.id);s=await api('/page-flow/'+task.id+'/sources',{main_file:'工程招标.docx',supplements:[],input_version:s.input_versions.analyse},'PUT');
   if(external)await api('/page-flow/'+task.id+'/review-input',{bids:['外部投标.docx'],input_version:s.input_versions.review},'PUT');
@@ -95,7 +96,7 @@ try{
   assert.ok(s.review.report.report.requirements.every(r=>r.tender.length&&r.bid.length));assert.equal(s.review.report.report.coverage.length,7);assert.equal(s.review.report.analysis.catalog.length,9);assert.ok(s.review.report.analysis.validation.startsWith('[校验通过]'));record(before.review.mode+' LingYan parse→analysis validation→full catalog comparison→original checks→report',{session:run.session_id,sourceUnchanged:true,requirements:9,issues:2,replay:true});
  }
  const reviewed=await state(external),issueId=reviewed.review.report.report.issues[0].id;await api('/page-flow/'+external+'/review-decision',{session_id:reviewed.review.report.session_id,report_created_at:reviewed.review.report.created_at,issue_id:issueId,status:'confirmed',note:'夹具已人工复核'},'PUT');assert.equal((await state(external)).review.report.decisions[issueId].status,'confirmed');record('manual review persisted');
- const source=join(dataRoot,'workspace',external,'sources/外部投标.docx');execFileSync(join(root,'business/python/.venv/bin/python'),['-c','from docx import Document;import sys;d=Document(sys.argv[1]);d.add_paragraph("投标文件版本变化");d.save(sys.argv[1])',source]);assert.equal((await state(external)).review.status,'stale');await api('/page-flow/'+external+'/action',{kind:'review',request_id:randomUUID(),input_version:reviewed.input_versions.review},'POST',409);record('changed document returns pending and rejects old basis');
+ const source=join(dataRoot,'workspace',external,'sources/外部投标.docx');execFileSync(pythonExecutable(root),['-X','utf8','-c','from docx import Document;import sys;d=Document(sys.argv[1]);d.add_paragraph("投标文件版本变化");d.save(sys.argv[1])',source]);assert.equal((await state(external)).review.status,'stale');await api('/page-flow/'+external+'/action',{kind:'review',request_id:randomUUID(),input_version:reviewed.input_versions.review},'POST',409);record('changed document returns pending and rejects old basis');
  for(const invalid of ['no-report','bad-evidence','scope-leak']){mode=invalid;const before=sha(await readFile(source)),{run}=await start(external),s=await settle(external,run);assert.equal(s.execution.state,'failed');assert.equal(s.review.status,'failed');assert.equal(sha(await readFile(source)),before);record(invalid+' cannot mark reviewed')}
  mode='stop';const enteredPromise=new Promise(resolve=>entered=resolve),started=await start(external);await enteredPromise;await api('/page-flow/'+external+'/stop',{session_id:started.run.session_id,action_id:started.run.action_id});assert.equal((await state(external)).review.status,'stopped');record('stop cannot mark reviewed');
  mode='normal';const resumed=await settle(external,(await start(external)).run);assert.equal(resumed.review.status,'reviewed',JSON.stringify(resumed.execution));const pending=await seed(true);const all=await api('/tasks');assert.equal(all.tasks.find(t=>t.id===pending).review_status,'unreviewed');assert.equal(all.tasks.find(t=>t.id===platform).review_status,'reviewed');record('list distinguishes pending and reviewed');

@@ -6,7 +6,8 @@ import {assertInstallation,assertStopped} from '../server/installation.mjs';
 const directory=resolve(process.argv[2]??fileURLToPath(new URL('..',import.meta.url)));
 const pkg=JSON.parse(await readFile(join(directory,'package.json'),'utf8'));if(pkg.name!=='ooo-bidpliot')throw new Error('请选择 ooo-bidpliot 插件目录');
 await assertStopped(directory);
-async function run(program,args){await new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd:directory,stdio:'inherit'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(program+' 准备失败（退出 '+code+'）')))})}
+// npm arguments below are fixed; cmd is required for npm.cmd before dependencies exist.
+async function run(program,args){await new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd:directory,stdio:'inherit',shell:process.platform==='win32'&&program==='npm'});child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(program+' 准备失败（退出 '+code+'）')))})}
 await run('npm',['ci','--no-fund','--no-audit']);
 await run('npm',['run','check']);
 await run(process.execPath,[join(directory,'scripts/build.mjs')]);
