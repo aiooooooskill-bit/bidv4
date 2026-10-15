@@ -1,0 +1,25 @@
+{
+  "version": "0.1.4",
+  "release": "https://github.com/aiooooooskill-bit/bidv4/releases/tag/v0.1.4",
+  "publicDownloadsVerified": true,
+  "assets": [
+    {
+      "name": "ooo-bidpliot-0.1.4.tgz",
+      "bytes": 5371365,
+      "digest": "sha256:93913e26fc08b368a0cc3f0e5b727426d32d0098fda669deaf841186a776a265",
+      "matchesLocal": true
+    },
+    {
+      "name": "ooo-bidpliot-0.1.4.zip",
+      "bytes": 5691302,
+      "digest": "sha256:02ebd0d38026be8bbf6feb15a88ebecdeb03e0e734a5ac5322d994fc59552f5d",
+      "matchesLocal": true
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 178,
+      "digest": "sha256:50224e003cedf2e27fba02f37a7c6e2fb8ab842249ed8da419714decf529b5fa",
+      "matchesLocal": true
+    }
+  ]
+}

@@ -36,3 +36,5 @@ https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.4/ooo-bidpliot
 - 官方隔离安装、页面/Agent业务、更新、重启、卸载重装、数据保留与缺失环境拒绝23/23项通过；[报告](evidence/release-0.1.4-delivery.json)。
 - 最终TGZ在含中文和空格的新目录准备、构建、自检、创建项目与加载28个工具通过；[报告](evidence/release-0.1.4-package-installation.json)。该报告platform=darwin，不能代替Windows实机验证。
 - TGZ/ZIP均606个文件、逐字节一致、无符号链接，已核对Agent预设、新上传/章节预览代码及构建资源；[包校验](evidence/release-0.1.4-package.json)。
+
+发布后已从GitHub公开地址重新下载TGZ、ZIP与SHA256SUMS.txt，均与本地文件逐字节一致并匹配GitHub资产digest，见[下载校验](evidence/release-0.1.4-github.json)。本地交付副本位于项目deliveries/release-0.1.4/。
