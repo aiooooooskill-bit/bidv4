@@ -5,6 +5,7 @@ import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {business,dataRoot,root,BusinessError} from './business.mjs';
 import {transcribe,subagentFailure} from './tools.mjs';
 import {analysisProgress} from '../../shared/analysis-progress.js';
+import {actionSatisfied} from '../../shared/delivery-status.js';
 import {installExecutionGuard} from './execution-guard.mjs';
 import {jsonResponse} from './markdown.mjs';
 import {Workflows} from './workflow.mjs';
@@ -45,10 +46,11 @@ export class BusinessRuntime{
 
  }
  applyStageTools(agent,kind){
-  const current=this.stageTools.get(agent.id),review=kind==='review';if(current?.review===review&&current.agent===agent)return;
+  const mode=kind==='review'?'review':kind==='outline'?'outline':'default',current=this.stageTools.get(agent.id);if(current?.mode===mode&&current.agent===agent)return;
   current?.fiber?.dispose();
-  const fiber=review?agent.ctx.inject(['tools'],ctx=>{ctx.tools.restrict({allow:[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','prepare_review_documents','review_basis','review_batch','save_review_batch','finish_review_report']})}):null;
-  this.stageTools.set(agent.id,{agent,review,fiber});
+  const allow=mode==='review'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','prepare_review_documents','review_basis','review_batch','save_review_batch','finish_review_report']:mode==='outline'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','task','check_pipeline_state','outline_plan','check_outline','assemble_tender','read_artifact','update_task_progress']:null;
+  const fiber=allow?agent.ctx.inject(['tools'],ctx=>{ctx.tools.restrict({allow})}):null;
+  this.stageTools.set(agent.id,{agent,mode,fiber});
  }
  async skillsLink(cwd){await mkdir(cwd,{recursive:true});try{await symlink(join(root,'business/python/app/skills'),join(cwd,'skills'),process.platform==='win32'?'junction':'dir')}catch(e){if(e.code!=='EEXIST')throw e}}
  modelSelection(agent){
@@ -93,16 +95,18 @@ export class BusinessRuntime{
   const questions=this.ctx.sessionProjections.snapshot(agent.session,['userQuestions']).values.userQuestions??{};
   return eventsView(events,{...questions,active:(questions.active??[]).filter(q=>calls.has(q.callId))},record.end_seq==null?agent:undefined);
  }
- async projection(record){
+ async projection(record,state){
+  state??=await business(this.ctx,'state',{task_id:record.task_id});
   const handle=await this.handle(record),agent=handle.agent;
-  const view={session_id:record.session_id,action_id:record.action_id,kind:record.kind,model:record.model,sections:record.sections??[],...(record.outcome??this.executionView(record,agent))};
+  const view={session_id:record.session_id,action_id:record.action_id,created_at:record.created_at,kind:record.kind,model:record.model,sections:record.sections??[],...(record.outcome??this.executionView(record,agent))};
   if(record.stopped_at){view.state='stopped';view.questions=[];delete view.error}
   if(record.preparation_error&&!record.stopped_at&&view.state!=='running'){view.state='failed';view.questions=[];view.error=record.preparation_error}
   if(record.kind==='review'&&record.finished_state==='failed'){view.state='failed';if(record.review_error)view.error=record.review_error}
-  if(view.state==='completed'&&record.kind==='review'&&(await business(this.ctx,'state',{task_id:record.task_id})).review.report?.session_id!==record.session_id){view.state='failed';view.error=record.review_error??'本轮未生成有效审查报告'}
+  if(view.state==='completed'&&record.kind==='review'&&state.review.report?.session_id!==record.session_id){view.state='failed';view.error=record.review_error??'本轮未生成有效审查报告'}
   if(view.state==='completed'){
-   const state=await business(this.ctx,'state',{task_id:record.task_id});const names=new Set(state.files.map(f=>f.path));
-   const missing=record.kind==='analyse'?requiredAnalysis.map(n=>'analysis/'+n).filter(n=>!names.has(n)):record.kind==='outline'?!state.directory?['投标目录']:[]:record.kind==='guide'?!names.has('body/写作指引.md')?['写作指引']:[]:record.kind==='promises'?!names.has('body/关键事实与承诺.md')?['关键事实与承诺']:[]:['build','body','revise'].includes(record.kind)?(record.sections?.length?record.sections.filter(s=>{const item=state.body_sections.find(b=>b.volume===s.volume&&b.title===s.title);return !item||!state.body_files.includes(item.path)||item.status!=='ready'}).map(s=>s.title):state.body_sections.filter(s=>!state.body_files.includes(s.path)||s.status==='draft').map(s=>s.title)):[];
+   const names=new Set(state.files.map(f=>f.path));
+   const missing=record.kind==='analyse'?requiredAnalysis.map(n=>'analysis/'+n).filter(n=>!names.has(n)):record.kind==='outline'?!state.directory?['投标目录']:[]:record.kind==='guide'?!names.has('body/写作指引.md')?['写作指引']:[]:record.kind==='promises'?!names.has('body/关键事实与承诺.md')?['关键事实与承诺']:[]:['build','body','revise'].includes(record.kind)?(record.sections?.length?record.sections.filter(s=>{const item=state.body_sections.find(b=>b.volume===s.volume&&b.title===s.title);return !item||!state.body_files.includes(item.path)||item.status!=='ready'}).map(s=>s.title):state.body_sections.filter(s=>!state.body_files.includes(s.path)||s.status!=='ready').map(s=>s.title)):[];
+   if(record.kind==='outline'){const verification=await business(this.ctx,'outline_status',{task_id:record.task_id,action_id:record.action_id});if(!verification.ok)missing.push(verification.error)}
    if(['body','revise','guide','promises'].includes(record.kind)){
     const stages=record.kind==='guide'?['guide']:['guide','promises'];
     for(const kind of stages)if(state.build_preparation[kind]!=='ready')missing.push(kind==='guide'?'写作指引未就绪':'关键事实与承诺未就绪');
@@ -114,6 +118,7 @@ export class BusinessRuntime{
    }
    if(missing.length){view.state='failed';view.error=record.preparation_error??'本轮未产出所需文件：'+missing.join('、')+'。已有成果保留，请重新发起该阶段。'}
   }
+  if(view.state==='failed')view.resolved=actionSatisfied(state,record);
   return view;
  }
  async tasks(){const result=await business(this.ctx,'tasks');let recovered=false;for(const task of result.tasks)if(task.review_status==='running'){const record=(await this.latestRecord(task.id,'review'))?.record;if(record)recovered=await this.recoverReview(record)||recovered}return recovered?business(this.ctx,'tasks'):result}
@@ -122,7 +127,7 @@ export class BusinessRuntime{
   const dir=join(actions,tid);let names;try{names=await readdir(dir)}catch(e){if(e.code==='ENOENT')return null;throw e}
   const records=[];for(const name of names.filter(n=>n.endsWith('.json')&&n!=='latest.json')){const path=join(dir,name),record=await jsonFile(path);if(record.kind===kind)records.push({record,path})}return records.sort((a,b)=>b.record.created_at-a.record.created_at)[0]??null;
  }
- async state(tid){let record=await jsonFile(join(actions,tid,'latest.json'));if(record&&(await this.handle(record)).agent.status!=='running'){await this.settling.get(tid);record=await jsonFile(join(actions,tid,'latest.json'))}if(record?.kind==='review')await this.recoverReview(record);record=await jsonFile(join(actions,tid,'latest.json'));const execution=record?await this.projection(record):null;const base=await business(this.ctx,'state',{task_id:tid});const analysis=(await this.latestRecord(tid,'analyse'))?.record;const conversation=await jsonFile(join(dataRoot,'conversations',tid+'.json'));return {...base,session_id:conversation?.session_id??null,workflow:await this.workflows.snapshot(tid),analysis_progress:analysis?.analysis_progress??analysisProgress(base.files,analysis?.analysis_before,analysis?.created_at),execution}}
+ async state(tid){let record=await jsonFile(join(actions,tid,'latest.json'));if(record&&(await this.handle(record)).agent.status!=='running'){await this.settling.get(tid);record=await jsonFile(join(actions,tid,'latest.json'))}if(record?.kind==='review')await this.recoverReview(record);record=await jsonFile(join(actions,tid,'latest.json'));const base=await business(this.ctx,'state',{task_id:tid});const execution=record?await this.projection(record,base):null;const analysis=(await this.latestRecord(tid,'analyse'))?.record;const conversation=await jsonFile(join(dataRoot,'conversations',tid+'.json'));return {...base,session_id:conversation?.session_id??null,workflow:await this.workflows.snapshot(tid),analysis_progress:analysis?.analysis_progress??analysisProgress(base.files,analysis?.analysis_before,analysis?.created_at),execution}}
  async assertIdle(tid){if(this.admissions.has(tid))throw new BusinessError(409,'当前项目正在提交');return this.idleState(tid)}
  async idleState(tid){if(this.workflows.active(tid))throw new BusinessError(409,'项目自动流程正在执行，请先停止');const state=await this.state(tid);if(['running','needs_input'].includes(state.execution?.state))throw new BusinessError(409,'当前项目正在执行，请先停止或填写具体选项');await this.settling.get(tid);await this.freezeAnalysis(tid);return state}
  async saveSources(tid,payload){
@@ -189,9 +194,11 @@ export class BusinessRuntime{
     const record={action_id:key,start_seq:handle.agent.session.snapshotEvents().length,session_id:sessionId,task_id:tid,kind:payload.kind,model,payload_hash:hash,input_version:(await business(this.ctx,'state',{task_id:tid})).input_versions[payload.kind],created_at:Date.now(),sections,section_paths,...(payload.kind==='analyse'?{analysis_sources:await business(this.ctx,'analysis_source_version',{task_id:tid})}:{}),...(payload.kind==='analyse'?{analysis_before:Object.fromEntries(state.files.map(f=>[f.path,f.hash]))}:{})};
     await atomic(path,record);await atomic(join(dir,'latest.json'),record);
     const prompt=instructions[payload.kind]+(payload.kind==='review'?'\n审核中的招标条款歧义、来源冲突、外部事实或证明不足，直接在报告“需确认”中列出原文依据、影响及尚待确认的范围，继续完整审核，不调用ask_user_question让用户逐项裁决。只有缺少开始审核所必需的文件或无法识别受审对象才提问；修改业务规则或替用户作新的承诺须询问。':'')+'\n页面输入：'+JSON.stringify(payload)+'\n制作状态：'+JSON.stringify(state.build_preparation)+'；目录篇幅：'+JSON.stringify(state.directory?.content.page_target??null)+(bidderSnapshot?'\n已确认投标主体信息（唯一身份依据）：'+JSON.stringify(bidderSnapshot)+'。先读取此快照，已有公司地址、电话、传真、邮箱、签字代表姓名和职务及签署日期直接使用，不再次提问。缺失或项目专属承诺才提问。所有公司资质与业绩只检索本主体；写作素材全库共用，注入后修订并检查旧项目和旧主体名称。':'')+'\n当前任务绝对路径：'+cwd+'；来源集合以work/parse/sources.json为准。';
-    record.prompt=prompt;await this.updateRecord(record,{prompt});this.applyStageTools(handle.agent,payload.kind);
-    if(!options.agent)handle.agent.followup(createUserMessage({content:[{type:'text',text:prompt}],source:{kind:'human'}}));
-    this.track(handle,tid);return {session_id:sessionId,action_id:key,instructions:prompt,replayed:false};
+    const outlineContext=payload.kind==='outline'?await business(this.ctx,'outline_begin',{task_id:tid,action_id:key}):null;
+    const stagePrompt=outlineContext?prompt+'\n本轮目录派发/汇总契约：'+JSON.stringify(outlineContext):prompt;
+    record.prompt=stagePrompt;await this.updateRecord(record,{prompt:stagePrompt});this.applyStageTools(handle.agent,payload.kind);
+    if(!options.agent)handle.agent.followup(createUserMessage({content:[{type:'text',text:stagePrompt}],source:{kind:'human'}}));
+    this.track(handle,tid);return {session_id:sessionId,action_id:key,instructions:stagePrompt,replayed:false};
    }catch(e){await unlink(join(locks,tid)).catch(()=>{});await unlink(path).catch(()=>{});if(previous)await atomic(join(dir,'latest.json'),previous);else await unlink(join(dir,'latest.json')).catch(()=>{});throw e}
   }finally{this.release(tid)}
  }
@@ -239,14 +246,17 @@ export class BusinessRuntime{
   })().finally(()=>this.knowledge.delete(id));return job.done;
  }
  async runKnowledge(id,signal){
-  let handle;
+  let handle,stage='parse';
   try{
-   const cwd=join(dataRoot,'workspace','knowledge');await this.skillsLink(cwd);
-   handle=await this.ctx.agents.create({sessionId:'kb-'+randomUUID(),meta:{cwd,agentPreset:'ooo-bidpliot'},agentOptions:await this.select(),setup:async c=>{await this.ctx.agentPresets.mount(c,'ooo-bidpliot')}});
-   const prepared=await business(this.ctx,'kb_prepare',{id},{signal});await transcribe(this.ctx,prepared,{agent:handle.agent,signal});
+   const createAgent=async()=>{const cwd=join(dataRoot,'workspace','knowledge');await this.skillsLink(cwd);return this.ctx.agents.create({sessionId:'kb-'+randomUUID(),meta:{cwd,agentPreset:'ooo-bidpliot'},agentOptions:await this.select(),setup:async c=>{await this.ctx.agentPresets.mount(c,'ooo-bidpliot')}})};
+   const prepared=await business(this.ctx,'kb_prepare',{id},{signal});
+   if(prepared.needs_ocr){handle=await createAgent();await transcribe(this.ctx,prepared,{agent:handle.agent,signal})}
+   await business(this.ctx,'kb_parsed',{id},{signal});stage='extract';
+   await business(this.ctx,'kb_images',{id},{signal});
+   handle??=await createAgent();
    const p=await business(this.ctx,'kb_prompt',{id},{signal});const run=await this.ctx.subagents.start('spawn',{parent:handle.agent,signal,persona:p.system,toolFilter:{allow:[]},prompt:[{type:'text',text:p.prompt}]});
    try{const result=await run.result;if(result.stopReason!=='completed')throw subagentFailure(run,result,'资料整理未完成');const text=result.output.filter(b=>b.type==='text').map(b=>b.text).join('');await business(this.ctx,'kb_finish',{id,metadata:jsonResponse(text)},{signal})}finally{await run.dispose()}
-  }catch(e){await business(this.ctx,'kb_fail',{id,error:signal.aborted?'资料处理已中断，请重新解析':e.message})}finally{await handle?.dispose()}
+  }catch(e){await business(this.ctx,'kb_fail',{id,stage,error:signal.aborted?'资料处理已中断，请重试':e.message})}finally{await handle?.dispose()}
  }
  close(){
   if(this.closing)return this.closing;

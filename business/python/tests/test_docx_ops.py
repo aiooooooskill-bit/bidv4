@@ -801,7 +801,8 @@ def test_base_template_layout_on_create_and_assemble(env):
     vol = Document(str(work_dir(env['task']['id']) / 'body' / '整本-技术部分.docx'))
     assert _east(vol, 'Normal') == '宋体'
     n_fields = sum((1 for t in vol.sections[0].footer._element.iter(qn('w:instrText')) if 'PAGE' in (t.text or '')))
-    assert n_fields == 1
+    assert n_fields == 2
+    assert vol.sections[0].footer.paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.CENTER
 
 def test_material_inject_image_only_para_survives(env):
     """纯图片段落在「连续第 3 空行」位不再被空行折叠吃出元素映射——占位行
@@ -869,12 +870,12 @@ def test_assemble_tree_order_headings_and_missing(env):
     vrows = [r_ for r_ in _adb.list_artifact_index() if r_['kind'] == 'tender.volume']
     assert not vrows
     chk = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    paras = chk.paragraphs
+    paras = [p for p in chk.paragraphs if not p.style.name.lower().startswith('toc')]
     assert paras[0].style.name == 'Title' and paras[0].text == '技术部分'
-    assert paras[1].style.name == 'Heading 1' and paras[1].text == '第一章\u3000技术方案'
-    assert paras[2].style.name == 'Heading 2' and paras[2].text == '1.1 项目理解与需求分析'
+    assert paras[1].style.name == 'Heading 1' and paras[1].text == '技术方案'
+    assert paras[2].style.name == 'Heading 2' and paras[2].text == '项目理解与需求分析'
     texts = [p.text for p in paras]
-    assert texts.count('1.1 项目理解与需求分析') == 1
+    assert texts.count('项目理解与需求分析') == 1
     assert '项目理解正文第一段。' in texts
     assert not any(('资质证书复印件' in t for t in texts))
     assert 'PAGE' in chk.sections[0].footer.paragraphs[0]._p.xml
@@ -883,11 +884,16 @@ def test_assemble_tree_order_headings_and_missing(env):
     assert '未发布整册' in r2
     docx_section_create(**{'path': 'body/总体设计方案', 'title': '总体设计方案', 'paragraphs': '总体设计正文。'})
     r3 = docx_assemble_volume(**{})
-    assert '已发布为整本标书成果' in r3 and '（第 1 版）' in r3
+    assert '未发布整册' in r3
+    docx_section_create(path='body/附件：资质证书复印件',title='附件：资质证书复印件',paragraphs='原附件证明材料。')
+    r4 = docx_assemble_volume()
+    assert '已发布为整本标书成果' in r4 and '（第 1 版）' in r4
     vrows = [r_ for r_ in _adb.list_artifact_index() if r_['kind'] == 'tender.volume']
     assert len(vrows) == 1 and vrows[0]['display_name'] == '技术部分'
     pkg_docx = _astore.package_files(vrows[0]['artifact_id'], vrows[0])
-    assert len(pkg_docx) == 1 and pkg_docx[0].name == '整本-技术部分.docx'
+    package_meta = json.loads(_astore.read_content_resolved(vrows[0]['artifact_id'], vrows[0]))
+    assert len(pkg_docx) == 1 and pkg_docx[0].name == package_meta['filename']
+    assert not _astore.package_files(vrows[0]['artifact_id'], vrows[0], '*.pdf')
     assert pkg_docx[0].read_bytes() == _abs(env, 'body/整本-技术部分.docx').read_bytes()
     r4 = docx_assemble_volume(**{})
     assert '未重复发布' in r4 and '（第 1 版）' in r4
@@ -919,15 +925,17 @@ def test_assemble_cover_node(env):
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]') and '缺失' not in r and ('未产出' not in r)
     chk = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    paras = chk.paragraphs
+    paras = [p for p in chk.paragraphs if not p.style.name.lower().startswith('toc')]
     texts = [_accepted_text(p._p) for p in paras]
     assert paras[0].style.name == 'Tender Cover' and texts[0] == 'XX 项目投标文件（技术部分）'
     assert not any((p.style.name == 'Title' for p in paras))
     assert '封面' not in texts
-    chapter = next((p for t, p in zip(texts, paras) if t == '第一章\u3000技术方案'))
+    chapter = next((p for t, p in zip(texts, paras) if t == '技术方案'))
     assert chapter.paragraph_format.page_break_before is True
-    assert chk.sections[0].different_first_page_header_footer is True
-    assert 'PAGE' in chk.sections[0].footer.paragraphs[0]._p.xml
+    assert len(chk.sections) == 2
+    assert not chk.sections[0].footer.paragraphs[0].text
+    assert 'PAGE' in chk.sections[1].footer.paragraphs[0]._p.xml
+    assert chk.sections[1]._sectPr.find(qn('w:pgNumType')).get(qn('w:start')) == '1'
 
 def test_assemble_cover_missing_reported(env):
     """封面缺节文件的两种形态照旧点名（正文编写→缺失正文节；模板或附件填充→
@@ -938,7 +946,8 @@ def test_assemble_cover_missing_reported(env):
     assert r.startswith('[已合册]')
     assert '缺失 1 节未并入：封面' in r
     chk = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    assert chk.paragraphs[0].style.name == 'Heading 1'
+    assert any(p.style.name == 'Heading 1' for p in chk.paragraphs)
+    assert '未发布整册' in r
     import copy
     non_prose = copy.deepcopy(_DIR_COVER)
     non_prose['response_documents'][0]['directory'][0]['交付形态'] = '模板或附件填充'
@@ -947,7 +956,8 @@ def test_assemble_cover_missing_reported(env):
     assert r2.startswith('[已合册]')
     assert '模板填充类未产出 1 节（按附件对待，不占整本位）：封面' in r2
     chk2 = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    assert chk2.paragraphs[0].style.name == 'Heading 1'
+    assert any(p.style.name == 'Heading 1' for p in chk2.paragraphs)
+    assert '未发布整册' in r2
 
 def test_assemble_includes_produced_format_node(env):
     """模板填充叶子产出节文件即按树序并进整本（格式件是标书组成部分），
@@ -961,7 +971,7 @@ def test_assemble_includes_produced_format_node(env):
     chk = Document(str(_abs(env, 'body/整本-技术部分.docx')))
     texts = [p.text for p in chk.paragraphs]
     assert '（复印件附后）' in texts
-    assert texts.count('第二章\u3000附件：资质证书复印件') == 1
+    assert texts.count('附件：资质证书复印件') == 1
     assert '个节文件未并入' not in r
 
 def test_assemble_accepts_revisions_and_keeps_images(env):
@@ -1027,7 +1037,7 @@ def test_assemble_demotes_off_tree_headings(env):
         ppr = p._p.find(qn('w:pPr'))
         lvl = ppr.find(qn('w:outlineLvl')) if ppr is not None else None
         headings.append((p.style.name, lvl.get(qn('w:val')) if lvl is not None else None, p.text))
-    assert [h for h in headings if h[1] is None] == [('Heading 1', None, '第一章\u3000运维实施方案')]
+    assert [h for h in headings if h[1] is None] == [('Heading 1', None, '运维实施方案')]
     demoted = {h[2]: h for h in headings if h[1] == '9'}
     assert demoted['沟通与报告机制'][0] == 'Heading 2'
     assert demoted['运维服务方案'][0] == 'Heading 2'
@@ -1052,35 +1062,17 @@ def test_assemble_toc_reconciliation(env):
 _DIR_TOC = {'response_documents': [{'name': '技术部分', 'scope': '', 'directory': [{'目录名称': '封面', 'level': 1, 'children': [], '交付形态': '正文编写', '来源位置': []}, {'目录名称': '编制索引', 'level': 1, 'children': [], '交付形态': '正文编写', '来源位置': []}, {'目录名称': '目录', 'level': 1, 'children': [], '交付形态': '模板或附件填充', '来源位置': []}, {'目录名称': '技术方案', 'level': 1, 'children': [{'目录名称': '项目理解与需求分析', 'level': 2, 'children': [], '交付形态': '正文编写', '来源位置': ['REQ-01']}]}, {'目录名称': '附件：资质证书复印件', 'level': 1, 'children': [], '交付形态': '模板或附件填充', '来源位置': ['MAND-02']}]}]}
 
 def test_assemble_mechanical_toc_and_front_matter(env):
-    """目录节点无节文件→机械目录页（Word 目录域+缓存清单，插在目录节点位置）；
-    前置区（目录前的非封面节点=编制索引）不占章号，正文从目录后第一章起编；
-    未产出附件节在缓存清单标「另附」；返回行报告条目数。"""
+    """目录前有封面以外材料时不猜计数规则，也不删除前置正文。"""
     _seed_dir_artifact(env, _DIR_TOC)
-    docx_section_create(**{'path': 'body/封面', 'title': '封面'})
-    docx_section_create(**{'path': 'body/编制索引', 'title': '编制索引', 'paragraphs': '索引表正文。'})
-    docx_section_create(**{'path': 'body/项目理解与需求分析', 'title': '项目理解与需求分析', 'paragraphs': '项目理解正文第一段。'})
-    r = docx_assemble_volume(**{})
-    assert r.startswith('[已合册]'), r
-    assert '目录页已生成（4 条' in r
-    assert '未产出附件节标「另附」1 项' in r
-    assert '模板填充类未产出 1 节' in r
-    chk = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    texts = [_accepted_text(p._p) for p in chk.paragraphs]
-    assert not any((t.startswith('第一章\u3000编制索引') for t in texts))
-    assert '第一章\u3000技术方案' in texts
-    toc_i = next((i for i, p in enumerate(chk.paragraphs) if p.text == '目录'))
-    assert chk.paragraphs[toc_i].style.name not in ('Heading 1', 'Heading 2', 'Title')
-    idx_i = next((i for i, t in enumerate(texts) if t == '编制索引'))
-    ch1_i = next((i for i, t in enumerate(texts) if t.startswith('第一章\u3000技术方案')))
-    assert idx_i < toc_i < ch1_i
-    xml = chk.element.body.xml
-    assert xml.count('w:fldCharType="begin"') >= 1
-    assert ' TOC \\o "1-3"' in xml
-    assert 'w:fldCharType="separate"' in xml and 'w:fldCharType="end"' in xml
-    assert any((t.strip() == '编制索引' for t in texts))
-    assert any((t.strip() == '第一章\u3000技术方案' for t in texts))
-    assert any((t.strip() == '1.1 项目理解与需求分析' for t in texts))
-    assert any(('附件：资质证书复印件' in t and '（另附）' in t for t in texts))
+    for name in ['封面','编制索引','项目理解与需求分析']:
+        docx_section_create(path='body/'+name,title=name,paragraphs='原有内容。')
+    import hashlib
+    paths=[_abs(env,'body/'+name+'.docx') for name in ['封面','编制索引','项目理解与需求分析']]
+    before=[hashlib.sha256(p.read_bytes()).hexdigest() for p in paths]
+    result=docx_assemble_volume()
+    assert '目录前存在封面以外的前置材料' in result
+    assert [hashlib.sha256(p.read_bytes()).hexdigest() for p in paths]==before
+    assert not _abs(env,'body/整本-技术部分.docx').exists()
 
 def test_assemble_toc_node_with_file_unnumbered(env):
     """手写目录节文件优先：并入+对账照旧，但「目录」标题不占章号（此前会是
@@ -1091,10 +1083,11 @@ def test_assemble_toc_node_with_file_unnumbered(env):
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]')
     assert '目录页与正文对账不符' not in r
-    assert '目录页已生成' not in r
+    assert '目录页已生成' in r
+    assert '由Office/WPS打开时更新' in r
     texts = [_accepted_text(p._p) for p in Document(str(_abs(env, 'body/整本-技术部分.docx'))).paragraphs]
     assert not any((t.startswith('第一章\u3000目录') for t in texts))
-    assert '第一章\u3000项目理解' in texts
+    assert '项目理解' in texts
 
 def test_assemble_attachment_shell_section(env):
     """附件壳节（2026-09-14 拍板：知识库全无命中也建节）=模板填充叶子带节文件
@@ -1107,7 +1100,7 @@ def test_assemble_attachment_shell_section(env):
     assert '模板填充类未产出' not in r
     texts = [_accepted_text(p._p) for p in Document(str(_abs(env, 'body/整本-技术部分.docx'))).paragraphs]
     assert any(('此处贴入：资质证书复印件' in t for t in texts))
-    assert any((t.startswith('第二章\u3000附件：资质证书复印件') for t in texts))
+    assert any((t.startswith('附件：资质证书复印件') for t in texts))
 
 def test_assemble_empty_container_suppressed(env):
     """空容器抑制（兜底）：容器子树无任何将产出叶子→不发章标题（防「第X章
@@ -1120,7 +1113,7 @@ def test_assemble_empty_container_suppressed(env):
     assert '模板填充类未产出 2 节' in r
     texts = [_accepted_text(p._p) for p in Document(str(_abs(env, 'body/整本-技术部分.docx'))).paragraphs]
     assert not any(('其他资料' in t for t in texts))
-    assert any((t.startswith('第一章\u3000技术方案') for t in texts))
+    assert any((t.startswith('技术方案') for t in texts))
 
 def test_assemble_suppressed_container_reported(env):
     """空容器抑制的容器标题点名：此前容器名从整本/目录页/报告三处同时消失，
@@ -1134,11 +1127,14 @@ def test_assemble_suppressed_container_reported(env):
     assert '附件章' in suppressed_line
 
 def test_assemble_no_toc_node_advisory(env):
-    """无「目录」节点：全部一级节点按章编号（旧行为兼容）但现在可见——
-    一行事实提示，供用户判断是否要前置区。"""
+    """旧树没有目录节点也须自动生成原生目录和更新域。"""
     _seed_dir_artifact(env, _DIR_SINGLE)
-    r = docx_assemble_volume(**{})
-    assert '目录树无「目录」节点' in r and '按章编号' in r
+    docx_section_create(path='body/项目理解与需求分析',title='项目理解与需求分析',paragraphs='原正文。')
+    result=docx_assemble_volume()
+    assert '目录页已生成' in result and '由Office/WPS打开时更新' in result
+    doc=Document(_abs(env,'body/整本-技术部分.docx'))
+    assert ' TOC ' in doc.element.body.xml
+    assert not any(p.text.startswith('第一章') and p.text.endswith('目录') for p in doc.paragraphs)
 
 def test_assemble_cover_variant_advisory(env):
     """「封面页」等变体不识别为封面（清洗后≠「封面」）：占号+发标题照旧，
@@ -1248,31 +1244,36 @@ def test_assemble_without_directory_errors(env):
 _DIR_NUMBERING = {'response_documents': [{'name': '技术部分', 'scope': '', 'directory': [{'目录名称': '总体部署', 'level': 1, 'children': [{'目录名称': '部署原则', 'level': 2, 'children': [{'目录名称': '安全原则', 'level': 3, 'children': [], '交付形态': '正文编写', '来源位置': []}]}, {'目录名称': '分步实施', 'level': 2, 'children': [], '交付形态': '正文编写', '来源位置': []}]}, {'目录名称': '售后服务', 'level': 1, 'children': [], '交付形态': '正文编写', '来源位置': []}]}, {'name': '商务部分', 'scope': '', 'directory': [{'目录名称': '报价说明', 'level': 1, 'children': [], '交付形态': '正文编写', '来源位置': []}]}]}
 
 def test_assemble_numbering_schemes(env):
-    """章节编号=树位置的纯函数：缺省 chapter（第X章全角空格+1.1）、decimal、
-    gov、none 四格式按树序生成；多册各自从首章重起；编号后 _is_title_para
-    对账剥标题仍按裸名（自带标题段只剥一份）。"""
-    import copy
+    """四种原生多级列表：标题不混入编号文字，实际排版序号与目录一致，各册重起。"""
+    from copy import deepcopy
     for name in ('安全原则', '分步实施', '售后服务'):
-        docx_section_create(**{'path': f'body/技术部分/{name}', 'title': name, 'paragraphs': '正文'})
-    docx_section_create(**{'path': 'body/商务部分/报价说明', 'title': '报价说明', 'paragraphs': '正文'})
-
-    def headings() -> dict[str, list[str]]:
-        out: dict[str, list[str]] = {}
-        for vol in ('技术部分', '商务部分'):
-            doc = Document(str(_abs(env, f'body/整本-{vol}.docx')))
-            out[vol] = [p.text for p in doc.paragraphs if p.style.name.startswith('Heading')]
-        return out
-    _seed_dir_artifact(env, _DIR_NUMBERING)
-    r = docx_assemble_volume(**{})
-    assert r.startswith('[已合册]') and '⚠️' not in r, r
-    assert headings()['技术部分'] == ['第一章\u3000总体部署', '1.1 部署原则', '1.1.1 安全原则', '1.2 分步实施', '第二章\u3000售后服务']
-    assert headings()['商务部分'] == ['第一章\u3000报价说明']
-    for scheme, expected in (('decimal', ['1 总体部署', '1.1 部署原则', '1.1.1 安全原则', '1.2 分步实施', '2 售后服务']), ('gov', ['一、总体部署', '（一）部署原则', '1.安全原则', '（二）分步实施', '二、售后服务']), ('none', ['总体部署', '部署原则', '安全原则', '分步实施', '售后服务'])):
-        content = copy.deepcopy(_DIR_NUMBERING)
-        content['numbering'] = scheme
-        _seed_dir_artifact(env, content)
-        assert docx_assemble_volume(**{}).startswith('[已合册]')
-        assert headings()['技术部分'] == expected, scheme
+        docx_section_create(path=f'body/技术部分/{name}',title=name,paragraphs='正文')
+    docx_section_create(path='body/商务部分/报价说明',title='报价说明',paragraphs='正文')
+    expected_titles=['总体部署','部署原则','安全原则','分步实施','售后服务']
+    cases=[(None,['1 总体部署','1.1 部署原则','1.1.1 安全原则','1.2 分步实施','2 售后服务']),
+           ('chapter',['第一章 总体部署','1.1 部署原则','1.1.1 安全原则','1.2 分步实施','第二章 售后服务']),
+           ('gov',['一、 总体部署','（一） 部署原则','1. 安全原则','（二） 分步实施','二、 售后服务']),
+           ('none',expected_titles)]
+    for scheme,expected in cases:
+        content=deepcopy(_DIR_NUMBERING)
+        if scheme:content['numbering']=scheme
+        _seed_dir_artifact(env,content)
+        result=docx_assemble_volume();assert result.startswith('[已合册]') and '排版结果不能' not in result,result
+        path=_abs(env,'body/整本-技术部分.docx');doc=Document(path)
+        headings=[p for p in doc.paragraphs if p.style.name.startswith('Heading')]
+        assert [p.text for p in headings]==expected_titles
+        ids=[p._p.pPr.numPr.numId.val for p in headings]
+        assert len(set(ids))==1 and (ids[0]==0 if scheme=='none' else ids[0]>0)
+        assert [p._p.pPr.numPr.ilvl.val for p in headings]==[0,1,2,1,0]
+        toc=[p.text.split('\t',1)[0] for p in doc.paragraphs if p.style.name.lower().startswith('toc') and '\t' in p.text]
+        assert [''.join(t.split()) for t in toc]==[''.join(t.split()) for t in expected]
+        if scheme!='none':
+            abstract_id=next(n for n in doc.part.numbering_part.element.findall(qn('w:num')) if n.get(qn('w:numId'))==str(ids[0])).find(qn('w:abstractNumId')).get(qn('w:val'))
+            abstract=next(n for n in doc.part.numbering_part.element.findall(qn('w:abstractNum')) if n.get(qn('w:abstractNumId'))==abstract_id)
+            assert [e.get(qn('w:val')) for e in abstract.findall('.//'+qn('w:pStyle'))]==[doc.styles[f'Heading {n}'].style_id for n in range(1,10)]
+        other_doc=Document(_abs(env,'body/整本-商务部分.docx'))
+        other=next(p.text.split('\t',1)[0] for p in other_doc.paragraphs if p.style.name.lower().startswith('toc') and '\t' in p.text)
+        assert other=={'chapter':'第一章 报价说明','gov':'一、报价说明','none':'报价说明'}.get(scheme,'1 报价说明')
 
 def test_assemble_warns_self_numbered_node_names(env):
     """目录节点名自带编号（树格式红线违例）：合册照常编号（双重编号如实可见）
@@ -1285,8 +1286,8 @@ def test_assemble_warns_self_numbered_node_names(env):
     assert '第一章 技术方案' in r and '1.1 项目理解' in r
     assert '双重编号' in r
     texts = [p.text for p in Document(str(_abs(env, 'body/整本-技术部分.docx'))).paragraphs]
-    assert '第一章\u3000第一章 技术方案' in texts
-    assert '1.1 1.1 项目理解' in texts
+    assert '第一章 技术方案' in texts
+    assert '1.1 项目理解' in texts
 
 def test_section_text_lines_accepted_view(env):
     """校验对象=接受全部修订后的终稿：插入修订计入、删除修订不计。"""
@@ -1360,7 +1361,7 @@ def test_assemble_keeps_mismatched_own_heading(env):
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]'), r
     texts = [p.text for p in Document(str(_abs(env, 'body/整本-技术部分.docx'))).paragraphs]
-    assert '第一章\u3000运维实施方案' in texts
+    assert '运维实施方案' in texts
     assert '运维方案' in texts
     assert '运维服务方案' in texts
 
@@ -1671,7 +1672,7 @@ def test_source_inject_strips_outline_and_toc_bookmarks(env):
     body = Document(str(_abs(env, section))).element.body
     assert body.findall(f".//{qn('w:outlineLvl')}") == []
     starts = list(body.iter(qn('w:bookmarkStart')))
-    assert not [b for b in starts if (b.get(qn('w:name')) or '').startswith('_')]
+    assert not [b for b in starts if (b.get(qn('w:name')) or '').startswith('_') and not (b.get(qn('w:name')) or '').startswith('_Tender')]
     assert any((b.get(qn('w:name')) == 'keepme' for b in starts))
 
 def _make_armed_material_docx(path: Path) -> None:
@@ -1756,16 +1757,19 @@ def test_assemble_disarms_armed_styles_and_strips_outline(env):
     assert st21.find(qn('w:pPr')).find(qn('w:numPr')) is not None
     h2 = next((s for s in final.styles.element.findall(qn('w:style')) if s.get(qn('w:styleId')) == 'Heading2'))
     h2ppr = h2.find(qn('w:pPr'))
-    assert h2ppr is None or h2ppr.find(qn('w:numPr')) is None
+    assert h2ppr.find(qn('w:numPr')) is not None
+    native_id=h2ppr.find(qn('w:numPr')).find(qn('w:numId')).get(qn('w:val'))
+    native_num=next(n for n in final.part.numbering_part.element.findall(qn('w:num')) if n.get(qn('w:numId'))==native_id)
+    native_abstract=native_num.find(qn('w:abstractNumId')).get(qn('w:val'))
     guard = {f'heading {i}' for i in range(1, 10)} | {'normal'}
     for a in final.part.numbering_part.element.findall(qn('w:abstractNum')):
         for lv in a.findall(qn('w:lvl')):
             ps = lv.find(qn('w:pStyle'))
             if ps is not None:
-                assert names.get(ps.get(qn('w:val')), '').lower() not in guard
+                assert a.get(qn('w:abstractNumId')) == native_abstract or names.get(ps.get(qn('w:val')), '').lower() not in guard
     ols = body.findall(f".//{qn('w:outlineLvl')}")
     assert ols and all((o.get(qn('w:val')) == '9' for o in ols))
-    assert not [b for b in body.iter(qn('w:bookmarkStart')) if (b.get(qn('w:name')) or '').startswith('_')]
+    assert not [b for b in body.iter(qn('w:bookmarkStart')) if (b.get(qn('w:name')) or '').startswith('_') and not (b.get(qn('w:name')) or '').startswith('_Tender')]
 
 def _numpr_para(doc, text: str, *, pstyle: str | None, num_id: int, ilvl: int=0, outline: int | None=None):
     p = doc.add_paragraph(text)
@@ -1818,7 +1822,7 @@ def _subhead_section(env, path: str, title: str, subheads: list[tuple[str, int]]
 
 def _vol_pstyle(vol_doc, text: str) -> tuple[str, str | None]:
     """按文本找整本段落，回 (pStyleId, outlineLvl|None)。"""
-    p = next((p_ for p_ in vol_doc.element.body.findall(f".//{qn('w:p')}") if text in ''.join(p_.itertext())))
+    p = next((p_ for p_ in vol_doc.element.body.findall(f".//{qn('w:p')}") if not any((ps.get(qn('w:val')) or '').lower().startswith('toc') for ps in p_.findall('./'+qn('w:pPr')+'/'+qn('w:pStyle'))) and text in ''.join(p_.itertext())))
     ppr = p.find(qn('w:pPr'))
     ps = ppr.find(qn('w:pStyle')) if ppr is not None else None
     ol = ppr.find(qn('w:outlineLvl')) if ppr is not None else None
@@ -1826,7 +1830,7 @@ def _vol_pstyle(vol_doc, text: str) -> tuple[str, str | None]:
 
 def _vol_ptext(vol_doc, text: str) -> str:
     """按子串找整本段落，回接受视角全文（编号断言用）。"""
-    p = next((p_ for p_ in vol_doc.element.body.findall(f".//{qn('w:p')}") if text in ''.join(p_.itertext())))
+    p = next((p_ for p_ in vol_doc.element.body.findall(f".//{qn('w:p')}") if not any((ps.get(qn('w:val')) or '').lower().startswith('toc') for ps in p_.findall('./'+qn('w:pPr')+'/'+qn('w:pStyle'))) and text in ''.join(p_.itertext())))
     return ''.join((t.text or '' for t in p.iter(qn('w:t')))).strip()
 
 def test_assemble_restyles_subheads_by_tree_depth(env):
@@ -1842,10 +1846,14 @@ def test_assemble_restyles_subheads_by_tree_depth(env):
     assert _vol_pstyle(vol, '二级小标题') == ('Heading3', '9')
     assert _vol_pstyle(vol, '三级小标题') == ('Heading4', '9')
     assert _vol_pstyle(vol, '表内标题') == ('Heading3', '9')
-    assert _vol_ptext(vol, '二级小标题') == '1.1.1 二级小标题'
-    assert _vol_ptext(vol, '三级小标题') == '1.1.1.1 三级小标题'
-    assert _vol_ptext(vol, '表内标题') == '1.1.2 表内标题'
-    assert _vol_pstyle(vol, '1.1 项目理解与需求分析')[0] == 'Heading2'
+    assert _vol_ptext(vol, '二级小标题') == '二级小标题'
+    assert _vol_ptext(vol, '三级小标题') == '三级小标题'
+    assert _vol_ptext(vol, '表内标题') == '表内标题'
+    assert _vol_pstyle(vol, '项目理解与需求分析')[0] == 'Heading2'
+    numbers=[p for p in vol.element.body.iter(qn('w:p')) if any(label in ''.join(p.itertext()) for label in ['二级小标题','三级小标题','表内标题'])]
+    ids=[p.pPr.numPr.numId.val for p in numbers]
+    assert len(set(ids))==1 and ids[0]>0
+    assert [p.pPr.numPr.ilvl.val for p in numbers]==[2,3,2]
     sec = Document(str(_abs(env, 'body/项目理解与需求分析.docx')))
     sec_ps = lambda t: next((p_.find(qn('w:pPr')).find(qn('w:pStyle')).get(qn('w:val')) for p_ in sec.element.body.findall(f".//{qn('w:p')}") if t in ''.join(p_.itertext())))
     assert sec_ps('二级小标题') == 'Heading2'
@@ -1870,19 +1878,19 @@ def test_assemble_subhead_guard_frontmatter_and_nonprose(env):
     """降级护栏（守卫放在深度 2 上才能观察——深度 1 时目标级=源级，降与不降
     同形）：前置区（目录节点前）与格式件章（NON_PROSE 招标件零改动保真）的
     标题段保持原 pStyle 不降；同一次合册里正文节照常降级（对照组）。"""
-    _seed_dir_artifact(env, _DIR_SUBHEAD_GUARD)
-    _subhead_section(env, 'body/索引明细', '索引明细', [('前置区小标题', 2)])
+    from copy import deepcopy
+    tree=deepcopy(_DIR_SUBHEAD_GUARD)
+    tree['response_documents'][0]['directory']=tree['response_documents'][0]['directory'][1:]
+    _seed_dir_artifact(env, tree)
     _subhead_section(env, 'body/投标函格式', '投标函格式', [('格式件内部标题', 2)])
     _subhead_section(env, 'body/正文节', '正文节', [('正文小标题', 2)])
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]'), r
     vol = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    assert _vol_pstyle(vol, '前置区小标题')[0] == 'Heading2'
     assert _vol_pstyle(vol, '格式件内部标题')[0] == 'Heading2'
     assert _vol_pstyle(vol, '正文小标题')[0] == 'Heading3'
-    assert _vol_ptext(vol, '前置区小标题') == '前置区小标题'
     assert _vol_ptext(vol, '格式件内部标题') == '格式件内部标题'
-    assert _vol_ptext(vol, '正文小标题') == '2.1.1 正文小标题'
+    assert _vol_ptext(vol, '正文小标题') == '正文小标题'
 
 def test_assemble_subhead_numbering_gov_and_none(env):
     """小标题编号格式矩阵：gov 接续中文层级（节（一）下 H3→1.、H4→（1））；
@@ -1893,8 +1901,13 @@ def test_assemble_subhead_numbering_gov_and_none(env):
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]'), r
     vol = Document(str(_abs(env, 'body/整本-技术部分.docx')))
-    assert _vol_ptext(vol, '政务一级小标题') == '1.政务一级小标题'
-    assert _vol_ptext(vol, '政务二级小标题') == '（1）政务二级小标题'
+    assert _vol_ptext(vol, '政务一级小标题') == '政务一级小标题'
+    assert _vol_ptext(vol, '政务二级小标题') == '政务二级小标题'
+    numbered=[p for p in vol.paragraphs if p.text in ('政务一级小标题','政务二级小标题')]
+    assert [p._p.pPr.numPr.ilvl.val for p in numbered]==[2,3]
+    assert len({p._p.pPr.numPr.numId.val for p in numbered})==1
+    assert all(p._p.pPr.numPr.numId.val>0 for p in numbered)
+    assert '%3.' in vol.part.numbering_part.element.xml and '（%4）' in vol.part.numbering_part.element.xml
     tree['numbering'] = 'none'
     _seed_dir_artifact(env, tree)
     r = docx_section_create(**{'path': 'body/总体设计', 'title': '总体设计', 'paragraphs': '总体设计正文。', 'replace': True})

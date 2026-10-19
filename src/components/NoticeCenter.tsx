@@ -1,9 +1,11 @@
 import {useState,useSyncExternalStore,type ReactNode} from 'react';
 import {Modal} from './Modal';
 import {businessText} from './MarkdownDocument';
-import {ApiError} from '../api';
+import {ApiError,type Flow,type Execution} from '../api';
+import {actionSatisfied,actionNames,deliveryReady} from '../../shared/delivery-status.js';
 
-export type TaskNotice={id:string;scope:string;kind:'error';title:string;message:string;detail?:string;body?:ReactNode;action?:{label:string;run:()=>void|Promise<void>}};
+type Submission=Pick<Execution,'kind'|'sections'|'created_at'>;
+export type TaskNotice={id:string;scope:string;kind:'error';title:string;message:string;detail?:string;body?:ReactNode;execution?:Execution;submission?:Submission;action?:{label:string;run:()=>void|Promise<void>}};
 let items:TaskNotice[]=[];
 let activeScope='analysis';
 let drawer=false;
@@ -21,14 +23,41 @@ export function putNotice(n:TaskNotice,showToast=false){
   emit();
 }
 export function clearNotice(id:string){items=items.filter(n=>n.id!==id);if(toast?.id===id)toast=null;emit();}
+export const executionNoticeId=(tid:string,e:Execution)=>`${tid}:execution:${e.kind}:${e.action_id}`;
+export function syncExecutionNotices(tid:string,flow:Flow){
+  if(deliveryReady(flow))clearNotice(tid+':export');
+  const current=flow.execution;
+  for(const notice of [...items]){
+    if(notice.scope!==tid)continue;
+    const attempt=notice.submission;
+    if(attempt){
+      const completed=current?.kind===attempt.kind&&current.state==='completed'&&
+        Number.isFinite(attempt.created_at)&&(current.created_at??0)>=attempt.created_at!&&
+        (!attempt.sections?.length||attempt.sections.every(s=>current.sections?.some(n=>n.volume===s.volume&&n.title===s.title)));
+      if(completed||actionSatisfied(flow,attempt))clearNotice(notice.id);
+      continue;
+    }
+    const old=notice.execution;
+    if(!old)continue;
+    const sameAction=current?.action_id===old.action_id;
+    const replaced=current?.kind===old.kind&&current.state==='completed'&&current.action_id!==old.action_id&&
+      (!old.sections?.length||old.sections.every(s=>current.sections?.some(n=>n.volume===s.volume&&n.title===s.title)));
+    if((sameAction&&(current.resolved||current.state==='completed'))||replaced||actionSatisfied(flow,old))clearNotice(notice.id);
+  }
+}
+export function reportExecution(tid:string,execution:Execution){
+  const id=executionNoticeId(tid,execution);
+  if(execution.state!=='failed'||execution.resolved){clearNotice(id);return}
+  reportError(new Error(execution.error??'本轮执行未完成'),{id,scope:tid,title:(actionNames[execution.kind]??'执行')+'未完成',execution});
+}
 export function openNoticeCenter(){drawer=true;toast=null;emit();}
-export function reportError(value:unknown,options:{id?:string;scope?:string;title?:string;message?:string;retry?:()=>void|Promise<void>;retryLabel?:string}={}){
+export function reportError(value:unknown,options:{id?:string;scope?:string;title?:string;message?:string;retry?:()=>void|Promise<void>;retryLabel?:string;execution?:Execution;submission?:Submission}={}){
   const raw=value instanceof Error?value.message:String(value??'');if(!raw)return;
   const stale=/409|已变化|版本|过期/.test(raw);
   const network=value instanceof ApiError&&[502,503,504].includes(value.status)||/Failed to fetch|fetch failed|NetworkError|502|503/.test(raw);
   const model=/模型|凭证|图片输入|model|provider|credential|api.?key|inputModalities|image input/i.test(raw);
   const message=options.message??(stale?'内容已被更新，本次保存或提交未完成。请读取最新状态后重试。':model?'当前模型调用未完成，请检查 dsh 中的模型配置、凭证及图片输入能力。':network?'暂时无法连接服务，本次操作未完成。可重试当前操作。':/Invalid PDF|PasswordException|password|图片无法解码/i.test(raw)?'原件无法预览，请检查文件是否损坏或需要密码。':/Can't find end of central directory|invalid zip|corrupt/i.test(raw)?'Word文件无法打开，请检查原件是否为有效DOCX。':value instanceof ApiError&&[413,415].includes(value.status)?businessText(raw):value instanceof ApiError&&value.status>=400&&value.status<500&&!/[A-Za-z]{4,}|Traceback|\n/.test(raw)?businessText(raw):'本次操作未完成，已有内容保留。请重试当前操作；若仍失败，可查看详细信息。');
-  putNotice({id:options.id??`${options.scope??activeScope}:error:${raw}`,scope:options.scope??activeScope,kind:'error',title:options.title??'操作未完成',message,detail:message!==raw?businessText(raw).slice(0,8000):undefined,action:options.retry?{label:options.retryLabel??'重新读取',run:options.retry}:undefined},true);
+  putNotice({id:options.id??`${options.scope??activeScope}:error:${raw}`,scope:options.scope??activeScope,kind:'error',title:options.title??'操作未完成',message,execution:options.execution,submission:options.submission,detail:message!==raw?businessText(raw).slice(0,8000):undefined,action:options.retry?{label:options.retryLabel??'重新读取',run:options.retry}:undefined},true);
 }
 export function NoticeButton(){
   const s=useTaskNotices(),count=s.items.filter(n=>n.scope===s.activeScope).length;

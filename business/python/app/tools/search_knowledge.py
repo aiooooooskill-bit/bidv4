@@ -22,6 +22,8 @@ from ..knowledge import fts, store, materials_lib as mlib
 from ..knowledge.freshness import freshness_warnings
 from ..knowledge.roles import derive_role, hit_header, item_meta, questions_of, statement_of
 from ..knowledge.types import role_of
+from ..knowledge.search import search_assets
+from ..knowledge.availability import availability
 _SNIPPET_CHARS = 300
 
 def _kb_image_hint(file_name: str) -> str:
@@ -32,14 +34,17 @@ def _kb_image_hint(file_name: str) -> str:
     docx 是内嵌图（文件序号即顺序）。
     """
     from ..knowledge import images as kb_images
+    meta_path=store.kb_parse_paths(file_name)[2]
+    meta=json.loads(meta_path.read_text()) if meta_path.is_file() else {}
+    warning=('\n  '+meta['image_error']+'；已有文字保留，不能据此宣称证明图片已齐全。') if meta.get('image_error') else ''
     try:
         imgs = kb_images.list_images(file_name)
     except Exception:
         return ''
     if not imgs:
-        return ''
+        return warning
     first = imgs[0]['name']
-    return f'\n  含图 {len(imgs)} 张——贴证书复印件用 docx_image_insert 插入正文节：knowledge/parse/{file_name}/images/{first}…（PDF 为整页渲染图，文件名即页码（img_007.png=第 7 页，空白页跳过）；docx 为文档内嵌图）'
+    return warning+f'\n  含图 {len(imgs)} 张——贴证书复印件用 docx_image_insert 插入正文节：knowledge/parse/{file_name}/images/{first}…（PDF 为整页渲染图，文件名即页码（img_007.png=第 7 页，空白页跳过）；docx 为文档内嵌图）'
 
 def _excerpt(item: dict, line_start, line_end, *, section_path=None) -> str:
     if section_path and section_path.startswith('条目信息'):
@@ -119,7 +124,7 @@ def _dedupe(hits: list[dict]) -> list[dict]:
     seen: set[str] = set()
     out = []
     for h in hits:
-        key = f"{h['item_id']}:{h.get('material_id') or ''}:{h.get('line_start')}"
+        key = f"{h['item_id']}:{h.get('material_id') or ''}:{h.get('section_path')}:{h.get('line_start')}"
         if key in seen:
             continue
         seen.add(key)
@@ -138,6 +143,20 @@ def _linked_evidence(candidate_item: dict, fact_items: dict[str, dict]) -> str:
         if role_of(it.get('doc_type')) != 'writing' and item_meta(it, 'project_name') == proj and (it['id'] != candidate_item['id']):
             return f"（关联证明材料：{it['file_name']}）"
     return ''
+
+def _no_company_hit(query, cid, doc_type, items):
+    candidates = search_assets(query, company_id=cid, limit=8) if doc_type else []
+    excluded = [items[h['item_id']] for h in candidates if h['item_id'] in items and items[h['item_id']].get('doc_type') != doc_type]
+    if excluded:
+        from ..knowledge.types import type_name
+        names = list(dict.fromkeys(f"{it['file_name']}（当前类型：{type_name(it.get('doc_type'))}；{availability(it)['label']}）" for it in excluded))
+        return '[公司资料类型筛选无命中] 当前主体内存在相关候选，但被指定类型排除：'+'、'.join(names)+'。未采用其他类型资料；请核对资料分类或明确调整筛选条件。'
+    if not items:
+        return '[公司资料无命中] 当前项目已确认主体下没有公司资料；请先核对归属，再决定是否上传。'
+    processing = sum(it['parse_status'] in ('pending','parsing') or it['extract_status']=='running' for it in items.values())
+    failed = sum(it['parse_status']=='failed' or it['extract_status']=='failed' for it in items.values())
+    raw = sum(not availability(it)['usable'] for it in items.values())
+    return f'[公司资料无命中] 当前主体有 {len(items)} 份资料，其中处理中 {processing} 份、机器处理失败 {failed} 份、仅原件无可用事实内容 {raw} 份。本次检索未定位相关内容，不能据此断言未上传；请按名称检索并核对类型、处理状态和归属。'
 
 def search_company_assets(query: str, doc_type: str | None=None) -> str:
     """检索公司资料，回答"我们有什么/做过什么"（公司事实：资质证书、合同案例、人员证书、
@@ -173,29 +192,40 @@ def search_company_assets(query: str, doc_type: str | None=None) -> str:
         from ..services.bidder import require_confirmed
         selected=require_confirmed(ctx.task_id)
         cid=selected['company_id']
-        hits = _dedupe(_search_all(query, limit=32,domain='kb',company_id=cid,doc_type=doc_type))
+        hits = _dedupe(search_assets(query, limit=32,company_id=cid,doc_type=doc_type))
         items = {it['id']: it for it in db.kb_list_items() if it['company_id']==cid}
         hits = [h for h in hits if h['item_id'] in items]
         if not hits:
-            return '[公司资料无命中] 换更通用的关键词再试（如把产品简称换成全称、把长句拆成核心词）；或该资料尚未上传——提示用户在知识库上传公司资料。'
+            return _no_company_hit(query,cid,doc_type,items)
         ranked: list[tuple[int, dict, dict, str]] = []
         for h in hits:
             item = items[h['item_id']]
-            role = derive_role(item, h)
+            role = 'raw-locator' if h.get('section_path')=='§identity' else derive_role(item, h)
             if role == 'writing-reference':
                 continue
             order = {'fact-verified': 0, 'fact-candidate': 1}.get(role, 2)
             ranked.append((order, h, item, role))
         ranked.sort(key=lambda x: x[0])
-        hits_out = ranked[:8]
+        facts = [hit for hit in ranked if hit[3]!='raw-locator']
+        locators = [hit for hit in ranked if hit[3]=='raw-locator']
+        # Neither factual excerpts nor raw-file locations may crowd out the other.
+        locator_count = min(len(locators), max(4, 8-len(facts)))
+        hits_out = facts[:8-locator_count] + locators[:locator_count]
         if not hits_out:
-            return '[公司资料无命中] 换更通用的关键词再试，或提示用户上传相关资料。'
+            return _no_company_hit(query,cid,doc_type,items)
         out = [f'[公司资料命中 {len(hits_out)} 条]（检索词：{query}）']
         ev = []
         for _, h, item, role in hits_out:
+            if role=='raw-locator':
+                state=availability(item)
+                issue = ('；'+('历史机器处理记录（人工内容已可用）：' if state['source']=='human' else '机器处理失败：')+item['error']) if item.get('error') else ''
+                key=f"kb:{item['id']}:identity"
+                out.append(f"- {item['file_name']}［原件定位｜{state['label']}］{issue}\n  仅名称/类型命中，不是事实证据；用 read_company_asset({item['id']}) 读取可用内容并核对原件。引用键：{key}"+_kb_image_hint(item['file_name']))
+                ev.append({'key':key,'file':item['file_name'],'hash':item['file_hash'],'role':role,'type':item.get('doc_type'),'review':item['review_status'],'usable':state['usable']})
+                continue
             from ..services.asset_usage import record_read
             record_read(ctx.task_id,ctx.conversation_id,item)
-            review = '人工已核对' if item['review_status']=='confirmed' else 'AI整理' if item['review_status'] == 'processed' else '资料整理中'
+            review = '人工已核对' if item['review_status']=='confirmed' else '已有内容·AI整理失败' if item['extract_status']=='failed' else 'AI整理' if item['review_status']=='processed' else '原文已识别·待AI整理'
             header = hit_header(item, h, role, review_note=review.strip('（）') or '', freshness=_fresh(item))
             sp = h.get('section_path')
             if sp == '§statement':
@@ -211,7 +241,6 @@ def search_company_assets(query: str, doc_type: str | None=None) -> str:
             linked = _linked_evidence(item, items) if role == 'fact-candidate' else ''
             out.append(f"- {item['file_name']}［{header}］{ai_note}{linked}{section}{_loc(h)}\n  摘录：{_excerpt(item, h.get('line_start'), h.get('line_end'), section_path=h.get('section_path'))}\n  引用键：{key}" + _kb_image_hint(item['file_name']))
             ev.append({'key': key, 'file': item['file_name'], 'hash': item['file_hash'], 'role': role, 'type': item.get('doc_type'), 'lines': [h.get('line_start'), h.get('line_end')], 'page': h.get('page_start'), 'review': item['review_status'], 'freshness': _fresh(item)})
-        md_rel = store.kb_parse_paths(hits_out[0][2]['file_name'])[0]
         out.append('精读指引：用 read_company_asset(item_id) 读取当前核对字段、出处及核对全文；当前公司事实以人工核对值为准。原件识别文字用于对照。')
         out.append(_evidence_line(ev))
         return '\n'.join(out)

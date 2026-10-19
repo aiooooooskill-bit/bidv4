@@ -4,12 +4,12 @@ export const BASE='/api/bidv4';
 export type Stage='new'|'parsed'|'analyzed'|'outlined'|'drafting'|'delivered';
 export interface Task {id:string;title:string;created_at:string;stage:Stage;last_activity_at?:string;review_status?:ReviewState['status'];review_mode?:'platform'|'external'}
 export interface SourceFile {name:string;size:number;modified_at:string}
-export interface WorkFile {path:string;content:string;hash:string;registry?:DirectoryData['registry']}
+export interface WorkFile {modified_at?:number;path:string;content:string;hash:string;registry?:DirectoryData['registry']}
 export interface WorkEntry {path:string;size:number;mtime:string}
 export interface PageQuestion {callId:string;state:'open'|'continued';questions:Array<{id:string;header?:string;question:string;options?:Array<{label:string;description?:string}>;multiSelect?:boolean}>}
-export interface Execution {session_id:string;action_id:string;kind:string;sections?:Array<{volume:string;title:string}>;state:'running'|'needs_input'|'completed'|'failed'|'stopped';error?:string;questions:PageQuestion[]}
+export interface Execution {created_at?:number;resolved?:boolean;session_id:string;action_id:string;kind:string;sections?:Array<{volume:string;title:string}>;state:'running'|'needs_input'|'completed'|'failed'|'stopped';error?:string;questions:PageQuestion[]}
 export interface Artifact {artifact_id:string;display_name:string;kind:string;content_seq:number;updated_at:string}
-export interface BodySection {volume:string;title:string;path:string;status:'missing'|'ready'|'stale'|'unverified'|'draft'}
+export interface BodySection {modified_at?:number;volume:string;title:string;path:string;status:'missing'|'ready'|'stale'|'unverified'|'draft'}
 export interface VolumeState {name:string;path:string;artifact_id:string|null;status:'missing'|'ready'|'stale'}
 export interface Bidder {company_id?:string;signer_id?:string;sign_date?:string;revision:number;confirmed:boolean;stale:boolean;snapshot:{company:{name:string;profile:Record<string,string>};signer:{name:string};sign_date:string}|null}
 export interface ReviewEvidence {document_id:string;start:number;end:number;quote:string}

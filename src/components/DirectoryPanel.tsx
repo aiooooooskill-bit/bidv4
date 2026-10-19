@@ -55,9 +55,9 @@ export function DirectoryPanel({tid,value,onSaved,onSelect,locked=false,selected
   const branchKey=volume+':'+prefix+':'+n.目录名称;
   const id=n._id!,address=draft?node(draft,id):null,status=statuses?.find(s=>s.volume===volume&&s.title===n.目录名称)?.status;
   return <div className="directory-node" key={n._id??depth+':'+i+':'+n.目录名称}>
-   <div className="directory-line">{children.length?<button className="directory-toggle" aria-label={(collapsed.has(branchKey)?'展开':'收起')+n.目录名称} aria-expanded={!collapsed.has(branchKey)} onClick={()=>setCollapsed(current=>{const next=new Set(current);next.has(branchKey)?next.delete(branchKey):next.add(branchKey);return next})}>{collapsed.has(branchKey)?'›':'⌄'}</button>:null}<span className="directory-number">{prefix}</span><button className="directory-title" data-active={selected?.volume===volume&&selected?.title===n.目录名称} onClick={()=>{if(!children.length)onSelect(volume,n.目录名称)}}>{businessText(n.目录名称)}</button>
+   <div className="directory-line">{children.length?<button className="directory-toggle" aria-label={(collapsed.has(branchKey)?'展开':'收起')+n.目录名称} aria-expanded={!collapsed.has(branchKey)} onClick={()=>setCollapsed(current=>{const next=new Set(current);next.has(branchKey)?next.delete(branchKey):next.add(branchKey);return next})}>{collapsed.has(branchKey)?'›':'⌄'}</button>:null}<span className="directory-number">{prefix}</span><button className="directory-title" data-active={selected?.volume===volume&&selected?.title===n.目录名称} onClick={()=>{if(!children.length||status)onSelect(volume,n.目录名称)}}>{businessText(n.目录名称)}</button>
     {n.交付形态?<span className="directory-kind">{n.交付形态}</span>:null}
-    {!children.length&&statuses?<span className="directory-file-state" data-state={status}>{n.目录名称==='目录'?'合册生成':status?stateLabels[status]:''}</span>:null}
+    {(!children.length||status)&&statuses?<span className="directory-file-state" data-state={status}>{n.目录名称==='目录'?'合册生成':status?stateLabels[status]:''}</span>:null}
     {draft?<div className="directory-row-actions">
      <button className="directory-icon" aria-label={'编辑标题：'+n.目录名称} title="编辑标题" disabled={disabled} onClick={()=>openAction('rename',docIndex,id)}>✎</button>
      <button className="directory-icon" aria-label={'删除章节：'+n.目录名称} title="删除该章及其子级" disabled={disabled} onClick={()=>setRemove(id)}>×</button>
@@ -82,7 +82,7 @@ export function DirectoryPanel({tid,value,onSaved,onSelect,locked=false,selected
   <div className="directory-docs">{docs.map((doc,index)=><div className="directory-volume" key={index}>
    {docs.length>1?<p className="directory-book-name">{businessText(doc.name??'响应文件')}</p>:null}
    {doc.scope?<details className="directory-scope"><summary>编制说明</summary><p>{businessText(doc.scope)}</p></details>:null}
-   {tree(numberTree(doc.directory??[],data.numbering??'chapter'),doc.name?.trim()||'主册',index)}
+   {tree(numberTree(doc.directory??[],data.numbering??'decimal'),doc.name?.trim()||'主册',index)}
    {draft?<button className="bp-btn directory-add" disabled={disabled} onClick={()=>openAction('add',index)}>+ 添加一级目录</button>:null}
   </div>)}</div>
   <Modal open={!!action} onClose={()=>setAction(null)} label={action?.kind==='move'?'移动章节':action?.kind==='add'?'添加章节':'修改章节标题'}>

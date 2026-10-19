@@ -1,3 +1,4 @@
+import {deliveryReady} from '../../shared/delivery-status.js';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
@@ -22,7 +23,7 @@ export class Workflows{
    const state=await this.runtime.state(tid);
    const sameReviewBasis=incompleteReview(state)&&(await this.runtime.latestRecord(tid,'review'))?.record.input_version===state.input_versions.review&&(await this.runtime.reviewProgress(tid,record.session_id)).accepted>0;
    if(record.session_id&&(state.execution?.action_id!==record.action_id||state.execution.state==='stopped'||(state.execution.state==='failed'&&!sameReviewBasis)))record.session_id=null;
-   for(let index=0;index<record.index;index++){const stage=stages[index];let valid=true;if(['analyse','outline'].includes(stage)){try{await this.runtime.requireCurrent(tid,stage,state)}catch(e){if(e.status!==409)throw e;valid=false}}if(stage==='build')valid=state.volume_states.length>0&&state.volume_states.every(v=>v.status==='ready')&&Object.values(state.build_preparation).every(v=>v==='ready');if(!valid){record.index=index;record.completed=record.completed.slice(0,index);record.session_id=null;break}}
+   for(let index=0;index<record.index;index++){const stage=stages[index];let valid=true;if(['analyse','outline'].includes(stage)){try{await this.runtime.requireCurrent(tid,stage,state)}catch(e){if(e.status!==409)throw e;valid=false}}if(stage==='build')valid=deliveryReady(state);if(!valid){record.index=index;record.completed=record.completed.slice(0,index);record.session_id=null;break}}
    if(!record.session_id){record.attempt=(record.attempt??0)+1;record.payload=null}
   }else record={id:randomUUID(),state:'running',index:0,completed:[],options:{page_target:options.page_target??null,numbering:options.numbering??'decimal'},session_id:null,attempt:0};
   record.state='running';delete record.error;await save(tid,record);
@@ -44,7 +45,7 @@ export class Workflows{
      // Reuse only currently valid, complete upstream work.
      let reusable=false;
      if(['analyse','outline'].includes(kind)){try{await this.runtime.requireCurrent(tid,kind,state);reusable=true}catch(e){if(e.status!==409)throw e}}
-     if(kind==='build')reusable=state.volume_states.length>0&&state.volume_states.every(v=>v.status==='ready')&&Object.values(state.build_preparation).every(v=>v==='ready');
+     if(kind==='build')reusable=deliveryReady(state);
      if(kind==='review')reusable=state.review.status==='reviewed';
      if(reusable){record.completed.push(kind);record.index++;record.payload=null;continue}
      record.payload??={kind,request_id:record.id+':'+record.index+':'+record.attempt,input_version:state.input_versions[kind],...(kind==='analyse'?{main_file:state.source_selection.main,supplements:state.source_selection.supplements.map(s=>s.file)}:{}),...(kind==='outline'?record.options:{}),...(kind==='build'?{sections:[]}:{} )};

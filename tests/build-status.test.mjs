@@ -50,7 +50,7 @@ test('运行、失败、停止和完成按当前执行与真实准备状态判�
   assert.match(text(status(view)),/请先保存当前修改，再发起制作操作。/);
   assert.equal(find(view,n=>n.type==='button'&&n.props.children==='继续制作标书').props.disabled,true);
   context.mark('t1:document',false);guard.render();
-  flow.execution={...flow.execution,state:'failed',error:'生成失败'};assert.match(text(state(view)),/制作未完成/);assert.match(text(status(view)),/请查看错误提示/);
+  flow.execution={...flow.execution,state:'failed',error:'生成失败'};assert.match(text(state(view)),/章节生成未完成/);assert.match(text(status(view)),/请查看错误提示/);
   flow.execution={...flow.execution,state:'stopped'};assert.equal(text(state(view)),'已停止');
   flow.execution={...flow.execution,state:'completed'};assert.equal(text(state(view)),'本轮已结束');
   flow.body_sections.forEach(section=>section.status='ready');flow.body_files=flow.body_sections.map(section=>section.path);flow.volume_states.forEach(volume=>volume.status='ready');

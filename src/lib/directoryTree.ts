@@ -32,7 +32,7 @@ export interface DirectoryData {
   meta?: Record<string, string>
   lineage_check?: { unused_ids?: string[]; dangling_ids?: string[] }
   warning?: string
-  /** 章节编号格式（合册按目录树序自动编号时读取；缺省 chapter=第X章+1.1） */
+  /** 章节编号格式（合册按目录树序自动编号时读取；缺省 decimal=1/1.1/1.1.1） */
   numbering?: 'chapter' | 'decimal' | 'gov' | 'none'
   page_target?: number | null
 }

@@ -57,6 +57,32 @@ def iter_leaves(content: dict) -> list[tuple[str, str, str]]:
                 out.append((vol, title, str(n.get('交付形态') or '').strip()))
     return out
 
+
+def body_nodes(content: dict, root, owned_paths=()) -> list[tuple[str, str, str]]:
+    """正文目标：所有叶子，以及实际持有正文文件的父节点。
+
+    父节点的引言或尚未拆分的既有正文仍是内容，不能因增加子目录而消失。
+    不要求原本只有结构的父节点新建空正文。
+    """
+    out = []
+    for doc in content.get('response_documents') or []:
+        vol = document_name(doc)
+        prefix = sanitize_name(vol) + '/' if multi_volume(content) else ''
+        for node in _iter_nodes(doc.get('directory') or []):
+            title = str(node.get('目录名称') or '').strip()
+            path = 'body/' + prefix + sanitize_name(title) + '.docx'
+            if title and (not node.get('children') or path in owned_paths or (root / path).is_file()):
+                out.append((vol, title, str(node.get('交付形态') or '').strip()))
+    return out
+
+
+def body_nodes_for_task(task_id, content):
+    """已记账的父正文即使文件暂缺仍是应有内容；成功完整归集后才释放旧归属。"""
+    from ..artifact_store import work_dir
+    from ..services.build_state import read
+    state = read(task_id)
+    return body_nodes(content, work_dir(task_id), set(state.get('sections', {})) | set(state.get('pending_sections', {})))
+
 def multi_volume(content: dict) -> bool:
     """多册判定：有目录树的响应文件多于一份。"""
     docs = content.get('response_documents') or []

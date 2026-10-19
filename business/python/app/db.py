@@ -571,8 +571,9 @@ def mt_block_counts() -> dict[str, int]:
         conn.close()
     return {r['file_id']: int(r['n']) for r in rows}
 
-def kb_search_segments(match_expr: str, limit: int=8, *, domain: str | None=None, company_id: str='all', doc_type: str | None=None) -> list[dict]:
+def kb_search_segments(match_expr: str, limit: int=8, *, domain: str | None=None, company_id: str='all', doc_type: str | None=None, exclude_identity: bool=False) -> list[dict]:
     conditions=['kb_segments MATCH ?'];args=[match_expr]
+    if exclude_identity:conditions.append("(section_path IS NULL OR section_path<>'§identity')")
     if domain=='mt':conditions.append("item_id IN (SELECT id FROM mt_files)")
     if domain=='kb':
         conditions.append('item_id IN (SELECT id FROM kb_items)')

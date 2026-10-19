@@ -1,5 +1,5 @@
 /**
- * 章节编号预览（2026-09-12）：合册编号逻辑（sidecar docx_ops._HeadingNumberer）
+ * 章节编号预览：合册原生多级列表编号规则（sidecar heading_numbering）
  * 的前端移植 + 目录树装饰纯函数。编号=树位置的纯函数，预览与生成整本同规则：
  * 封面（树首一级叶子名为「封面」）不占号、每册从首章重起、容器节点照常编号。
  * 纯显示层——节点名仍存裸名，目录树不带编号的红线不破；真实合册会跳过未产出
@@ -32,7 +32,7 @@ function cnNum(n: number): string {
 
 /** 编号器：prefix(depth) 消费一个 depth 级序号并重置更深计数（depth 1–9，越界返回空）。 */
 export function createNumberer(scheme: NumberingValue): { prefix: (depth: number) => string } {
-  const s = scheme === 'decimal' || scheme === 'gov' || scheme === 'none' ? scheme : 'chapter'
+  const s = scheme
   const counters: number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] // 下标 1 起
   return {
     prefix(depth: number): string {
@@ -73,11 +73,11 @@ export function numberTree(nodes: EditNode[], scheme: NumberingValue): NumberedN
   const walk = (list: EditNode[], depth: number): NumberedNode[] =>
     list.map((n, i) => {
       const children = n.children ?? []
-      const isCover =
-        depth === 1 && i === 0 && children.length === 0 && cleanName(n.目录名称) === '封面'
+      const unnumbered = depth === 1 && children.length === 0 &&
+        ((i === 0 && cleanName(n.目录名称) === '封面') || cleanName(n.目录名称) === '目录')
       return {
         node: n,
-        prefix: isCover ? '' : numberer.prefix(depth),
+        prefix: unnumbered ? '' : numberer.prefix(depth),
         children: children.length ? walk(children, depth + 1) : [],
       }
     })

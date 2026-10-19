@@ -1,7 +1,7 @@
 """Library queries filter domains and company before BM25 or pagination."""
 import math
 from .. import company_store as cs, db
-from ..knowledge.fts import build_match_expr
+from ..knowledge.search import search_assets
 from .errors import BusinessError
 
 def page_result(items,page,size,key):
@@ -11,17 +11,17 @@ def page_result(items,page,size,key):
     return {key:items[(page-1)*size:page*size],'total':total,'page':page,'page_size':size,'pages':pages}
 
 def asset_list(query,company_id):
-    from .knowledge import _item_out
-    items=[_item_out(it) for it in db.kb_list_items()]
+    items=db.kb_list_items()
     if company_id!='all':
         if company_id!='unassigned':cs.require_company(company_id)
         items=[it for it in items if (it['company_id'] or '')==('' if company_id=='unassigned' else company_id)]
-    expr=build_match_expr(query) if query.strip() else None
     if query.strip():
         matches={}
-        for hit in db.kb_search_segments(expr,limit=100000,domain='kb',company_id=company_id) if expr else []:
-            matches.setdefault(hit['item_id'],hit['rank'])
-        q=query.strip().lower()
-        items=[it for it in items if it['id'] in matches or q in (it['file_name']+' '+it['title']).lower()]
-        items.sort(key=lambda it:matches.get(it['id'],0))
+        for hit in search_assets(query,limit=100000,company_id=company_id):
+            # Name priority and BM25 use different scales; retain the best channel per item.
+            rank=(0,hit['rank']) if hit['section_path']=='§identity' else (1,hit['rank'])
+            item_id=hit['item_id']
+            if item_id not in matches or rank<matches[item_id]:matches[item_id]=rank
+        items=[it for it in items if it['id'] in matches]
+        items.sort(key=lambda it:matches[it['id']])
     return items

@@ -9,7 +9,8 @@ from .. import db, company_store as cs
 from ..config import MAX_UPLOAD_BYTES
 from ..knowledge import store
 from ..knowledge.freshness import freshness_warnings
-from ..knowledge.ingest import schedule_ingest
+from ..knowledge.ingest import schedule_ingest, reindex_item
+from ..knowledge.availability import availability
 from ..knowledge.types import FIELD_LABELS, get_type, role_of, type_name, types_payload
 from ..parse.image import IMAGE_EXTS
 KB_ALLOWED_EXTENSIONS = {'.docx', '.pdf'} | IMAGE_EXTS
@@ -70,6 +71,7 @@ async def upload_file(company_id: str, file: IncomingFile=None):
     os.replace(tmp, target)
     item = db.kb_insert_item(file_name=target.name, file_hash=digest, title=Path(target.name).stem, ext=ext)
     cs.attach_asset(item['id'],company_id)
+    reindex_item(item['id'])
     return {'id': item['id'], 'file_name': target.name, 'size': size}
 
 def _parse_meta_col(item: dict, key: str) -> dict | None:
@@ -82,11 +84,11 @@ def _parse_meta_col(item: dict, key: str) -> dict | None:
     except ValueError:
         return None
 
-def _capability(item: dict) -> str:
-    """能力档位（派生不落库）：stored→searchable→typed（素材分离后无 enriched）。"""
-    if item['parse_status'] != 'ready':
+def _capability(state: dict) -> str:
+    """按实际文字与字段派生能力，不把解析或核对状态当作内容证明。"""
+    if not state['usable']:
         return 'stored'
-    if item['extract_status'] != 'done' and (not item.get('doc_type')):
+    if not state['has_fields']:
         return 'searchable'
     return 'typed'
 
@@ -95,7 +97,8 @@ def _item_out(item: dict) -> dict:
     suggested = _parse_meta_col(item, 'suggested_metadata')
     business = _parse_meta_col(item, 'business_metadata')
     doc_type = business.get('doc_type') if business and business.get('doc_type') else item.get('doc_type')
-    return {**{k: v for k, v in item.items() if k not in ('suggested_metadata', 'business_metadata', 'corrected_text')}, 'doc_type': doc_type, 'doc_type_name': type_name(doc_type), 'role': role_of(doc_type), 'capability': _capability(item), 'suggested': suggested, 'business': business, 'check_result': _parse_meta_col(item, 'check_result'), 'freshness': freshness_warnings({'business_metadata': business, 'suggested_metadata': suggested}), 'md_ready': md_path.is_file()}
+    state = availability(item)
+    return {**{k: v for k, v in item.items() if k not in ('suggested_metadata', 'business_metadata', 'corrected_text')}, 'availability': state, 'doc_type': doc_type, 'doc_type_name': type_name(doc_type), 'role': role_of(doc_type), 'capability': _capability(state), 'suggested': suggested, 'business': business, 'check_result': _parse_meta_col(item, 'check_result'), 'freshness': freshness_warnings({'business_metadata': business, 'suggested_metadata': suggested}), 'md_ready': md_path.is_file()}
 
 def _parse_summary(file_name: str) -> dict | None:
     _, outline_path, meta_path, _ = store.kb_parse_paths(file_name)
@@ -111,6 +114,8 @@ def _parse_summary(file_name: str) -> dict | None:
     out: dict = {'conversion': conv, 'conversion_label': CONVERSION_LABELS.get(conv, conv), 'chars': meta.get('chars'), 'headings': meta.get('headings'), 'tables': meta.get('tables'), 'warnings': meta.get('warnings') or []}
     if meta.get('image_count') is not None:
         out['image_count'] = meta['image_count']
+    if meta.get('image_error'):
+        out['image_error'] = meta['image_error']
     if meta.get('pages') is not None:
         out['pages'] = meta['pages']
     if meta.get('scanned_pages'):
@@ -127,7 +132,9 @@ async def list_items(q: str='', company_id: str='all', page: int=1, page_size: i
     items=asset_list(q,company_id)
     if doc_type:items=[i for i in items if i['doc_type']==doc_type]
     if review_status:items=[i for i in items if (i['review_status']=='confirmed' if review_status=='confirmed' else i['review_status']!='confirmed')]
-    return page_result(items,page,page_size,'items')
+    result=page_result(items,page,page_size,'items')
+    result['items']=[_item_out(item) for item in result['items']]
+    return result
 
 async def get_item(kid: str):
     item = db.kb_get_item(kid)
@@ -143,7 +150,7 @@ async def get_item_content(kid: str):
 
 def _content_out(item):
     md_path, outline_path, _, _ = store.kb_parse_paths(item['file_name'])
-    text = md_path.read_text(encoding='utf-8') if item['parse_status'] == 'ready' and md_path.is_file() else ''
+    text = md_path.read_text(encoding='utf-8') if md_path.is_file() else ''
     correction = item['corrected_text']
     from ..parse import outline_with_lines
     content = correction if correction is not None else text

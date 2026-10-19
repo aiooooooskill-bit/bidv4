@@ -5,7 +5,7 @@ from .. import artifact_store, db
 from ..promises import promise_rows
 from . import page_flow
 from . import bidder
-from ..tools.body_contract import iter_leaves, multi_volume, sanitize_name, document_name, NON_PROSE_DELIVERY
+from ..tools.body_contract import body_nodes_for_task, multi_volume, sanitize_name, document_name, NON_PROSE_DELIVERY
 
 
 def read(tid):
@@ -50,20 +50,26 @@ def sections(tid):
     if not directory:
         return []
     content = directory['content']
-    return [{'volume': vol, 'title': title, 'path': 'body/' + (sanitize_name(vol) + '/' if multi_volume(content) else '') + sanitize_name(title) + '.docx'}
-            for vol, title, delivery in iter_leaves(content) if title != '目录' and delivery != '目录容器']
+    result = []
+    state = read(tid)
+    owned = set(state.get('sections', {})) | set(state.get('pending_sections', {}))
+    for vol, title, delivery in body_nodes_for_task(tid, content):
+        path = 'body/' + (sanitize_name(vol) + '/' if multi_volume(content) else '') + sanitize_name(title) + '.docx'
+        if title != '目录' and (delivery != '目录容器' or (artifact_store.work_dir(tid) / path).is_file() or path in owned):
+            result.append({'volume': vol, 'title': title, 'path': path})
+    return result
 
 
 def section_basis(tid, section):
     content = page_flow.directory(tid)['content']
     def find(nodes, ancestors=()):
         for node in nodes:
+            if node['目录名称'] == section['title']:
+                return {'ancestors': ancestors, 'node': {k: v for k, v in node.items() if k not in ('level', '_id', 'children')}}
             if node.get('children'):
                 found = find(node['children'], (*ancestors, node['目录名称']))
                 if found:
                     return found
-            elif node['目录名称'] == section['title']:
-                return {'ancestors': ancestors, 'node': {k: v for k, v in node.items() if k not in ('level', '_id')}}
     doc = next(d for d in content['response_documents'] if document_name(d) == section['volume'])
     versions = page_flow.input_versions(tid)
     # 编号和树序只影响合册；正文依据按章节内容及共享规划比对。
@@ -105,7 +111,7 @@ def snapshot(tid):
         basis = stored.get('sections', {}).get(section['path'])
         pending = stored.get('pending_sections', {}).get(section['path'])
         status = 'missing' if not exists else 'draft' if pending else 'unverified' if not basis else 'ready' if basis == section_basis(tid, section) else 'stale'
-        items.append({**section, 'status': status})
+        items.append({**section, 'status': status, 'modified_at': (root / section['path']).stat().st_mtime_ns / 1_000_000 if exists else None})
     body_files = [p.relative_to(root).as_posix() for p in (root / 'body').rglob('*.docx') if not p.name.startswith('整本-')]
     expected = {s['path'] for s in items}
     return {'build_preparation': planning, 'build_preparation_changes': changes, 'body_sections': items,
@@ -241,17 +247,22 @@ def record_write(tid, path, session_id=None, replace=False):
     section = next((s for s in sections(tid) if s['path'] == path), None)
     if section:
         with artifact_store.write_lock():
-            value = read(tid)
-            from .asset_usage import attach_reads
-            try:
-                attach_reads(tid,value,path,session_id,replace)
-            except ValueError:
-                value.setdefault('pending_sections', {})[path]={'basis':None,'hash':page_flow.file_hash(artifact_store.work_dir(tid)/path)}
-                save(tid,value)
-                raise
-            save(tid,value)
-            value.setdefault('pending_sections', {})[path] = {'basis': section_basis(tid, section), 'hash': page_flow.file_hash(artifact_store.work_dir(tid) / path)}
-            save(tid, value)
+            _record_write_locked(tid, section, read(tid), session_id, replace)
+
+
+def _record_write_locked(tid, section, value, session_id=None, replace=False):
+    """调用方已持发布锁；供单节写入与多节保全事务共用同一记账逻辑。"""
+    path = section['path']
+    from .asset_usage import attach_reads
+    try:
+        attach_reads(tid, value, path, session_id, replace)
+    except ValueError:
+        value.setdefault('pending_sections', {})[path] = {'basis': None, 'hash': page_flow.file_hash(artifact_store.work_dir(tid) / path)}
+        save(tid, value)
+        raise
+    save(tid, value)
+    value.setdefault('pending_sections', {})[path] = {'basis': section_basis(tid, section), 'hash': page_flow.file_hash(artifact_store.work_dir(tid) / path)}
+    save(tid, value)
 
 
 def record_validation(tid, path):
@@ -271,10 +282,11 @@ def volume_basis(tid, doc):
     root = artifact_store.work_dir(tid)
     prefix = sanitize_name(document_name(doc)) + '/' if multi_volume(content) else ''
     paths = ['body/' + prefix + sanitize_name(title) + '.docx'
-             for _, title, _ in iter_leaves({'response_documents': [doc]})]
+             for vol, title, _ in body_nodes_for_task(tid, content) if vol == document_name(doc)]
     paths += ['body/写作指引.md', 'body/关键事实与承诺.md']
     from .asset_usage import basis as asset_basis
-    return page_flow.digest({'assets':asset_basis(tid,['guide','promises',*paths]), 'document': doc, 'numbering': content.get('numbering'),
+    from .document_format import inspect_rules
+    return page_flow.digest({'formatting':inspect_rules(tid), 'assets':asset_basis(tid,['guide','promises',*paths]), 'document': doc, 'numbering': content.get('numbering'),
                              'page_target': content.get('page_target'),
                              'source_analysis': page_flow.input_versions(tid)['outline'], 'bidder':bidder.basis(tid),
                              'files': {p: page_flow.file_hash(root / p) if (root / p).is_file() else None for p in paths}})
@@ -292,13 +304,19 @@ def volume_states(tid, stored):
         file = artifact_store.work_dir(tid) / path
         row = rows.get(name)
         stamp = stored.get('volumes', {}).get(row['artifact_id']) if row else None
-        exists = file.is_file() and row is not None and bool(artifact_store.package_files(row['artifact_id'], row))
+        try:
+            metadata = json.loads(artifact_store.read_content_resolved(row['artifact_id'],row) or '{}') if row else {}
+        except ValueError:
+            metadata = {}
+        packaged_word = next((p for p in artifact_store.package_files(row['artifact_id'],row) if p.name==metadata.get('filename')),None) if row else None
+        exists = file.is_file() and packaged_word is not None
+        intact = exists and page_flow.file_hash(packaged_word)==metadata.get('sha256')
         prefix = sanitize_name(name) + '/' if multi_volume(directory['content']) else ''
         required = ['body/' + prefix + sanitize_name(title) + '.docx'
-                    for _, title, delivery in iter_leaves({'response_documents': [doc]})
+                    for vol, title, delivery in body_nodes_for_task(tid, directory['content']) if vol == name
                     if title != '目录' and delivery not in NON_PROSE_DELIVERY]
         complete = all((artifact_store.work_dir(tid) / p).is_file() and p not in stored.get('pending_sections', {}) for p in required)
-        ready = exists and complete and stamp == {'basis': volume_basis(tid, doc), 'content_seq': row['content_seq'], 'hash': page_flow.file_hash(file)}
+        ready = intact and complete and stamp == {'basis': volume_basis(tid, doc), 'content_seq': row['content_seq'], 'hash': page_flow.file_hash(file)}
         result.append({'name': name, 'path': path, 'artifact_id': row['artifact_id'] if row else None,
                        'status': 'missing' if not exists else 'ready' if ready else 'stale'})
     return result

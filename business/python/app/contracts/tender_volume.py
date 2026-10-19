@@ -1,8 +1,9 @@
 """整本标书契约：tender.volume / tender-volume-docx@1（文件型产物，2026-09-13）。
 
-合册（docx_assemble_volume）产出的交付稿登记形态：包内除 content.json（机器
-元信息）外还有整本 docx 本体（GET /artifacts/{aid}/file 取原始字节，前端
-docx-preview 预览/下载）。发布唯一入口 = 合册工具的机械发布
+合册（docx_assemble_volume）产出的交付稿包内只有Word及content.json机器元信息。
+GET /artifacts/{aid}/file 下载Word，整册预览使用Word。
+标题编号、目录、页脚使用原生自动更新域，由打开文档的Office/WPS计算分页。
+发布唯一入口 = 合册工具的机械发布
 （publish.publish_file_artifact）——LLM 的 staging 草稿流只走 JSON，二进制
 进不去，天然防手滑。身份复用键 = 任务 + kind + display_name（册名）：多册
 各一条，重合册覆盖同一条（详见 publish_file_artifact）。
@@ -22,6 +23,7 @@ class TenderVolumeModel(BaseModel):
     """content.json 形状：机器元信息（前端统计行/AI read_artifact 消费）。"""
 
     filename: str  # 包内文件名（整本-<册名>.docx）
+    field_update: str = "on_open"
     book: str  # 册名（与 display_name 同值）
     size: int = 0
     # 信息性字段：zip 时间戳使重合册的二进制哈希必变，发布去重不走它

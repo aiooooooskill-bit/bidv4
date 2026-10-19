@@ -186,11 +186,12 @@ def check_pipeline_state() -> str:
                     lines.append('[body] ' + str(len(misplaced)) + ' 个文件嵌套在子目录（与合册平铺约定不符，合册找不到——移到 body/ 根层或多册目录下）：' + '、'.join(misplaced[:8]) + ('…' if len(misplaced) > 8 else ''))
                 seen_titles: dict[tuple[str, str], int] = {}
                 known: set[tuple[str, str]] = set()
-                for vol, title, _mode in body_contract.iter_leaves(dir_content):
+                targets = body_contract.body_nodes_for_task(task_id, dir_content)
+                for vol, title, _mode in targets:
                     pair = (body_contract.sanitize_name(vol) if multi else '', body_contract.sanitize_name(title))
                     known.add(pair)
                     seen_titles[pair] = seen_titles.get(pair, 0) + 1
-                expected = {(body_contract.sanitize_name(vol) if multi else '', body_contract.sanitize_name(title)) for vol, title, _mode in body_contract.prose_leaves(dir_content)}
+                expected = {(body_contract.sanitize_name(vol) if multi else '', body_contract.sanitize_name(title)) for vol, title, mode in targets if mode not in body_contract.NON_PROSE_DELIVERY}
                 dup = [k for k, n in seen_titles.items() if n > 1]
                 if dup:
                     lines.append('[body] 同册存在同名叶子（清洗后文件名冲突）：' + '、'.join((f'{v}/{s}' if v else s for v, s in sorted(dup))) + '——文件名映射歧义，需用户改名其一')

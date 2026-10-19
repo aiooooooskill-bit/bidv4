@@ -41,7 +41,12 @@ else test(testName,{timeout:80000},async()=>{
     if(step===0)calls=[call('docx_section_create',{path:'body/工程验证章节.docx',title:'工程验证章节',paragraphs:'工程验证原段落'})];if(step===1)calls=[call('validate_body',{section:'body/工程验证章节.docx'})];
    }else if(!missingArtifacts){
     if(kind==='analyse'&&step===0)calls=analysis.map(n=>write('analysis/'+n+'.md','# 工程夹具 '+n+'\n仅验证工具执行与文件落盘。'));
-    if(kind==='outline')calls=step===0?[call('write',{file_path:join(cwd,'_meta/staging/tender-response-docs.json'),content:JSON.stringify(directory)})]:step===1?[call('publish_artifact',{contract:'tender.directory/tender-response-docs@1',draft_path:join(cwd,'_meta/staging/tender-response-docs.json')})]:[];
+    if(kind==='outline'){
+    const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
+    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n';
+    const sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
+    calls=sequence[step]??[];
+   }
     if(kind==='guide'&&step===0)calls=[write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 工程验证章节 | 推理撰写 | — | — | 无 |')];
     if(kind==='promises'&&step===0)calls=[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |')];
     if(kind==='build'){
@@ -149,6 +154,9 @@ else test(testName,{timeout:80000},async()=>{
    const admitted=await api('/page-flow/'+tid+'/action',payload);sessions.push(admitted.session_id);
    await bounded(runtime.handles.get(admitted.session_id).agent.whenIdle(),kind);await runtime.settling.get(tid);
    const result=await api('/page-flow/'+tid);assert.equal(result.execution.state,'completed',JSON.stringify({execution:result.execution,tools:runtime.handles.get(admitted.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result').map(e=>e.data)}));
+   const stageAgent=runtime.handles.get(admitted.session_id).agent;
+   if(kind==='outline'){assert.ok(hostTools.get('outline_plan',stageAgent));assert.ok(hostTools.get('task',stageAgent));assert.equal(hostTools.get('docx_section_create',stageAgent),undefined,'目录阶段不暴露正文制作工具')}
+   if(['guide','body','revise'].includes(kind))assert.ok(hostTools.get('docx_section_create',stageAgent),'离开目录阶段后恢复原正文能力');
    const errors=runtime.handles.get(admitted.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result'&&(e.data.message.isError||e.data.message.content.some(b=>b.type==='text'&&/^\[(发布失败|创建失败|修订失败|合册失败)\]/.test(b.text))));assert.deepEqual(errors,[],kind);
   }
   // 整本制作从无规划开始，实际走官方提问、页面回答与同会话续接。
@@ -169,7 +177,7 @@ else test(testName,{timeout:80000},async()=>{
   const question=buildState.execution.questions[0];
   await api('/page-flow/'+buildId+'/answer',{session_id:buildRun.session_id,call_ids:[question.callId],batches:[{call_id:question.callId,answers:[{id:'term',selected:['三年']}]}]});
   await runtime.handles.get(buildRun.session_id).agent.whenIdle();await runtime.settling.get(buildId);
-  buildState=await api('/page-flow/'+buildId);assert.equal(buildState.execution.state,'completed',JSON.stringify(buildState.execution));assert.equal(buildState.execution.session_id,buildRun.session_id);assert.deepEqual(buildState.build_preparation,{guide:'ready',promises:'ready'});assert.equal(buildState.body_sections[0].status,'ready');assert.equal(buildState.body_files.filter(p=>!p.includes('整本-')).length,1);
+  buildState=await api('/page-flow/'+buildId);assert.equal(buildState.execution.state,'completed',JSON.stringify({execution:buildState.execution,tools:runtime.handles.get(buildRun.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result').map(e=>e.data)}));assert.equal(buildState.execution.session_id,buildRun.session_id);assert.deepEqual(buildState.build_preparation,{guide:'ready',promises:'ready'});assert.equal(buildState.body_sections[0].status,'ready');assert.equal(buildState.body_files.filter(p=>!p.includes('整本-')).length,1);
   const finalArtifacts=await api('/artifacts?task_id='+buildId),volume=finalArtifacts.artifacts.find(a=>a.kind==='tender.volume');assert.ok(volume);
   const volumeResponse=await fetch(base+'/api/bidv4/artifacts/'+volume.artifact_id+'/file',{headers:{Cookie:cookie}});assert.equal(volumeResponse.status,200);const publishedBytes=Buffer.from(await volumeResponse.arrayBuffer());assert.equal(publishedBytes.subarray(0,2).toString(),'PK');
   assert.equal(buildState.volume_states[0].status,'ready');assert.equal(buildState.volume_states[0].name,'工程验证册');assert.equal(buildState.body_sections[0].volume,'工程验证册');

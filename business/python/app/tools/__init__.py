@@ -14,4 +14,11 @@ from .validate_analysis import validate_analysis
 from .validate_body import validate_body
 from .web_fetch import fetch_url
 from .review import review_basis, review_batch, save_review_batch, finish_review_report
+from .outline import outline_plan, check_outline
+from .body_repartition import docx_section_repartition
+from .document_format import docx_format_rule
+TOOLS_OUTLINE = [outline_plan, check_outline]
 TOOLS = [review_basis, review_batch, save_review_batch, finish_review_report, read_company_asset, build_preparation, assemble_tender,  publish_artifact, read_artifact, search_company_assets, search_references, check_name_residue, check_pipeline_state, validate_analysis, validate_body, update_task_progress, fetch_url, list_templates, docx_section_create, docx_section_read, docx_material_inject, docx_source_inject, docx_image_insert, docx_comment_add, docx_diagram_insert, docx_html_figure, docx_section_revise, docx_assemble_volume]
+TOOLS += TOOLS_OUTLINE
+TOOLS += [docx_section_repartition]
+TOOLS += [docx_format_rule]

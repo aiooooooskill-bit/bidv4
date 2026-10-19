@@ -92,7 +92,7 @@ def _build_score_registry(eval_md: str, source_names: list[str]) -> dict:
         anchor = {'file': None}
         for _, cells in rows:
             if cells[0]:
-                reg[f'SCORE-{len(reg) + 1:02d}'] = {'type': '评分点', 'text': cells[0], '出处': _expand_citation_cell(cells[-1], source_names, anchor)}
+                reg[f'SCORE-{len(reg) + 1:02d}'] = {'type': '评分点', 'text': cells[0], '分值': cells[1] if len(cells) > 2 else '', '评分要点': cells[2] if len(cells) > 3 else '', '出处': _expand_citation_cell(cells[-1], source_names, anchor)}
     return reg
 
 
@@ -244,6 +244,8 @@ def _parse_response_docs(md: str, warnings: list[str] | None=None) -> list[dict]
     """
     docs = []
     for heading, body in sections(md, 1):
+        if not re.match(r'^响应文件[：:]', heading.title):
+            continue
         name = re.sub(r'^响应文件[：:]\s*', '', heading.title).strip()
         dir_sec = _extract_section(body, '目录')
         lineage = _parse_trailer(body, source=md)
@@ -321,6 +323,8 @@ def assemble_tender() -> str:
         registry: dict = {}
         for d in (mand_reg, tpl_reg, req_reg, score_reg):
             registry.update(d)
+        from ..services.outline_contract import enrich_registry
+        enrich_registry(registry, out_root, source_names)
         outline_warnings: list[str] = []
         docs = _parse_response_docs(outline_md, outline_warnings)
         meta = _parse_meta(outline_md)

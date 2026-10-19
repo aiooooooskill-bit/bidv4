@@ -56,7 +56,11 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    const replied=JSON.stringify(request.messages.slice(anchor).filter(m=>m.role==='user')).includes('answer_to_pending_question');
    let sequence=[];
    if(kind==='analyse')sequence=[analysis.map(n=>write('analysis/'+n+'.md','# 工程夹具 '+n+'\n本项目需要实施方案，维护期由用户确定。'))];
-   if(kind==='outline')sequence=[[call('write',{file_path:join(cwd,'_meta/staging/directory.json'),content:JSON.stringify(directory)})],[call('publish_artifact',{contract:'tender.directory/tender-response-docs@1',draft_path:join(cwd,'_meta/staging/directory.json')})]];
+   if(kind==='outline'){
+    const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
+    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n';
+    sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
+   }
    if(kind==='guide')sequence=[[write('body/写作指引.md',guide)],[call('validate_body',{section:'body/写作指引.md'})]];
    const question=[call('ask_user_question',{questions:[{id:'term',question:'维护期是多少？',options:[{label:'三年'},{label:'五年'}]}]})];
    if(kind==='promises'&&mode==='duplicate-repair')sequence=[[call('read',{file_path:join(cwd,'work/body/关键事实与承诺.md')})],[write('body/关键事实与承诺.md',promises('五年'))]];

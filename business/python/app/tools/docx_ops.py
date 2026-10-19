@@ -70,6 +70,9 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from docx.opc.part import Part
+from docx.parts.image import ImagePart
 from docx.shared import Cm, Pt
 from lxml import etree
 from .. import db, publish, render_queue, runctx
@@ -485,29 +488,15 @@ def _src_heading_level(src_doc: Document, sid: str) -> int:
             pass
     return 2
 
-def _restyle_subhead_levels(out: Document, elements, src_doc: Document, heading_ids: set[str], depth: int, scheme: str, section_prefix: str) -> int:
-    """整本侧节内小标题按树深度降级（2026-09-16 拍板）：拷入面的标题段必然全是
-    节内小标题（节文件自身标题段拷贝前已按裸名剥掉、树发标题是合册另一条通道）
-    ——目标级 = clamp(树深度 + 源级 − 1, 2, 9)，深度 2 节下的 H2→H3、H3→H4，
-    章直接挂内容的叶子（深度 1）维持 H2 观感。改挂输出文档内建 Heading N：
-    与树发骨架标题同族、层级观感一致；`_demote_extra_headings` 随后照旧钉
-    outlineLvl=9——导航窗格/目录域不收录不变，只有视觉层级下沉。须在
-    `_merge_missing_styles` 之前调：改挂后素材标题样式不再被引用、整本不迁入。
-    源级解析不到目标样式（版式缺该级标题，极端情形）保持原样不硬造。
+def _restyle_subhead_levels(out: Document, elements, src_doc: Document, heading_ids: set[str], depth: int) -> int:
+    """素材内部标题按树深降级为内建标题样式；编号由原生多级列表统一处理。
 
-    同批：降级的同时**程序拼编号**进标题文本（2026-09-16 二批，用户拍板「编号
-    是重复工作不花 token」）——H3/H4 按节内出现顺序编：chapter/decimal 接续节号
-    （5.1.1 / 5.1.1.1，节内计数器每叶重置）、gov 接续中文层级（1. / （1））；
-    深度 1 章叶与 none 格式不编（章叶无节号可嵌套）、H5+ 不编（防素材深标题编出
-    5.1.1.1.1.1 式深号）、文字已带编号形态（_SELF_NUMBERED）不编防双拼——
-    09-10「小标题不自动编号」拍板的修订：当年两个否决前提（程序分不清小标题/
-    不知道树位置）已被降级批解决，「模型自编必错」依然成立故写手仍零参与。"""
+    原文不加编号字符串，树外标题的大纲收录策略仍由 _demote_extra_headings 控制。
+    """
     if not elements or not heading_ids:
         return 0
     level_cache: dict[str, int] = {}
     target_cache: dict[int, str | None] = {}
-    number_on = scheme != 'none' and bool(section_prefix) and (depth >= 2)
-    c3 = c4 = 0
     moved = 0
     for el in elements:
         for p in ([el] if el.tag == qn('w:p') else []) + el.findall('.//' + qn('w:p')):
@@ -527,20 +516,6 @@ def _restyle_subhead_levels(out: Document, elements, src_doc: Document, heading_
                 continue
             ps.set(qn('w:val'), tid)
             moved += 1
-            if not (number_on and target in (3, 4)):
-                continue
-            texts = [t for t in p.iter(qn('w:t')) if (t.text or '').strip()]
-            if not texts or _SELF_NUMBERED.match(texts[0].text.lstrip()):
-                continue
-            if target == 3:
-                c3 += 1
-                c4 = 0
-                num = f'{c3}.' if scheme == 'gov' else f'{section_prefix.rstrip()}.{c3} '
-            else:
-                c3 = c3 or 1
-                c4 += 1
-                num = f'（{c4}）' if scheme == 'gov' else f'{section_prefix.rstrip()}.{c3}.{c4} '
-            texts[0].text = num + texts[0].text.lstrip()
     return moved
 _TOC_TAIL_PAGE = re.compile('[.·．…]{2,}\\s*\\d+\\s*$')
 _TOC_NUMBER_PREFIXES = ('^第[一二三四五六七八九十百\\d]+章\\s*', '^[一二三四五六七八九十]+、', '^（[一二三四五六七八九十]+）', '^\\d{1,2}(?:\\.\\d+)*\\s*')
@@ -623,21 +598,45 @@ def view_lines(doc: Document) -> list[str]:
 def _migrate_images(src_doc: Document, dst_doc: Document, element) -> int:
     """把元素引用的源文档图片登记进目标文档并改写引用（按内容去重、partname 自动避让）。"""
     moved = 0
-    for blip in element.findall('.//' + qn('a:blip')):
-        rid = blip.get(qn('r:embed'))
+    image_refs = [(e, qn('r:embed')) for e in element.iter(qn('a:blip'))]
+    image_refs += [(e, qn('r:id')) for e in element.iter('{urn:schemas-microsoft-com:vml}imagedata')]
+    for blip, attribute in image_refs:
+        rid = blip.get(attribute)
         if not rid:
             continue
         try:
             image_part = src_doc.part.related_parts[rid]
             blob = image_part.blob
-        except KeyError:
-            continue
-        try:
-            new_rid, _image = dst_doc.part.get_or_add_image(BytesIO(blob))
-        except Exception:
-            continue
-        blip.set(qn('r:embed'), new_rid)
+        except KeyError as e:
+            raise ValueError('正文图片关系缺失，不能静默略过原图片：' + rid) from e
+        # 原XML已含尺寸，元素级拷贝无需重新解码图片。直接保留部件也能保全EMF等
+        # Office矢量预览，避免Image.from_file仅支持位图导致Visio图被跳过。
+        package = dst_doc.part.package
+        digest = hashlib.sha1(blob).hexdigest()
+        target = next((p for p in package.image_parts if p.sha1 == digest), None)
+        if target is None:
+            target = ImagePart(package.next_partname('/word/media/image%d.' + image_part.partname.ext), image_part.content_type, blob)
+            package.image_parts.append(target)
+        new_rid = dst_doc.part.relate_to(target, RT.IMAGE)
+        blip.set(attribute, new_rid)
         moved += 1
+    # 同一块内超链接也依赖源包的r:id；只拷贝可见文字会使链接失效或错指图片。
+    for hyperlink in element.iter(qn('w:hyperlink')):
+        rid = hyperlink.get(qn('r:id'))
+        if rid:
+            relation = src_doc.part.rels[rid]
+            if not relation.is_external:
+                raise ValueError('尚不能可靠合并内部部件超链接，请先核查原正文')
+            hyperlink.set(qn('r:id'), dst_doc.part.relate_to(relation.target_ref, relation.reltype, is_external=True))
+    for embedded in element.iter('{urn:schemas-microsoft-com:office:office}OLEObject'):
+        rid = embedded.get(qn('r:id'))
+        relation = src_doc.part.rels.get(rid)
+        if relation is None or relation.is_external or relation.target_part.rels:
+            raise ValueError('嵌入对象关系缺失或含尚不支持的依赖，不能略过原对象：' + str(rid))
+        source = relation.target_part
+        package = dst_doc.part.package
+        target = Part(package.next_partname('/word/embeddings/oleObject%d.' + source.partname.ext), source.content_type, source.blob, package)
+        embedded.set(qn('r:id'), dst_doc.part.relate_to(target, relation.reltype))
     return moved
 
 def _sig_shingles(text: str) -> set[str]:
@@ -655,6 +654,21 @@ def _strip_inner_sectpr(el) -> None:
         return
     for sect in ppr.findall(qn('w:sectPr')):
         ppr.remove(sect)
+
+def _remove_leading_page_breaks(elements) -> None:
+    """章节新标题已承担起页职责；只去掉其正文开始前的重复分页。"""
+    for element in elements:
+        if element.tag != qn('w:p'):
+            return
+        element.get_or_add_pPr().get_or_add_pageBreakBefore().val = False
+        for node in list(element.iter()):
+            if node.tag == qn('w:br') and node.get(qn('w:type')) == 'page':
+                node.getparent().remove(node)
+            elif (node.tag == qn('w:t') and (node.text or '').strip()) or node.tag in {
+                qn('w:drawing'), qn('w:pict'), qn('w:object'), qn('w:fldChar'), qn('w:instrText'),
+                qn('m:oMath'), qn('m:oMathPara'),
+            }:
+                return
 
 def _strip_copy_residue(el, heading_ids: set[str] | None=None) -> None:
     """拷入卫生（2026-09-13 目录乱号批；2026-09-16 批扩标题编号剥除）：剥段落
@@ -764,7 +778,10 @@ def _new_document() -> Document:
     版式文件 body 带样式示例段（打开可直观预览/改版式），起建时整段剥离
     （body 只留 sectPr=版面/页脚），示例永不进入节文件与合册。所选版式文件缺失时明确报错，不使用其他模板。"""
     tpl = _active_template_path()
-    return _blank_from(tpl)
+    doc = _blank_from(tpl)
+    from ..services import document_format
+    document_format.apply(doc, document_format.rules(_task_id()) if _task_id() else {})
+    return doc
 
 def _body_style(doc: Document):
     """Tender Body 样式对象，版式文件不带时返回 None（正文段回落 Normal，
@@ -1087,6 +1104,17 @@ def _merge_missing_comments(src_doc: Document, dst_doc: Document, elements) -> i
         else:
             m.getparent().remove(m)
     return len(id_map)
+
+
+def _retain_title_comment_anchors(source_title, target):
+    """原节标题由合册标题替代时，把其批注锚点移到同一章节的新标题。"""
+    starts = list(source_title.iter(qn('w:commentRangeStart')))
+    for marker in reversed(starts):
+        target.insert(1 if target.find(qn('w:pPr')) is not None else 0, deepcopy(marker))
+    for marker in source_title.iter(qn('w:commentRangeEnd')):
+        target.append(deepcopy(marker))
+    for marker in source_title.iter(qn('w:commentReference')):
+        run = OxmlElement('w:r'); run.append(deepcopy(marker)); target.append(run)
 
 def _tool_guard(label: str):
     """工具体兜底：意外异常（损坏 docx、IO 失败等）转失败文案返回，不打崩 run。
@@ -2356,7 +2384,9 @@ def _leaf_will_emit(node: dict, wroot: Path, vol_dir: str) -> bool:
     真；模板填充类以节文件存在为准（含格式件与附件壳节）。与合册主循环同一判定。"""
     children = node.get('children') or []
     if children:
-        return _subtree_will_emit(children, wroot, vol_dir)
+        title = body_contract.sanitize_name(str(node.get('目录名称') or ''))
+        own = wroot / ('body/' + (vol_dir + '/' if vol_dir else '') + title + '.docx')
+        return own.is_file() or _subtree_will_emit(children, wroot, vol_dir)
     title = str(node.get('目录名称') or '').strip()
     if not title:
         return False
@@ -2381,7 +2411,7 @@ def _empty_containers(nodes: list[dict], wroot: Path, vol_dir: str) -> set[int]:
         children = n.get('children') or []
         if children:
             out |= _empty_containers(children, wroot, vol_dir)
-            if not _subtree_will_emit(children, wroot, vol_dir):
+            if not _leaf_will_emit(n, wroot, vol_dir):
                 out.add(id(n))
     return out
 
@@ -2392,103 +2422,12 @@ def _body_tail(out: Document):
             return el
     return None
 
-def _insert_mechanical_toc(out: Document, anchor, entries: list[tuple[str, str, int]]) -> int:
-    """机械目录页（2026-09-14 结构缺口批）：Word 目录域 + 缓存静态清单。
+def _insert_mechanical_toc(out: Document, anchor, entries):
+    from ..services.document_pagination import insert_toc
+    return insert_toc(out, anchor, entries)
 
-    域包裹缓存条目（fldChar separate…end 之间）——Word/WPS 更新域即得带页码的
-    正式目录并整体替换缓存；不更新也能交（缓存清单即目录）。条目=实收章节
-    （编号+标题，按层级缩进、无页码——页码排版后只有 Word 知道）；未产出附件
-    节在条目文本上带「（另附）」标记。anchor=目录节点位置前最后的内容元素
-    （None=插到正文最前）；标题「目录」刻意不用 Heading 样式——进大纲会被
-    目录域/导航窗格自引用。
-    """
-    if not entries:
-        return 0
-    els = []
-    h = out.add_paragraph('目录')
-    h.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    h.paragraph_format.space_after = Pt(12)
-    r = h.runs[0]
-    r.bold = True
-    r.font.size = Pt(16)
-    els.append(h._p)
-    for i, (prefix, title, depth) in enumerate(entries):
-        p = out.add_paragraph()
-        p.paragraph_format.left_indent = Cm(0.74 * max(0, depth - 1))
-        if i == 0:
-            r = p.add_run()
-            fc = OxmlElement('w:fldChar')
-            fc.set(qn('w:fldCharType'), 'begin')
-            r._r.append(fc)
-            r = p.add_run()
-            it = OxmlElement('w:instrText')
-            it.set(qn('xml:space'), 'preserve')
-            it.text = ' TOC \\o "1-3" \\h \\z \\u '
-            r._r.append(it)
-            r = p.add_run()
-            fs = OxmlElement('w:fldChar')
-            fs.set(qn('w:fldCharType'), 'separate')
-            r._r.append(fs)
-        p.add_run((prefix + title).strip())
-        if i == len(entries) - 1:
-            r = p.add_run()
-            fe = OxmlElement('w:fldChar')
-            fe.set(qn('w:fldCharType'), 'end')
-            r._r.append(fe)
-        els.append(p._p)
-    if anchor is not None:
-        for el in reversed(els):
-            anchor.addnext(el)
-    else:
-        sect = out.element.body.find(qn('w:sectPr'))
-        for el in els:
-            if sect is not None:
-                sect.addprevious(el)
-            else:
-                out.element.body.append(el)
-    return len(entries)
-_CN_DIGITS = '零一二三四五六七八九'
 _SELF_NUMBERED = re.compile('^(第([一二三四五六七八九十百]+|\\d+)章|[一二三四五六七八九十]+、|（[一二三四五六七八九十]+）|\\d{1,2}(\\.\\d+)*[ \u3000])')
 
-def _cn_num(n: int) -> str:
-    """1–99 → 中文数字（十一、二十一…）；超范围回落阿拉伯数字（防御，章节数到不了）。"""
-    if not 1 <= n <= 99:
-        return str(n)
-    if n < 10:
-        return _CN_DIGITS[n]
-    tens, ones = divmod(n, 10)
-    head = '十' if tens == 1 else _CN_DIGITS[tens] + '十'
-    return head + (_CN_DIGITS[ones] if ones else '')
-
-class _HeadingNumberer:
-    """合册章节编号器：编号=树位置的纯函数（每册一个实例，各册从首章重起）。
-
-    编号写进标题文本，不走 Word 样式绑定自动编号——素材拷入的标题段会被 Word
-    一起计数打乱章序、docx-preview 对经典绑定写法不渲染、节文件单看永远「第一章」。
-    chapter=第X章+1.1（一级全角空格接题名）、decimal=1+1.1、gov=一、（一）1.、
-    none=不加；封面节点不调用 prefix（不占序）。
-    """
-
-    def __init__(self, scheme: str):
-        self.scheme = scheme if scheme in ('chapter', 'decimal', 'gov', 'none') else 'chapter'
-        self.counters = [0] * 10
-
-    def prefix(self, depth: int) -> str:
-        """发一个 depth 级标题的编号前缀（消费一个序号并重置更深计数）。"""
-        if self.scheme == 'none' or not 1 <= depth <= 9:
-            return ''
-        self.counters[depth] += 1
-        for d in range(depth + 1, 10):
-            self.counters[d] = 0
-        if self.scheme == 'gov':
-            if depth == 1:
-                return f'{_cn_num(self.counters[1])}、'
-            if depth == 2:
-                return f'（{_cn_num(self.counters[2])}）'
-            return f'{self.counters[depth]}.'
-        if self.scheme == 'chapter' and depth == 1:
-            return f'第{_cn_num(self.counters[1])}章\u3000'
-        return '.'.join((str(self.counters[d]) for d in range(1, depth + 1))) + ' '
 _CAP_NUM_STRIP_RE = re.compile('^[图表]\\s*[0-9０-９\\-－—–.．]+\\s*')
 
 def _caption_style_ids(doc: Document) -> set[str]:
@@ -2542,6 +2481,19 @@ def _is_title_para(p_el, title: str) -> bool:
     pstyle = ppr.find(qn('w:pStyle')) if ppr is not None else None
     style_val = pstyle.get(qn('w:val')) or '' if pstyle is not None else ''
     return bool(style_val) and _accepted_text(p_el).strip() == title.strip()
+
+def _embedded_own_title(children, source, title):
+    """节副本携带前节尾文时，只按唯一同名原生标题定位，不猜正文语义。"""
+    def key(text):
+        return re.sub(r'\s+', '', re.sub(r'[（(](?:格式|附件)[^）)]*[）)]', '', text))
+    ids = _heading_style_ids(source)
+    found = []
+    for index, child in enumerate(children):
+        if child.tag != qn('w:p'): continue
+        style = child.find('./'+qn('w:pPr')+'/'+qn('w:pStyle'))
+        if style is not None and style.get(qn('w:val')) in ids and key(_accepted_text(child)) == key(title):
+            found.append(index)
+    return found[0] if len(found) == 1 else None
 
 def section_lines_labeled(doc: Document) -> list[tuple[str, str]]:
     """(定位标签, 文本) 序列：段落 P{i}、表格行 T{t}R{r}。
@@ -2614,7 +2566,7 @@ def head_text(path: str | Path, max_chars: int=200) -> str:
             break
     return ''.join(parts)[:max_chars]
 
-def _publish_volume(task_id: str, dst: Path, vol: str, merged: int, images: int, comments: int) -> str:
+def _publish_volume(task_id: str, dst: Path, vol: str, merged: int, images: int, comments: int, pagination: dict) -> str:
     """合册产出机械发布为 tender.volume 产物（聊天产物卡/面板交付入口）。
 
     发布失败不影响合册结果（文件仍在 work/body/，重跑合册可补发布）；发布
@@ -2623,7 +2575,15 @@ def _publish_volume(task_id: str, dst: Path, vol: str, merged: int, images: int,
     try:
         ctx = runctx.current_run()
         data = dst.read_bytes()
-        meta = publish.publish_file_artifact('tender.volume/tender-volume-docx@1', file_path=dst, content_meta={'filename': dst.name, 'book': vol, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'merged_sections': merged, 'images': images, 'comments': comments}, display_name=vol, source={'skill': 'tender-body', 'thread_id': ctx.conversation_id if ctx else None, 'run_id': ctx.run_id if ctx else None}, task_id=task_id, conversation_id=ctx.conversation_id if ctx else None)
+        if pagination.get('unresolved_page_references'):
+            raise ValueError('资料页码仍有未定位项，不能发布整册')
+        verification = pagination['export_verification']
+        if verification.get('unresolved_toc_entries'):
+            raise ValueError('目录条目缺少实际章节，不能发布整册：'+'、'.join(verification['unresolved_toc_entries']))
+        from ..services.export_validation import document_digest
+        if not verification['verified'] or document_digest(dst) != verification['document_digest']:
+            raise ValueError('导出文件与最终排版核验记录不一致，未发布')
+        meta = publish.publish_file_artifact('tender.volume/tender-volume-docx@1', file_path=dst, content_meta={'filename': dst.name, 'book': vol, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'merged_sections': merged, 'images': images, 'comments': comments, 'field_update': 'on_open'}, display_name=vol, source={'skill': 'tender-body', 'thread_id': ctx.conversation_id if ctx else None, 'run_id': ctx.run_id if ctx else None}, task_id=task_id, conversation_id=ctx.conversation_id if ctx else None)
         from ..services.build_state import record_volume
         record_volume(task_id, vol, meta['artifact_id'])
         seq = meta.get('_seq')
@@ -2642,13 +2602,11 @@ def docx_assemble_volume() -> str:
     标题（层级随树深，Word 可自动生成目录）、叶子节内容元素级拷入（图片/表格
     原样保留）、一级章前分页、页脚页码；模板填充类叶子（目录标非正文）**产出
     节文件即按树序并入**（拷原件填空的格式件本就是标书组成部分）、未产出的按
-    附件对待不占整本位（返回行点名）。章节编号按树序自动生成（第一章/1.1；
-    格式取目录产物的 numbering 字段，缺省第X章+1.1；封面不占序，目录产物里
-    可改为 1+1.1/一、（一）/不编号）；树含「目录」节点时其前的非封面节点为
-    前置区不占章号（编制索引等前置页），正文从目录后第一章起编。「目录」节点
-    无节文件→**目录页由本工具机械生成**（Word 目录域+缓存静态清单：预览即见
-    清单，Word/WPS 更新域即得带页码正式目录；未产出附件节标「另附」）；有节
-    文件→并入并对账（手写优先）。子树无任何将产出叶子的容器不发章标题（空壳
+    附件对待不占整本位（返回行点名且阻止发布）。标题使用原生多级列表关联
+    Heading 1–9；格式取目录产物的 numbering 字段，缺省 1/1.1/1.1.1；
+    封面不占序，可按招标要求设置第X章/一、（一）/不编号。目录前若还有非封面
+    前置材料，须先明确其计页规则，否则拒绝合册。「目录」节点
+    无节文件→**目录页由本工具机械生成**（Word原生目录域，排版后填入真实页码缓存；Word/WPS可继续原生更新；未产出附件节标「另附」）；有旧目录节文件→保留附注及表格，纯索引由原生目录重建。子树无任何将产出叶子的容器不发章标题（空壳
     章抑制，信息走目录页「另附」行）。
     **整本=交付态**：节内修订标记并入时按「接受全部修订」压平（未接受修订
     前不再新旧内容并存；节文件保留修订供审阅，改内容回节文件层改再重合册）；
@@ -2656,8 +2614,7 @@ def docx_assemble_volume() -> str:
     自动目录只剩章节骨架，视觉样式不变；「目录」节并入后与实收章节机械对账，
     不符（列了没有的/漏了实有的）点名提醒。
     树首节点为「封面」时（tender-outline 的结构约定）整本首页即封面页：跳过册名
-    大标题与封面节点自身标题、开「首页不同」（封面页不带页眉页脚，页码从封面
-    后一页起显示）。缺失的正文节文件逐个点名，不中断其余节。**整本是派生产物**：改内容
+    大标题与封面节点自身标题、独立无页码封面节；目录节从第1页开始，目录、正文和附件共同计数。缺失的正文节文件逐个点名，不中断其余节。**整本是派生产物**：改内容
     回节文件层改（或让模型改）再重新调用本工具覆盖合册，直接手改整本会被下次
     合册覆盖。**章节齐全且没有待校验写入时，合册自动发布为整本标书产物**（每册
     一条；docx 内容未变不重复发布）；否则只保留工作区合册，不覆盖旧发布包。
@@ -2672,11 +2629,16 @@ def docx_assemble_volume() -> str:
     if not docs:
         return '[合册失败] 目录产物没有响应文件树'
     multi = body_contract.multi_volume(content)
-    numberer_scheme = str(content.get('numbering') or '').strip() or 'chapter'
+    numberer_scheme = str(content.get('numbering') or '').strip() or 'decimal'
     wroot = work_dir(task_id).resolve()
+    from ..services import document_format, document_pagination
+    format_rules = document_format.rules(task_id)
     consumed: set[str] = set()
     reports: list[str] = []
     volume_rels = {f"body/{body_contract.VOLUME_PREFIX}{body_contract.sanitize_name(body_contract.document_name(d))}.docx" for d in docs}
+    known_body_paths = {'body/' + (body_contract.sanitize_name(vol) + '/' if multi else '') + body_contract.sanitize_name(title) + '.docx'
+                        for vol, title, _ in body_contract.body_nodes_for_task(task_id, content)}
+    unassigned = {p.relative_to(wroot).as_posix() for p in (wroot / 'body').rglob('*.docx')} - known_body_paths - volume_rels
     seen_vols: dict[str, str] = {}
     for doc in docs:
         vol = body_contract.document_name(doc)
@@ -2688,19 +2650,22 @@ def docx_assemble_volume() -> str:
         vol_dir = vol_key if multi else ''
         dst_rel = f'body/{body_contract.VOLUME_PREFIX}{vol_key}.docx'
         nodes = list(_tree_nodes(doc.get('directory') or []))
-        numberer = _HeadingNumberer(numberer_scheme)
         self_numbered: list[str] = []
         has_cover = bool(nodes) and nodes[0][0] == 1 and (not nodes[0][2]) and (body_contract.sanitize_name(nodes[0][1]) == _COVER_NODE_NAME)
         if nodes and (not has_cover) and (nodes[0][0] == 1) and (not nodes[0][2]) and ('封面' in nodes[0][1]):
             reports.append(f'{vol}：树首节点「{nodes[0][1]}」含「封面」但非约定名「封面」，未按封面页处理（会发标题并占编号）——如需封面页请在目录产物中把该节点命名为「封面」')
         toc_node_idx = next((i for i, (d, t, c, _m, _n) in enumerate(nodes) if d == 1 and (not c) and (body_contract.sanitize_name(t) == _TOC_NODE_NAME)), None)
-        if nodes and toc_node_idx is None:
-            reports.append(f'{vol}：目录树无「目录」节点，全部一级节点按章编号（旧目录产物兼容；编制说明等前置页会占章号——如需前置区请在目录里加「目录」节点）')
+        if toc_node_idx is None:
+            toc_node_idx = 1 if has_cover else 0
+            nodes.insert(toc_node_idx, (1, '目录', False, '目录容器', {'目录名称':'目录'}))
+        if any(title not in ('封面','目录') for _depth,title,_children,_mode,_node in nodes[:toc_node_idx]):
+            raise ValueError('目录前存在封面以外的前置材料；目录从1开始时其计页规则须明确，原文件未改动')
         empty_ids = _empty_containers(doc.get('directory') or [], wroot, vol_dir)
         out = _new_document()
-        if has_cover:
-            out.sections[0].different_first_page_header_footer = True
-        else:
+        document_format.apply(out, format_rules)
+        from ..services.heading_numbering import HeadingNumbering
+        numberer = HeadingNumbering(out, numberer_scheme)
+        if not has_cover:
             out.add_heading(vol, 0)
         merged = n_img = n_comment = n_cap = n_sub = 0
         cap_counters: dict = {}
@@ -2716,9 +2681,10 @@ def docx_assemble_volume() -> str:
         toc_pending = False
         toc_anchor = None
         toc_lines: list[str] | None = None
+        manual_toc_elements = []
         seen_chapter = False
         for idx, (depth, title, is_container, mode, node) in enumerate(nodes):
-            if id(node) in empty_ids:
+            if id(node) in empty_ids and ('body/' + (vol_dir + '/' if vol_dir else '') + body_contract.sanitize_name(title) + '.docx') not in known_body_paths:
                 suppressed.append(title)
                 continue
             if _SELF_NUMBERED.match(title):
@@ -2726,6 +2692,13 @@ def docx_assemble_volume() -> str:
             stem = body_contract.sanitize_name(title)
             rel_src = f'body/{vol_dir}/{stem}.docx' if vol_dir else f'body/{stem}.docx'
             is_toc_node = idx == toc_node_idx
+            if is_toc_node:
+                toc_pending = True
+                toc_anchor = _body_tail(out)
+                seen_chapter = True
+                if not (wroot / rel_src).is_file():
+                    continue
+            h = None
             if not is_container and mode in body_contract.NON_PROSE_DELIVERY:
                 if not (wroot / rel_src).is_file():
                     if is_toc_node:
@@ -2735,12 +2708,14 @@ def docx_assemble_volume() -> str:
                     unfilled.append((title, depth))
                     toc_entries.append(('', f'{title}（另附）', depth))
                     continue
-            if has_cover and idx == 0:
+            if is_toc_node:
+                pass
+            elif has_cover and idx == 0:
                 seen_chapter = True
             else:
                 front_matter = toc_node_idx is not None and idx < toc_node_idx
-                prefix = '' if front_matter or is_toc_node else numberer.prefix(depth)
-                h = out.add_heading(prefix + title, min(depth, 9))
+                h = out.add_heading(title, min(depth, 9))
+                prefix = numberer.heading(h._p, min(depth, 9))
                 if not is_toc_node:
                     issued_titles.append(title)
                     toc_entries.append((prefix, title, depth))
@@ -2748,7 +2723,7 @@ def docx_assemble_volume() -> str:
                     if seen_chapter:
                         h.paragraph_format.page_break_before = True
                     seen_chapter = True
-            if is_container:
+            if is_container and not (wroot / rel_src).is_file() and rel_src not in known_body_paths:
                 continue
             src_path = wroot / rel_src
             if not src_path.is_file():
@@ -2770,9 +2745,19 @@ def docx_assemble_volume() -> str:
                         i = text.find(mark)
                         placeholders.append(f'{title}({label})：{text[i:i + 24].strip()}')
                         break
-            children = [c for c in src.element.body.iterchildren() if c.tag.split('}')[-1] in ('p', 'tbl')]
+            from .body_repartition import _blocks
+            children = _blocks(src)
+            own_titles = []
+            leading = set()
             if children and children[0].tag.split('}')[-1] == 'p' and _is_title_para(children[0], title):
+                own_titles.append(children[0])
                 children = children[1:]
+            if h is not None:
+                own_index = _embedded_own_title(children, src, title)
+                if own_index is not None:
+                    leading = set(children[:own_index])
+                    own_titles.append(children[own_index])
+                    children = children[:own_index] + children[own_index+1:]
             if toc_lines is None and _toc_normalize(title) == '目录':
                 toc_lines = [t for t in section_text_lines(src) if t.strip() and len(t.strip()) <= 60]
             copied: list = []
@@ -2786,20 +2771,42 @@ def docx_assemble_volume() -> str:
                 n_img += _migrate_images(src, out, new_el)
                 copied.append(new_el)
                 sect = out.element.body.find(qn('w:sectPr'))
-                if sect is not None:
+                if h is not None and el in leading:
+                    h._p.addprevious(new_el)
+                elif sect is not None:
                     sect.addprevious(new_el)
                 else:
                     out.element.body.append(new_el)
             front_zone = toc_node_idx is not None and idx < toc_node_idx
             if not (front_zone or is_toc_node or mode in body_contract.NON_PROSE_DELIVERY or (has_cover and idx == 0)):
-                n_sub += _restyle_subhead_levels(out, copied, src, src_heading_ids, depth, numberer_scheme, prefix)
+                n_sub += _restyle_subhead_levels(out, copied, src, src_heading_ids, depth)
+            if has_cover and idx == 0:
+                document_format.preserve_cover(src,copied)
             _style_n, style_remap = _merge_missing_styles(src, out, copied)
+            if h is not None:
+                _remove_leading_page_breaks(copied)
             _merge_missing_numbering(src, out, copied, style_id_remap=style_remap)
             _demote_extra_headings(out, copied)
+            # 迁移素材编号后再分配整册编号，避免误把输出列表当作源列表重映射。
+            numberer.subheads(copied, depth if not (front_zone or is_toc_node or mode in body_contract.NON_PROSE_DELIVERY) else 0, _SELF_NUMBERED)
+            if is_toc_node:
+                manual_toc_elements.extend(copied)
             cap_ids = _caption_style_ids(src)
             if cap_ids:
                 n_cap += _renumber_captions(copied, cap_ids, max(numberer.counters[1], 1), cap_counters, numberer_scheme != 'none')
-            n_comment += _merge_missing_comments(src, out, copied)
+            if not is_toc_node and not (has_cover and idx == 0):
+                document_format.apply(out, format_rules, copied)
+            comment_elements = list(copied)
+            for own_title in own_titles:
+                if list(own_title.iter(qn('w:commentReference'), qn('w:commentRangeStart'), qn('w:commentRangeEnd'))):
+                    target = h._p if h is not None else next((p for element in copied for p in ([element] if element.tag == qn('w:p') else element.iter(qn('w:p')))), None)
+                    if target is None:
+                        target = out.add_paragraph()._p
+                        copied.append(target); comment_elements.append(target)
+                    _retain_title_comment_anchors(own_title, target)
+                    if h is not None and h._p not in comment_elements:
+                        comment_elements.insert(0, h._p)
+            n_comment += _merge_missing_comments(src, out, comment_elements)
             merged += 1
         if merged == 0:
             notes: list[str] = []
@@ -2812,30 +2819,56 @@ def docx_assemble_volume() -> str:
             detail = f"（{'；'.join(notes)}）" if notes else '（目录树无叶子节点）'
             reports.append(f'{vol}：无已写节文件{detail}，未产出整本')
             continue
+        document_format.compact_heading_stacks(out)
         if toc_pending:
-            n_toc = _insert_mechanical_toc(out, toc_anchor, toc_entries)
-            if n_toc:
-                bits = f'{vol}：目录页已生成（{n_toc} 条；Word/WPS 中更新目录域可得带页码目录）'
-                if unfilled:
-                    bits += f'；未产出附件节标「另附」{len(unfilled)} 项'
-                reports.append(bits)
+            # 手写目录中的纯索引清单由原生目录替换；正文附注和表格不丢弃。
+            titles = {_toc_normalize(prefix+title) for prefix,title,_depth in toc_entries}
+            toc_start,toc_rows = _insert_mechanical_toc(out,toc_anchor,toc_entries)
+            field_depth = 0
+            for element in manual_toc_elements:
+                if element.tag != qn('w:p'):
+                    continue
+                instructions=' '.join(t.text or '' for t in element.iter(qn('w:instrText')))
+                is_field=field_depth>0 or bool(re.search(r'\bTOC\b', instructions))
+                text=_toc_normalize(_accepted_text(element))
+                ps=element.find('./'+qn('w:pPr')+'/'+qn('w:pStyle'))
+                style=(ps.get(qn('w:val')) or '').lower() if ps is not None else ''
+                remove=is_field or text in titles or text=='目录' or bool(re.fullmatch(r'toc\d+',style))
+                if is_field:
+                    field_depth=max(0,field_depth+sum(1 if e.get(qn('w:fldCharType'))=='begin' else -1 if e.get(qn('w:fldCharType'))=='end' else 0 for e in element.iter(qn('w:fldChar'))))
+                if remove:
+                    _retain_title_comment_anchors(element,toc_start)
+                    element.getparent().remove(element)
+            document_pagination.configure_sections(out,toc_start,has_cover,format_rules)
+            reports.append(f'{vol}：目录页已生成（{len(toc_rows)} 条；原生目录域，由Office/WPS打开时计算页码）')
         try:
             dst, rel = _dest_path(task_id, f'body/{body_contract.VOLUME_PREFIX}{body_contract.sanitize_name(vol)}.docx', must_exist=False)
         except ValueError as e:
             return f'[合册失败] {e}'
         with _docx_path_lock(dst):
             dst.parent.mkdir(parents=True, exist_ok=True)
+            # 先完成域/书签核验再覆盖工作稿；不调用外部软件、不生成PDF。
+            with tempfile.TemporaryDirectory(prefix='bid-word-fields-') as layout_dir:
+                layout_path = Path(layout_dir)/'volume.docx'
+                pagination = document_pagination.finalize(out,layout_path,toc_rows,has_cover,format_rules)
             _atomic_save(out, dst)
+            from ..services.export_validation import document_digest
+            if document_digest(dst) != pagination['export_verification']['document_digest']:
+                raise ValueError('最终合册与已校验Word不一致，未发布')
+            dst.with_suffix('.pagination.json').write_text(json.dumps(pagination,ensure_ascii=False,indent=2))
+            reports.append(f'{vol}：已生成Word原生目录、标题编号及页脚；由Office/WPS打开时更新，封面不计页码')
             from ..services import build_state
             pending = build_state.read(task_id).get('pending_sections', {})
             pending_titles = [title for path, title in merged_once.items() if path in pending]
             # 部分或待校验的合册留在工作区，不能覆盖旧发布包及发布印记。
             if pending_titles:
                 pub_line = f'{vol}：待校验章节（{"、".join(pending_titles)}），未发布整册；请校验后重新合册'
-            elif missing or self_volumed or dup_content:
+            elif missing or unfilled or self_volumed or dup_content or unassigned:
                 pub_line = f'{vol}：本册章节未全部并入，未发布整册；请补齐后重新合册'
+                if unassigned:
+                    pub_line += '；仍有未归集的既有正文：' + '、'.join(sorted(unassigned))
             else:
-                pub_line = _publish_volume(task_id, dst, vol, merged, n_img, n_comment)
+                pub_line = _publish_volume(task_id, dst, vol, merged, n_img, n_comment, pagination)
         bits = f'{vol}：合并 {merged} 节 → work/{rel}'
         if n_img:
             bits += f'（含图片 {n_img} 张）'

@@ -37,8 +37,8 @@ def segment_for_fts(text: str) -> str:
     return " ".join(tokens)
 
 
-def build_match_expr(query: str) -> str | None:
-    """查询 → FTS5 MATCH 表达式（token OR 连接，宽松召回；token 只留安全字符防语法注入）。"""
+def query_words(query: str) -> list[str]:
+    """全文检索与名称定位共用的安全查询词。"""
     tokens = _TOKEN_SAFE.findall(query or "")
     # jieba 切词后再过滤一次（中文词保留、标点丢弃）；英文数字 token 原样
     words: list[str] = []
@@ -47,7 +47,10 @@ def build_match_expr(query: str) -> str | None:
             w = w.strip()
             if w and _TOKEN_SAFE.fullmatch(w):
                 words.append(w)
-    uniq = list(dict.fromkeys(words))
+    return list(dict.fromkeys(words))
+
+def build_match_expr(query: str) -> str | None:
+    uniq = query_words(query)
     if not uniq:
         return None
     return " OR ".join(f'"{w}"' for w in uniq)

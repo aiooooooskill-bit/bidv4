@@ -19,9 +19,9 @@ def env(tmp_path, monkeypatch):
     artifact_store.ensure_task_skeleton(tid)
     root = artifact_store.work_dir(tid)
     content = {'numbering': 'decimal', 'page_target': 120, 'response_documents': [{'name': '技术标', 'directory': [
+        {'目录名称': '目录', 'level': 1, 'children': [], '交付形态': '目录容器'},
         {'目录名称': '实施方案', 'level': 1, 'children': [], '节点概述': '按需求实施'},
-        {'目录名称': '服务保障', 'level': 1, 'children': []},
-        {'目录名称': '目录', 'level': 1, 'children': [], '交付形态': '目录容器'}]}]}
+        {'目录名称': '服务保障', 'level': 1, 'children': []}]}]}
     monkeypatch.setattr(page_flow, 'directory', lambda _: {'artifact_id': 'dir', 'content_seq': 1, 'content': content})
     (root / 'body/写作指引.md').write_text('# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 实施方案 | 推理撰写 | — | — | 无 |\n| 服务保障 | 推理撰写 | — | — | 无 |\n| 目录 | — | — | — | 合册机械生成 |')
     (root / 'body/关键事实与承诺.md').write_text('| 事项 | 值 |\n|---|---|\n| 维护 | 三年 |')
@@ -61,14 +61,14 @@ def test_numbering_changes_only_volume_not_body_or_preparation(env):
 def test_directory_change_flags_only_affected_body_then_rename_retains_file(env):
     tid, root, content = env
     original = (root / 'body/实施方案.docx').read_bytes()
-    content['response_documents'][0]['directory'][0]['节点概述'] = '按新需求实施'
+    content['response_documents'][0]['directory'][1]['节点概述'] = '按新需求实施'
     state = build_state.snapshot(tid)
     assert state['body_sections'][0]['status'] == 'stale'
     assert state['build_preparation']['guide'] == 'stale'
     # 只读校验不能把旧正文的依据更新。
     build_state.record_validation(tid, 'body/实施方案.docx')
     assert build_state.snapshot(tid)['body_sections'][0]['status'] == 'stale'
-    content['response_documents'][0]['directory'][0]['目录名称'] = '实施安排'
+    content['response_documents'][0]['directory'][1]['目录名称'] = '实施安排'
     state = build_state.snapshot(tid)
     assert state['body_sections'][0]['status'] == 'missing'
     assert state['orphan_body_files'] == ['body/实施方案.docx']
@@ -170,7 +170,7 @@ def test_full_escaped_promise_value_is_protected_and_dispatched(env):
 def test_guide_readiness_and_dispatch_share_standard_table_semantics(env):
     from app.dispatch_enrich import _guide_row
     tid, root, directory = env
-    directory['response_documents'][0]['directory'][0]['目录名称'] = '实施|方案'
+    directory['response_documents'][0]['directory'][1]['目录名称'] = '实施|方案'
     path = root / 'body/写作指引.md'
     guide = path.read_text().replace('实施方案', r'实施\|方案').replace('推理撰写', '**推理撰写**')
     guide = guide.replace('| 无 |', r'| 补充 A\|B 资料 |')
@@ -248,12 +248,25 @@ def test_page_target_contract_rejects_invalid_values():
 
 def publish_volume(tid, root, name):
     from app.tools.docx_ops import _publish_volume
+    from app.services.document_format import apply
+    from app.services.heading_numbering import HeadingNumbering
+    from app.services.document_pagination import insert_toc, configure_sections, finalize
+    from docx.enum.style import WD_STYLE_TYPE
     file = root / f'body/整本-{name}.docx'
     doc = Document()
-    doc.add_heading(name, 1)
+    apply(doc,{})
+    for level in range(1,4):
+        doc.styles.add_style(f'toc {level}',WD_STYLE_TYPE.PARAGRAPH,builtin=True)
+    numbers=HeadingNumbering(doc,'decimal')
+    heading=doc.add_heading(name, 1)
+    prefix=numbers.heading(heading._p,1)
+    heading.paragraph_format.page_break_before=True
     doc.add_paragraph('工程整册正文')
-    doc.save(file)
-    result = _publish_volume(tid, file, name, 1, 0, 0)
+    toc,rows=insert_toc(doc,None,[(prefix,name,1)])
+    configure_sections(doc,toc,False,{})
+    pagination=finalize(doc,file,rows,False,{})
+    file.with_suffix('.pagination.json').write_text(json.dumps(pagination))
+    result = _publish_volume(tid, file, name, 1, 0, 0,pagination)
     assert '发布失败' not in result, result
     return next(r for r in db.list_artifact_index(task_id=tid) if r['display_name'] == name)
 
@@ -310,7 +323,8 @@ def test_failed_volume_publication_cannot_mark_current_volume_ready(env, monkeyp
     def fail(*args, **kwargs):
         raise publish.PublishError('工程发布失败')
     monkeypatch.setattr(publish, 'publish_file_artifact', fail)
-    assert '工程发布失败' in _publish_volume(tid, root / 'body/整本-技术标.docx', '技术标', 1, 0, 0)
+    pagination=json.loads((root/'body/整本-技术标.pagination.json').read_text())
+    assert '工程发布失败' in _publish_volume(tid, root / 'body/整本-技术标.docx', '技术标', 1, 0, 0,pagination)
     assert build_state.read(tid)['volumes'][old['artifact_id']] == before
     assert build_state.snapshot(tid)['volume_states'][0]['status'] == 'stale'
 
@@ -408,7 +422,12 @@ def test_pending_revision_cannot_publish_until_validated(env, already_published)
     else:
         assert rows == []
         assert build_state.read(tid).get('volumes', {}) == {}
-    assert '尚未校验的修改正文。' in '\n'.join(p.text for p in Document(root / 'body/整本-技术标.docx').paragraphs)
+    # 导出预检拒绝未校验修订，保留旧工作稿，原章节修订内容仍在。
+    assert '尚未校验的修改正文。' in '\n'.join(p.text for p in Document(root / path).paragraphs)
+    if previous:
+        assert (root / 'body/整本-技术标.docx').read_bytes()==previous_bytes
+    else:
+        assert not (root / 'body/整本-技术标.docx').exists()
 
     build_state.record_validation(tid, path)
     assert build_state.snapshot(tid)['body_sections'][0]['status'] == 'ready'
@@ -429,6 +448,9 @@ def test_pending_revision_blocks_only_its_own_volume(env):
         {'name': name, 'directory': [{'目录名称': '实施方案', 'level': 1, 'children': []}]}
         for name in ('技术标', '商务标')]
     publish.publish_artifact('tender.directory/tender-response-docs@1', content, task_id=tid)
+    # 此用例只测分册待校验隔离；单册转多册时先明确原正文的归属，不能忽略旧文件。
+    (root / 'body/技术标').mkdir(parents=True, exist_ok=True)
+    (root / 'body/实施方案.docx').rename(root / 'body/技术标/实施方案.docx')
     complete_sections(tid, root)
     assert 'result' in export_result(tid)
     previous = {r['display_name']: r for r in db.list_artifact_index(task_id=tid) if r['kind'] == 'tender.volume'}

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {fixture,nodes,find,response} from './helpers/component-fixture.mjs';
+const availability={usable:true,has_text:true,has_fields:false,source:'human',label:'有人工核对内容'};
 const overview={companies:[{id:'a',name:'公司甲',revision:1,profile:{phone:'123'}}],representatives:[],types:[{code:'other',name:'其他'}],field_labels:{}};
 const shared=()=>({overview,dirty:false,onDirty(){},onSaved(){},onError(){},epoch:0});
 const button=(view,text)=>find(view,n=>n.type==='button'&&(Array.isArray(n.props.children)?n.props.children.join(''):n.props.children)===text);
@@ -8,7 +9,7 @@ const button=(view,text)=>find(view,n=>n.type==='button'&&(Array.isArray(n.props
 for(const [component,extra] of [
  ['CompanyDetail',{company:overview.companies[0]}],
  ['RepresentativeDetail',{rep:{id:'r',name:'张三',revision:1,title:'经理',phone:'123',email:'',note:''}}],
- ['KnowledgeDetail',{item:{id:'k',revision:1,title:'证件',company_id:'a',business:{doc_type:'other'},suggested:{},ocr:'核对文字',original_ocr:'机器文字',meta:{},parse_status:'ready'}}],
+ ['KnowledgeDetail',{item:{availability,id:'k',revision:1,title:'证件',company_id:'a',business:{doc_type:'other'},suggested:{},ocr:'核对文字',original_ocr:'机器文字',meta:{},parse_status:'ready'}}],
  ['MaterialDetail',{item:{id:'m',title:'方案',note:'用途',file_id:'f',file_name:'方案.docx'}}],
 ])test(component+' 保存期间锁定输入并保留离开保护',async()=>{
  let finish;const pending=new Promise(r=>finish=r);const marks=[],saves=[];
@@ -22,7 +23,7 @@ for(const [component,extra] of [
   assert.equal(marks.at(-1),true);
   const editors=nodes(view.render()).filter(n=>['input','textarea','select'].includes(n.type));
   assert.ok(editors.length);assert.ok(editors.every(n=>n.props.disabled===true));
-  finish(response({id:'saved'}));await work;await view.settle();assert.equal(saves.length,1);
+  finish(response({id:'saved',availability}));await work;await view.settle();assert.equal(saves.length,1);
  }finally{view.unmount();f.close()}
 });
 
@@ -61,7 +62,7 @@ test('409后读取最新主体版本保留本地草稿，核对后按新revision
 });
 
 test('资料详情一次读取字段、核对文字和revision，避免跨请求混用',async()=>{
- const calls=[],item={id:'k',company_id:'a',revision:7,file_name:'证件.png',title:'证件',business:{doc_type:'other'},suggested:{},content:'同一版本核对全文',original_content:'原始转写',meta:{},parse_status:'ready'};
+ const calls=[],item={availability,id:'k',company_id:'a',revision:7,file_name:'证件.png',title:'证件',business:{doc_type:'other'},suggested:{},content:'同一版本核对全文',original_content:'原始转写',meta:{},parse_status:'ready'};
  const f=await fixture(async url=>{calls.push(url);return response(url.includes('?')?{items:[item],total:1,page:1,pages:1,page_size:5}:item)});
  const view=f.mount('Knowledge',shared());
  try{await view.settle();const detail=find(view,n=>n.props.item?.id==='k');assert.equal(detail.props.item.revision,7);assert.equal(detail.props.item.ocr,'同一版本核对全文');assert.equal(calls.filter(u=>u.endsWith('/k')).length,1);assert.equal(calls.some(u=>u.endsWith('/content')),false)}finally{view.unmount();f.close()}
@@ -119,7 +120,7 @@ test('资料库保存期间栏目不可切换，防止刷新覆盖另一栏新�
 });
 
 test('识别尚无结构化结果时冲突恢复不崩溃且保留人工字段草稿',async()=>{
- const item={id:'k',revision:1,title:'待核对资料',company_id:'a',business:{doc_type:'other',extra:{证号:{value:'旧证号'}}},suggested:{},ocr:'旧识别文字',original_ocr:'旧识别文字',meta:{},parse_status:'ready',extract_status:'failed'};
+ const item={availability,id:'k',revision:1,title:'待核对资料',company_id:'a',business:{doc_type:'other',extra:{证号:{value:'旧证号'}}},suggested:{},ocr:'旧识别文字',original_ocr:'旧识别文字',meta:{},parse_status:'ready',extract_status:'failed'};
  let reading=0,writing=0;const saved=[];
  const f=await fixture(async(_url,options={})=>{
   if(options.method){saved.push(JSON.parse(options.body));return writing++?response({id:'k'}):response({detail:'资料正在识别'},409)}

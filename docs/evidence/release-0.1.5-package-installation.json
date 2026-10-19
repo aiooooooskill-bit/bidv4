@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "platform": "darwin",
+  "version": "0.1.5",
+  "unicodeAndSpaceInstallationPath": true,
+  "python": {
+    "version": "3.13.13",
+    "prefix": "<temporary Chinese-and-space installation path>/.venv"
+  },
+  "createdTask": "Windows 中文路径安装验收",
+  "toolCount": 32,
+  "wordOnlyExport": true,
+  "externalLayoutSoftwareRequired": false
+}

@@ -3,6 +3,7 @@ import json
 from .. import db,runctx,company_store as cs
 from ..services.bidder import require_confirmed
 from ..knowledge import store
+from ..knowledge.availability import availability
 
 def read_company_asset(item_id:str)->str:
     """精读本项目公司的资料：返回人工核对字段、出处、内容说明和当前核对全文；原件 OCR 是历史机器结果，当前值以本工具为准。item_id 来自 search_company_assets 的引用键 kb:<id>。"""
@@ -18,5 +19,5 @@ def read_company_asset(item_id:str)->str:
         text=asset['corrected_text'] if asset['corrected_text'] is not None else md.read_text() if md.is_file() else ''
         from ..services.asset_usage import record_read
         record_read(ctx.task_id,ctx.conversation_id,item)
-        return json.dumps({'id':item_id,'revision':item['revision'],'file_name':item['file_name'],'review_status':item['review_status'],'business':json.loads(item['business_metadata'] or '{}'),'text':text},ensure_ascii=False)
+        return json.dumps({'id':item_id,'revision':item['revision'],'file_name':item['file_name'],'availability':availability(item),'parse_status':item['parse_status'],'extract_status':item['extract_status'],'processing_error':item.get('error'),'review_status':item['review_status'],'business':json.loads(item['business_metadata'] or '{}'),'text':text},ensure_ascii=False)
     except Exception as error:return '[资料读取失败] '+str(error)

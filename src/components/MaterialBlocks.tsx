@@ -5,14 +5,14 @@ type Node=MaterialChapter;
 interface Outline {outline:Node[];parse_status:string;error?:string}
 const nodeKey=(node:Node)=>node.start_line+':'+node.end_line;
 const flatten=(nodes:Node[]):Node[]=>nodes.flatMap(node=>[node,...flatten(node.children??[])]);
-export function MaterialBlocks({fid,onChanged,onBusyChange,onNavigate,activeLine,navigationStatus,onReparsed,defaultTitle=''}:{fid:string;onChanged:()=>Promise<void>;onBusyChange?:(busy:boolean)=>void;onNavigate:(node:MaterialChapter)=>void;activeLine?:number;navigationStatus?:string;onReparsed?:()=>void;defaultTitle?:string}){
+export function MaterialBlocks({fid,onChanged,onBusyChange,onNavigate,activeLine,navigationStatus,onReparsed,defaultTitle=''}:{fid:string;onChanged:()=>Promise<void>;onBusyChange?:(busy:boolean)=>void;onNavigate:(node:MaterialChapter)=>void;activeLine?:number;navigationStatus?:string;onReparsed?:()=>void|Promise<void>;defaultTitle?:string}){
  const [outline,setOutline]=useState<Outline|null>(null),[selected,setSelected]=useState<Record<string,[number,number]>>({}),[title,setTitle]=useState(defaultTitle),[note,setNote]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[refresh,setRefresh]=useState(0),[loading,setLoading]=useState(true);
  const active=useRef(true),lock=useRef(false);
  useEffect(()=>{active.current=true;return()=>{active.current=false}},[]);
  useEffect(()=>{onBusyChange?.(busy);return()=>onBusyChange?.(false)},[busy,onBusyChange]);
  useEffect(()=>{let alive=true;setLoading(true);setError('');request<Outline>(`/materials/files/${fid}/outline`).then(r=>{if(alive)setOutline(r)}).catch(e=>{if(alive)setError(e.message)}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}},[fid,refresh]);
  const create=async()=>{if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await request(`/materials/files/${fid}/blocks`,json('POST',{title,note,ranges:Object.values(selected)}));if(!active.current)return;setSelected({});setTitle('');setNote('');await onChanged()}catch(e){if(active.current)setError(e instanceof Error?e.message:String(e))}finally{lock.current=false;if(active.current)setBusy(false)}};
- const retry=async()=>{if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await request(`/materials/files/${fid}/reparse`,{method:'POST'});if(active.current){setSelected({});onReparsed?.();setRefresh(x=>x+1)}}catch(e){if(active.current)setError(e instanceof Error?e.message:String(e))}finally{lock.current=false;if(active.current)setBusy(false)}};
+ const retry=async()=>{if(lock.current)return;lock.current=true;setBusy(true);setError('');try{await request(`/materials/files/${fid}/reparse`,{method:'POST'});if(active.current){setSelected({});await onReparsed?.();setRefresh(x=>x+1)}}catch(e){if(active.current)setError(e instanceof Error?e.message:String(e))}finally{lock.current=false;if(active.current)setBusy(false)}};
  const allNodes=flatten(outline?.outline??[]),count=Object.keys(selected).length;
  const ready=!loading&&outline?.parse_status==='ready'&&allNodes.length>0;
  const choose=(node:Node,checked:boolean,ancestors:string[])=>setSelected(old=>{

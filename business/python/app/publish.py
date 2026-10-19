@@ -15,6 +15,7 @@ task-single 语义：同契约同任务内已存在 → 复用 artifact_id 与 m
 """
 
 import json
+import hashlib
 import logging
 import shutil
 import uuid
@@ -66,6 +67,12 @@ def publish_artifact(
 
     name = (display_name or "").strip() or c.default_display_name
     source = source or {}
+    if contract_key == 'tender.directory/tender-response-docs@1' and source.get('skill') in ('tender-outline', 'direct'):
+        from .services.outline_contract import require_publish
+        try:
+            require_publish(task_id, content)
+        except ValueError as e:
+            raise PublishError(str(e)) from e
     content_text = json.dumps(content, ensure_ascii=False, indent=2)
 
     # 写锁（不可见 plumbing，宿主在 artifact_store）：串行化发布落盘，防并发首建
@@ -186,17 +193,10 @@ def publish_file_artifact(
     task_id: str | None = None,
     conversation_id: str | None = None,
 ) -> dict:
-    """发布文件型产物（当前唯一契约 tender.volume=整本标书 docx），返回 meta。
+    """发布单个内容寻址Word文件；新文件写入完成后才切换元信息。
 
-    与 publish_artifact 的差异（JSON 路径零改动，两函数并行）：
-    - 包内多一个二进制本体（file_path 拷入包，包内文件名=源文件名）；
-      content.json 只存机器元信息（schema 校验对象）。
-    - 身份复用键 = 任务 + kind + **display_name（册名）**——契约标 task-multi
-      但不走「恒新建」：同册重合册覆盖同一条（多册各一条），不碰 doc.note 的
-      task-multi 语义。册改名=另立新卡、旧卡保留（内容仍可打开）。
-    - 内容未变短路按 docx 内容级比对（_zip_content_equal，忽略 zip 时间戳）。
-    - **不设恢复点**：整本是派生交付物、非用户编辑内容，旧版随时可由节文件
-      重新合册复原（恢复点的受益者是「用户手改被覆盖」场景，这里不存在）。
+    同任务、同册复用身份，按DOCX部件内容去重。失败保留上次发布稿。
+    整册是派生产物，原正文、附件与其他环境数据不在本函数修改范围。
     """
     from pathlib import Path
 
@@ -213,6 +213,10 @@ def publish_file_artifact(
         )
     if not file_path.is_file():
         raise PublishError(f"文件不存在：{file_path}")
+    from .services.export_validation import document_digest
+    bundle_key = document_digest(file_path)[:16]
+    filename = file_path.stem + '-' + bundle_key + '.docx'
+    content_meta = {**content_meta, 'filename': filename}
 
     try:
         c.model.model_validate(content_meta)
@@ -220,7 +224,6 @@ def publish_file_artifact(
         raise PublishError(f"元信息不符合契约 {contract_key}：{str(e).replace(chr(10), ' ')[:500]}")
 
     name = (display_name or "").strip() or c.default_display_name
-    filename = file_path.name
     source = source or {}
     content_text = json.dumps(content_meta, ensure_ascii=False, indent=2)
 
@@ -239,30 +242,23 @@ def publish_file_artifact(
 
         if existing is not None:
             aid = existing["artifact_id"]
-            pkg_dir = artifact_store.artifact_dir(aid, existing)
-            # 崩溃残留的暂存件清掉（正常路径 finally 已清，这里是兜底）
-            for stale in pkg_dir.glob("incoming-*.part"):
-                stale.unlink(missing_ok=True)
             pkg_files = artifact_store.package_files(aid, existing)
             # 内容未变短路：docx 内容级相等且显示名未变 → 不重复发布（版本/
             # last_run_id 全不动，run 收尾 pending_emit 捞不到 → 无 artifact.created，
             # 聊天产物卡不挪位）——与 JSON 路径的 2026-09-12 短路同款语义
-            if pkg_files and _zip_content_equal(pkg_files[0], file_path):
+            previous_content = artifact_store.read_content_resolved(aid, existing)
+            previous = json.loads(previous_content or '{}')
+            previous_docx = next((p for p in pkg_files if p.name == previous.get('filename')), None)
+            if previous_docx and hashlib.sha256(previous_docx.read_bytes()).hexdigest()==previous.get('sha256') and _zip_content_equal(previous_docx, file_path):
                 logger.info("artifact 文件内容未变跳过发布 %s (%s)", aid, contract_key)
                 return {
                     **(artifact_store.read_meta(aid, existing) or {}),
                     "_unchanged": True,
                     "_seq": existing.get("content_seq"),
                 }
-            # 新 docx 先落包内暂存名，簿记全部完成后最后一步原子换装——中途任何
-            # 一步失败，包内保持完整旧态（旧 docx + 旧 content.json），下次重跑
-            # 比对不等自然走完整更新路径收敛。此前「先写正式名后簿记」的顺序一旦
-            # 中途失败，重跑会命中内容短路把失败半态固化（content.json/seq 永不
-            # 修正、artifact.created 永不发、文案误报「未重复发布」）。
-            staging = pkg_dir / f"incoming-{uuid.uuid4().hex[:8]}.part"
-            staging.parent.mkdir(parents=True, exist_ok=True)
-            staging.write_bytes(file_path.read_bytes())
+            # 新的Word文件写完后再切换指针；提交失败恢复旧元信息。
             try:
+                artifact_store.write_package_file(aid, existing, filename, file_path.read_bytes())
                 artifact_store.replace_current_content(aid, existing, content_text)
                 db.upsert_artifact_index(
                     {
@@ -277,14 +273,17 @@ def publish_file_artifact(
                         "last_thread_id": source.get("thread_id"),
                     }
                 )
-                staging.replace(pkg_dir / filename)
-                # 单文件不变量：册名清洗后文件名变了的话，摘掉包内旧 docx（file 端点
-                # 按「包内唯一 .docx」取文件）
-                for p in artifact_store.package_files(aid, existing):
-                    if p.name != filename:
+            except Exception:
+                if previous_content is not None:
+                    artifact_store.replace_current_content(aid, existing, previous_content)
+                raise
+            # 切换Word文件成功后再清理旧派生文件，清理失败不回滚有效的新指针。
+            for p in artifact_store.package_files(aid, existing, '*.docx'):
+                if p.name != filename:
+                    try:
                         p.unlink(missing_ok=True)
-            finally:
-                staging.unlink(missing_ok=True)
+                    except OSError:
+                        logger.warning('旧合册派生文件暂未清理：%s', p)
             logger.info("artifact 文件更新 %s (%s) seq=%s", aid, contract_key, existing["content_seq"] + 1)
 
             # _seq（与索引 content_seq 同源）：docx_ops 工具结果文案用——「第 N 版」

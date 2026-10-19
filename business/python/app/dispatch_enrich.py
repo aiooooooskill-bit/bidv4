@@ -172,7 +172,8 @@ def _requirement_lines(cells: list[str], cols: dict[str, int], registry: dict) -
     def expand(match):
         entry = registry[_norm_id(match.group().upper())]
         source = str(entry.get('出处') or '').strip() or '—'
-        return f"{entry['text']}（出处：{source}）"
+        details = '\n'.join(str(entry[k]) for k in ('评分要点', '原文依据') if entry.get(k))
+        return f"{entry['text']}（出处：{source}）" + ('\n' + details if details else '')
     basis = build_state.GUIDE_REFERENCE_RE.sub(expand, raw)
     return ([f'- {basis}'] if basis and basis not in ('—', '-') else []), has_tpl
 
@@ -399,7 +400,7 @@ def resolve_section(needle: str, task_id: str) -> SectionTarget | None:
         _row, content, _mtime = body_contract.load_directory(task_id)
         if not content:
             return None
-        leaves = body_contract.iter_leaves(content)
+        leaves = body_contract.body_nodes_for_task(task_id, content)
         if not leaves:
             return None
         match = _match_leaf(needle, leaves)

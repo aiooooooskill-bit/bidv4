@@ -100,7 +100,12 @@ const endpoint=createServer(async(req,res)=>{
   }else{
    if(kind==='analyse'&&step===0)calls=[call('parse_document',{file_name:'交付验收原件.png'})];
    if(kind==='analyse'&&step===1)calls=analysis.map(n=>write('analysis/'+n+'.md','# 本地目录验收 '+n+'\n固定目录安装、更新、重装使用的真实业务成果。'));
-   if(kind==='outline')calls=step===0?[call('write',{file_path:join(cwd,'_meta/staging/tender-response-docs.json'),content:JSON.stringify(directory)})]:step===1?[call('publish_artifact',{contract:'tender.directory/tender-response-docs@1',draft_path:join(cwd,'_meta/staging/tender-response-docs.json')})]:[];
+   if(kind==='outline'){
+    const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
+    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n';
+    const sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
+    calls=sequence[step]??[];
+   }
    if(kind==='guide'&&step===0)calls=[write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |')];
    if(kind==='promises'&&step===0)calls=[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |')];
    if(kind==='body'){if(blocking&&step===0){res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());blocked.resolve();return;}calls=step===0?[call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})]:step===1?[call('validate_body',{section:'body/交付验收章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}

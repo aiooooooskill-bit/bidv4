@@ -38,6 +38,13 @@ async def dispatch():
         from app.services.asset_usage import record_read
         record_read(args['task_id'],args['session_id'],args['asset']);return {'ok':True}
     if op=='schemas':return schemas()
+    if op in ('outline_begin','outline_dispatch','outline_check','outline_status'):
+        from app.services import outline_contract
+        tid=args['task_id']
+        if op=='outline_begin':return outline_contract.begin(tid,args['action_id'])
+        if op=='outline_dispatch':return outline_contract.dispatch(tid,args['name'])
+        if op=='outline_status':return outline_contract.status(tid,args['action_id'])
+        return outline_contract.check(tid,args.get('volume',''),child_completed=args.get('child_completed',False))
     if op=='routes':return ROUTES
     if op=='asset_access':
         from app.company_store import require_asset_path
@@ -134,7 +141,13 @@ async def dispatch():
     if op=='checks':
         tool_context();s=state(request['task_id']);return {'pipeline':TOOL_MAP['check_pipeline_state'](),'body':TOOL_MAP['validate_body'](section='body'),'has_body':bool(s['body_files']),'input_version':s['input_versions']['revise']}
     if op=='export':
-        tool_context();result=TOOL_MAP['docx_assemble_volume']()
+        tool_context()
+        current=build_state.snapshot(request['task_id'])
+        blocked={section['volume'] for section in current['body_sections'] if section['status'] in ('missing','draft')}
+        if current['orphan_body_files']:blocked.update(v['name'] for v in current['volume_states'])
+        if blocked:
+            raise BusinessError(422,'以下整册未完成生成或发布：'+'、'.join(sorted(blocked))+'；请先补齐、归集并校验已有正文，旧发布成果保留')
+        result=TOOL_MAP['docx_assemble_volume']()
         if result.startswith(('[失败]','[错误]','[合册失败]')) or '未生成' in result:raise BusinessError(422,result)
         missing = [v['name'] for v in build_state.snapshot(request['task_id'])['volume_states'] if v['status'] != 'ready']
         if missing:
@@ -161,16 +174,23 @@ async def dispatch():
         from app.knowledge import store,extract
         item=db.kb_get_item(args['id']);md=store.kb_parse_paths(item['file_name'])[0].read_text()
         return {'system':extract.EXTRACT_SYSTEM,'prompt':extract.build_extract_prompt(item['file_name'],md)}
+    if op=='kb_parsed':
+        from app.knowledge.ingest import parsed
+        parsed(args['id']);return {'ok':True}
+    if op=='kb_images':
+        from app.knowledge.ingest import prepare_images
+        return prepare_images(args['id'])
     if op=='kb_finish':
         from app.knowledge.ingest import finish
-        from app.knowledge import images,store
-        item=db.kb_get_item(args['id'])
-        if Path(item['file_name']).suffix.lower() in ('.docx','.pdf'):images.extract_images(store.kb_files_dir()/item['file_name'],item['file_name'])
         return finish(args['id'],args['metadata'])
-    if op=='kb_fail':db.kb_update_item(args['id'],parse_status='failed',error=args['error']);return {'ok':True}
+    if op=='kb_fail':
+        from app.knowledge.ingest import fail
+        fail(args['id'],args['stage'],args['error']);return {'ok':True}
     if op=='kb_recover':
         item=db.kb_get_item(args['id'])
-        if item and item['parse_status']=='pending':db.kb_update_item(args['id'],parse_status='failed',error='资料处理已中断，请重新解析')
+        if item and (item['parse_status'] in ('pending','parsing') or item['extract_status']=='running'):
+            from app.knowledge.ingest import fail
+            fail(args['id'],'extract' if item['parse_status']=='ready' else 'parse','资料处理已中断，请重试')
         return {'ok':True}
     if op=='route':
         path=args['path'];method=args['method']

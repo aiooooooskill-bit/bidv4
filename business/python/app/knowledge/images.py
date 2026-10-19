@@ -196,13 +196,13 @@ def extract_images(src: Path, file_name: str) -> tuple[int, int]:
             return _render_pdf_pages(src, img_dir)
         except Exception:
             logger.exception("PDF 整页渲染失败（%s）", file_name)
-            return 0, 0
+            raise
 
     try:
         raw = _extract_docx(src) if ext == ".docx" else []
     except Exception:
         logger.exception("图片抽取失败（%s）", file_name)
-        return 0, 0
+        raise
 
     written = 0
     passed = 0

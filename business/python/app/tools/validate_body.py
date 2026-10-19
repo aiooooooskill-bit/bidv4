@@ -147,7 +147,7 @@ def _validate_guide(content_text: str, task_id: str) -> tuple[list[str], list[st
     prose_keys: set[str] = set()
     delivery: dict[str, str] = {}
     if content:
-        for vol, title, mode in body_contract.iter_leaves(content):
+        for vol, title, mode in body_contract.body_nodes_for_task(task_id, content):
             key = f'{vol}/{title}' if multi else title
             leaf_keys.add(key)
             delivery[key] = mode

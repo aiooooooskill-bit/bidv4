@@ -4,6 +4,7 @@ from . import store,fts
 from .segmenter import segments_from
 from .extract import validate_suggested
 from .types import FIELD_LABELS
+from .availability import identity
 
 def _loads(raw) -> dict | None:
     if not raw:
@@ -38,7 +39,7 @@ def questions_segment(questions) -> dict | None:
 
 def reindex_item(kid: str) -> None:
     """重建条目检索段（唯一重建入口）：outline 段 + 内容说明段（§statement）+
-    检索问题段（§questions）+ 当前整理元数据合成段。写作素材在独立素材库
+    检索问题段（§questions）+ 当前整理元数据合成段 + 原件定位段（非事实）。写作素材在独立素材库
     （materials_lib），知识库无章节块。"""
     from ..company_store import transaction
     with transaction() as conn:
@@ -82,6 +83,9 @@ def reindex_item(kid: str) -> None:
                 "line_start": None, "line_end": None, "page_start": None,
                 "raw": "\n".join(pairs),
             })
+    # Locator only: search tools must never present this as company evidence.
+    segs.append({'section_path': '§identity', 'line_start': None, 'line_end': None,
+                 'page_start': None, 'raw': identity(item)})
     db.kb_replace_segments(
         kid,
         [{**s, "body": fts.segment_for_fts(s.pop("raw"))} for s in segs], expected_revision=item['review_revision'],
@@ -97,5 +101,36 @@ def finish(kid,metadata):
 def schedule_ingest(kid):
     item=db.kb_get_item(kid)
     if not item or item['parse_status'] in ('pending','parsing','extracting') or item['extract_status']=='running':return False
-    db.kb_update_item(kid,parse_status='pending',error=None)
+    if item['parse_status']=='ready':
+        db.kb_update_item(kid,extract_status='running',error=None)
+    else:
+        db.kb_update_item(kid,parse_status='pending',error=None)
     return True
+
+def parsed(kid):
+    """Commit valid text before asking a model to structure it."""
+    db.kb_update_item(kid,parse_status='ready',extract_status='running',error=None)
+    reindex_item(kid)
+
+def prepare_images(kid):
+    from pathlib import Path
+    from . import images
+    from ..parse import write_atomic
+    item=db.kb_get_item(kid)
+    meta_path=store.kb_parse_paths(item['file_name'])[2]
+    meta=json.loads(meta_path.read_text())
+    try:
+        if Path(item['file_name']).suffix.lower() in ('.docx','.pdf'):
+            images.extract_images(store.kb_files_dir()/item['file_name'],item['file_name'])
+        meta.pop('image_error',None)
+    except Exception as error:
+        meta['image_error']='证明图片提取失败：'+str(error)
+    write_atomic(meta_path,json.dumps(meta,ensure_ascii=False))
+    return {'error':meta.get('image_error')}
+
+def fail(kid,stage,error):
+    if stage=='extract':
+        db.kb_update_item(kid,extract_status='failed',error=error)
+    else:
+        db.kb_update_item(kid,parse_status='failed',extract_status='pending',error=error)
+    reindex_item(kid)

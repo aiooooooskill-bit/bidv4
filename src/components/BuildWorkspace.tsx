@@ -1,3 +1,4 @@
+import {deliveryReady,actionNames} from '../../shared/delivery-status.js';
 import {useEffect,useRef,useState} from 'react';
 import {BASE,bodyUrl,request,json,type Flow,type Artifact,type WorkFile} from '../api';
 import {useExecutionControls,type ExecutionInput} from './ExecutionControls';
@@ -28,7 +29,8 @@ export function BuildWorkspace({tid,mode,flow,input,artifacts,disabled,busy,onCh
  const selectedVolumeState=currentVolumes.find(v=>v.artifact_id===volumeId);
  const locked=disabled||hasDirty,prepared=flow.build_preparation?.guide==='ready'&&flow.build_preparation?.promises==='ready';
  const stalePreparation=['guide','promises'].filter(stage=>flow.build_preparation?.[stage as 'guide'|'promises']==='stale');
- const complete=!!total&&!missing&&!unfinished&&prepared&&!!currentVolumes.length&&readyVolumes===currentVolumes.length;
+ const complete=deliveryReady(flow);
+ const failed=flow.execution?.state==='failed'&&!flow.execution.resolved,failedLabel=(actionNames[flow.execution?.kind??'']??'本轮执行')+'未完成';
  const previewUrl=volume?`${BASE}/artifacts/${volume.artifact_id}/file?v=${volume.content_seq}`:orphan?bodyUrl(tid,orphan,flow.input_versions.revise):selectedBody?bodyUrl(tid,selectedBody,flow.input_versions.revise):null;
  const previewName=volume?volume.display_name+'.docx':orphan??selectedBody;
  const running=['running','needs_input'].includes(flow.execution?.state??'');
@@ -54,10 +56,10 @@ export function BuildWorkspace({tid,mode,flow,input,artifacts,disabled,busy,onCh
  const pick=(volume:string,title:string)=>{setSelected({volume,title});setVolumeId(null);setOrphan(null)};
  const accept=async()=>{if(!selected)return;try{await request(`/page-flow/${tid}/accept-section`,json('POST',{...selected,input_version:flow.input_versions.revise}));clearNotice(tid+':accept-section');await onChanged()}catch(e){reportError(e,{id:tid+':accept-section',scope:tid,title:'章节依据确认未完成'})}};
  const openAction=(kind:NonNullable<typeof action>)=>{setInstruction('');setAction(kind)};
- const stateLabel=running?phase:flow.execution?.state==='failed'?'制作未完成':flow.execution?.state==='stopped'?'已停止':complete?'标书已制作':flow.execution?.state==='completed'?'本轮已结束':'待开始';
- const {controls,form}=useExecutionControls({tid,execution:flow.execution,input,onChanged,layout:'build',stateLabel,progress:<>
+ const stateLabel=running?phase:complete?'标书已制作':failed?failedLabel:flow.execution?.state==='stopped'?'已停止':flow.execution?.resolved?(actionNames[flow.execution.kind]??'本轮成果')+'已就绪':flow.execution?.state==='completed'?'本轮已结束':'待开始';
+ const {controls,form}=useExecutionControls({tid,execution:flow.execution,input,onChanged,layout:'build',stateLabel,statusState:complete&&!running?'completed':undefined,progress:<>
   <div className="build-status-metrics" aria-label="制作进度"><span className="build-status-group"><span className="build-status-dot" data-state={flow.directory?'ready':'missing'} aria-hidden="true"/><span>{flow.directory?'目录已保存':'目录未生成'}</span>{flow.directory?<small>{directoryCount} 项</small>:null}</span><span className="build-status-group" aria-label={`正文生成进度：${generated} / ${total} 章`}><span>正文</span><strong>{generated} / {total}</strong><span>章</span></span><span className="build-status-group" aria-label={`整册就绪：${readyVolumes} / ${currentVolumes.length} 册`}><span>整册就绪</span><strong>{readyVolumes} / {currentVolumes.length}</strong><span>册</span></span><span className="build-status-group">{flow.directory?(flow.directory.content.page_target==null?'不限篇幅':`目标 ${flow.directory.content.page_target} 页`):'篇幅待设置'}</span></div>
-  {unfinished||affected.length||hasDirty||flow.execution?.state==='failed'?<div className="build-status-notes">{unfinished?<span>{unfinished} 章待完成</span>:null}{affected.length?<span data-tone="warning">{affected.length} 章待核对或更新</span>:null}{hasDirty?<strong data-tone="warning">请先保存当前修改，再发起制作操作。</strong>:null}{flow.execution?.state==='failed'?<strong data-tone="error">制作未完成，请查看错误提示</strong>:null}</div>:null}
+  {unfinished||affected.length||hasDirty||failed?<div className="build-status-notes">{unfinished?<span>{unfinished} 章待完成</span>:null}{affected.length?<span data-tone="warning">{affected.length} 章待核对或更新</span>:null}{hasDirty?<strong data-tone="warning">请先保存当前修改，再发起制作操作。</strong>:null}{failed?<strong data-tone="error">{failedLabel}，请查看错误提示</strong>:null}</div>:null}
  </>});
  const tabs=<div className="bp-tabs">{[['directory','目录与章节'],['guide','写作指引'],['promises','关键事实与承诺'],].map(([key,label])=><button className="bp-tab" data-active={tab===key} key={key} onClick={()=>{if(tab!==key)navigate(()=>setTab(key))}}>{label}</button>)}</div>;
  return <>
@@ -82,7 +84,7 @@ export function BuildWorkspace({tid,mode,flow,input,artifacts,disabled,busy,onCh
    {!volumeId&&!orphan&&(section?.status==='stale'||section?.status==='unverified')&&selectedBody?<div className="chapter-notice">{section.status==='stale'?'本章编写依据已变化，已有 Word 正文保留。请核对后保留，或更新当前章。':'本章已有 Word 正文，编写依据尚未核对。'}<button className="bp-btn" disabled={locked||!prepared} onClick={()=>void accept()}>已核对，保留当前章</button></div>:null}
    {volume&&selectedVolumeState?.status!=='ready'?<div className="chapter-notice">{selectedVolumeState?'此整册尚未按当前目录和正文完成合册发布，请重新合册。':'此整册已不在当前目录中，作为历史文件保留。'}</div>:null}
    {previewUrl&&previewName?<SourcePreview key={previewUrl} name={previewName.endsWith('.docx')?previewName:previewName+'.docx'} url={previewUrl}/>:<div className="bp-empty">{selected?'本章节尚无正文。点击“生成当前章”可自动补齐写作准备并生成本章。':'点击左侧章节查看 Word 文档。'}</div>}
-   {currentVolumes.length?<div className="volume-files">{currentVolumes.map(v=>{const a=volumes.find(a=>a.artifact_id===v.artifact_id);return <div key={v.name}><strong>{v.name}</strong><span>{v.status==='ready'?'整册已就绪':v.status==='missing'?'待合册发布':'待重新合册'}</span>{a?<><button className="bp-btn" onClick={()=>{setVolumeId(a.artifact_id);setOrphan(null)}}>预览整册</button>{v.status==='ready'?<a className="bp-btn" href={`${BASE}/artifacts/${a.artifact_id}/file?v=${a.content_seq}`}>下载标书</a>:null}</>:null}</div>})}</div>:null}
+   {currentVolumes.length?<div className="volume-files">{currentVolumes.map(v=>{const a=volumes.find(a=>a.artifact_id===v.artifact_id);return <div key={v.name}><strong>{v.name}</strong><span>{v.status==='ready'?'整册已就绪':v.status==='missing'?'待合册发布':'待重新合册'}</span>{a?<><button className="bp-btn" onClick={()=>{setVolumeId(a.artifact_id);setOrphan(null)}}>预览整册</button>{v.status==='ready'?<a className="bp-btn" href={`${BASE}/artifacts/${a.artifact_id}/file?v=${a.content_seq}`}>下载 Word</a>:null}</>:null}</div>})}</div>:null}
    {historicalVolumes.length?<details className="retained-files"><summary>{historicalVolumes.length} 份历史整册已保留</summary>{historicalVolumes.map(a=><div key={a.artifact_id}><span>{a.display_name}</span><button className="bp-btn" onClick={()=>{setVolumeId(a.artifact_id);setOrphan(null)}}>预览历史整册</button><a className="bp-btn" href={`${BASE}/artifacts/${a.artifact_id}/file?v=${a.content_seq}`}>下载历史整册</a></div>)}</details>:null}
    {flow.orphan_body_files?.length?<details className="retained-files"><summary>{flow.orphan_body_files.length} 份正文已不在当前目录中，文件已保留</summary>{flow.orphan_body_files.map(path=><button className="bp-btn" key={path} onClick={()=>{setOrphan(path);setVolumeId(null)}}>{path.split('/').pop()}</button>)}</details>:null}
    </div>

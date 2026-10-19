@@ -4,7 +4,7 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前发行版本为 **0.1.4**，修改内容见 [版本说明](CHANGELOG.md)。采用固定本地目录安装；数据库与生成文件保存在该目录的 `data/`。交付组成与验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前发行版本为 **0.1.5**，修改内容见 [版本说明](CHANGELOG.md)。采用固定本地目录安装；数据库与生成文件保存在该目录的 `data/`。交付组成与验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
 
 ## 项目 Agent 对话
 
@@ -19,7 +19,7 @@
 在 DeepSeek Harness 客户端的「插件 → 添加插件」中填写以下发布附件地址：
 
 ```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.4/ooo-bidpliot-0.1.4.tgz
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.5/ooo-bidpliot-0.1.5.tgz
 ```
 
 宿主下载包并安装 Node 依赖；安装脚本调用 uv 根据锁文件准备 Python 业务环境。若宿主提示构建脚本待授权，按提示允许本插件的安装脚本后重试。需要本机已有 Node.js 24+、Python 3.12+ 和 uv，安装时可联网访问依赖仓库。安装后检查插件版本、页面入口和同名 Agent 预设均正常。
@@ -29,6 +29,8 @@ https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.4/ooo-bidpliot
 URL 安装的业务数据在宿主管理的插件安装目录内；卸载或更换 URL 版本前先备份该目录的 data 及宿主会话／附件。需要自行掌握固定目录及原位更新时，可使用下述 ZIP 解压安装。
 
 ## 本地目录安装
+
+合册默认只导出可编辑Word，不安装或调用LibreOffice，不生成PDF。标题使用Office/WPS原生标题样式和多级编号；目录、材料页码引用及居中页脚使用原生域，并设置打开文档时请求自动更新。封面独立分节且不计页码；目录从第1页开始，正文及附件连续计入。实际分页和域更新由打开文件的Office/WPS完成，平台不提供预先计算的页码，也不将网页预览视为最终分页。是否自动执行更新由所用办公软件及其设置决定，文档不含自动执行宏。
 
 已验证环境为 macOS arm64、Node.js 24.15.0、Python 3.13.13、uv 和 dsh `0.2.0-rc.2`。准备要求 Node.js 24+ 和 Python 3.12+。0.1.3 已改用跨平台文件锁、Windows Python 路径和 UTF-8 业务进程；**Windows 实机尚未验证**，Linux 也未进行实机验收。macOS 通过了实际压缩包的中文与空格路径安装、完整业务与上下文压缩回归。模型和凭证使用现有宿主配置。
 
@@ -76,7 +78,7 @@ npm run build
 node scripts/delivery.mjs export /absolute/new-delivery
 ```
 
-白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。GitHub [v0.1.4 发布页](https://github.com/aiooooooskill-bit/bidv4/releases/tag/v0.1.4) 提供完整插件安装包（客户端 URL 安装用 TGZ / 本地目录安装用 ZIP）与 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；GitHub 自动生成的 Source code 压缩包不包含已构建的 dist，请使用发布页附件。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
+白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。GitHub [v0.1.5 发布页](https://github.com/aiooooooskill-bit/bidv4/releases/tag/v0.1.5) 提供完整插件安装包（客户端 URL 安装用 TGZ / 本地目录安装用 ZIP）与 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；GitHub 自动生成的 Source code 压缩包不包含已构建的 dist，请使用发布页附件。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
 
 ## 页面流程
 

@@ -8,7 +8,7 @@ import {pythonExecutable} from '../server/platform.mjs';
 const root=fileURLToPath(new URL('..',import.meta.url)),pkg=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
 const temporary=await mkdtemp(join(tmpdir(),'bid Windows 中文 '));
 const target=join(temporary,pkg.name+'-'+pkg.version);
-const run=(program,args,{cwd=root,input}={})=>new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd,stdio:['pipe','pipe','pipe']});let output='';child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>output+=b);child.on('error',reject);child.on('close',code=>code===0?resolve(output):reject(new Error(output)));child.stdin.end(input)});
+const run=(program,args,{cwd=root,input}={})=>new Promise((resolve,reject)=>{const child=spawn(program,args,{cwd,stdio:['pipe','pipe','pipe']});let output='',error='';child.stdout.on('data',b=>output+=b);child.stderr.on('data',b=>error+=b);child.on('error',reject);child.on('close',code=>{if(code===0){if(error)process.stderr.write(error);resolve(output)}else reject(new Error(error+output))});child.stdin.end(input)});
 try{
  await run(pythonExecutable(root),['-X','utf8','-c','import sys,tarfile;tarfile.open(sys.argv[1]).extractall(sys.argv[2],filter="data")',join(root,'deliveries',pkg.name+'-'+pkg.version+'.tgz'),temporary]);
  await run(process.execPath,[join(target,'scripts/prepare.mjs')]);
