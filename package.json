@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -29,7 +29,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "tsc --noEmit",
-    "test": "node --test --test-concurrency=4 tests/*.test.mjs",
+    "test": "node scripts/test-js.mjs",
     "verify": "npm run check && npm run build && npm test && npm run test:business",
     "start": "dsh web --no-open --host 127.0.0.1 --port 3080",
     "tools:install": "uv sync --locked --project business/python",
@@ -77,7 +77,8 @@
     "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
     "@deepseek-ai/dsh-scope": "0.2.1-rc.2",
     "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2"
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-home-paths": "0.2.1-rc.2"
   },
   "engines": {
     "node": ">=24",
@@ -108,7 +109,8 @@
     "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.2",
     "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "@deepseek-ai/dsh-home-paths": "0.2.1-rc.2"
   },
   "files": [
     "cordis.patch.yml",
@@ -211,6 +213,9 @@
       "optional": true
     },
     "react-dom": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-home-paths": {
       "optional": true
     }
   }

@@ -8,6 +8,7 @@ import {createBusinessScope} from './native/scope.mjs';
 import {BusinessRuntime} from './native/runtime.mjs';
 import {business,root,dataRoot,BusinessError} from './native/business.mjs';
 import {assertInstallation,claimHost} from './installation.mjs';
+import {mountDataDirectory} from './data-location.mjs';
 export const name='ooo-bidpliot';
 export const inject=['webServer','connection','agents','llm','agentDefaultModel','subprocess','attachments','sessions','sessionPersistence','sessionQuery','agentPresets','sessionTitle','sessionProjections','agentLoop','tools','skills','userQuestions','fs','systemPrompt','subagents'];
 async function input(req,unlimitedUpload=false){
@@ -28,6 +29,7 @@ function send(res,value,status=200){res.writeHead(status,{'Content-Type':'applic
 async function file(res,path,name,media,head=false){const info=await stat(path);res.writeHead(200,{'Content-Type':media??'application/octet-stream','Content-Length':info.size,'X-Content-Type-Options':'nosniff',...(name?{'Content-Disposition':`attachment; filename*=UTF-8''${encodeURIComponent(name)}`}:{})});if(head)res.end();else await pipeline(createReadStream(path),res)}
 export async function apply(ctx){
  await assertInstallation(root);
+ await mountDataDirectory(root);
  const releaseHost=await claimHost(root);let scope,runtime,routes;
  try{scope=await createBusinessScope(ctx);runtime=new BusinessRuntime(scope.ctx);await runtime.init();routes=await business(scope.ctx,'routes')}
  catch(error){try{await runtime?.close()}finally{try{await scope?.close()}finally{await releaseHost()}}throw error}
