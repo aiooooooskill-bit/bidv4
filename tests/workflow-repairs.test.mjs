@@ -222,11 +222,11 @@ test('重复点击当前制作页签保留真实未保存拦截；整册未就�
   assert.ok(!nodes(guard.render()).some(n=>n.props.label==='未保存修改'&&n.props.open));
   context=guard.render().props.value;context.mark('t1:directory',false);guard.render();view.render();
   assert.equal(find(view,n=>n.props.children==='继续制作标书').props.disabled,false);
-  assert.ok(!nodes(view.render()).some(n=>n.props.children==='下载标书'));
+  assert.ok(!nodes(view.render()).some(n=>n.props.children==='下载 Word'));
   assert.ok(nodes(view.render()).some(n=>n.props.children==='下载历史整册'));
   flow.volume_states=[{name:'技术',artifact_id:'old',status:'ready'}];view.render();
   assert.equal(find(view,n=>n.type==='button'&&n.props.children==='标书已制作').props.disabled,true);
-  assert.ok(nodes(view.render()).some(n=>n.props.children==='下载标书'));
+  assert.ok(nodes(view.render()).some(n=>n.props.children==='下载 Word'));
  }finally{view.unmount();guard.unmount();f.close()}
 });
 

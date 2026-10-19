@@ -1,6 +1,6 @@
 # dsh 接入契约
 
-锁定本机 `@deepseek-ai/dsh 0.2.0-rc.2`，接口依据随包源码与类型，来源仓库为 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)。
+锁定本机 `@deepseek-ai/dsh 0.2.1-rc.2`，接口依据随包源码与类型，来源仓库为 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)。
 
 - `cordis.patch.yml`注册页面服务，业务运行时注册唯一客户预设 `ooo-bidpliot`（定义位于 `server/native/preset.mjs`），包含原角色方法、文件／搜索／技能／具体提问及原Python业务工具。没有独立执行或审查预设。
 - 正式服务与`cordis.patch.yml`均声明`webServer`、`connection`、`agents`、`llm`、`agentDefaultModel`、`subprocess`、`attachments`依赖。`/api/bidv4`由当前插件处理，经`connection.admit`验证dsh登录；没有引擎HTTP代理。
@@ -21,6 +21,10 @@
 - 冷历史可以由官方控制器恢复一个空闲 Agent，以保留原生服务能力；查看不会派发模型，也不创建业务动作。业务运行时复用已恢复的同一 Agent。此前私有日志不自动迁移。
 - 客户端继续使用原 sidebar/footer/overlay 扩展点，工作台的自动流程入口与报告/文件展示复用现有组件。宿主会话列表的更新通知工作台刷新项目，业务 Agent 和页面显示同一份真实数据。
 
-随包依据：`dsh-agent-default-model`、`dsh-agent-preset-registry`、`dsh-subagent`、`dsh-subagent-spawn-in-process`、`dsh-session-persistence-jsonl`、`dsh-session-checkpoint-policy`、`dsh-attachment-local`、`dsh-tool-fs`、`dsh-tool-ask-user`。使用未修改的官方`dsh-scope@0.2.0-rc.2`；本地vendor覆盖和依赖override已取消，不保留替换加载器或运行时补丁。
+随包依据：`dsh-agent-default-model`、`dsh-agent-preset-registry`、`dsh-subagent`、`dsh-subagent-spawn-in-process`、`dsh-session-persistence-jsonl`、`dsh-session-checkpoint-policy`、`dsh-attachment-local`、`dsh-tool-fs`、`dsh-tool-ask-user`。使用未修改的官方`dsh-scope@0.2.1-rc.2`；本地vendor覆盖和依赖override已取消，不保留替换加载器或运行时补丁。
 
 当前工程验证见 [合入验收](MERGE-ACCEPTANCE.md)。双插件整理按用户决定暂缓。
+
+0.2.1 子任务使用 `startActivation` 和 `childId`。四种内部角色使用官方 spawn provider 的命名实例，通过官方持久 descriptor.provider 恢复角色，继续只公开一个 `ooo-bidpliot` 预设。Agent 作用域的角色提示与工具白名单在创建/冷恢复时重装。父调用取消后显式 dispose 并等待子任务收尾；目录写入约束在派发前按保留的 childId 注册。阶段工具白名单必须在第一条模型请求前完成激活。
+
+官方组件只声明为宿主 peer，开发 SDK 提供独立目录验证环境；自有运行依赖保留在 dependencies。doctor 检验 engines.dsh 与 Cordis/loader 的精确版本，浏览器 React/客户端注入模块不作 Node 包必需检查。0.2.0 合成会话只作为只读原始字节的恢复测试材料，不提供旧宿主运行兼容。

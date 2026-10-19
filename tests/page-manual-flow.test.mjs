@@ -50,7 +50,7 @@ else test(name,{timeout:160000},async()=>{
   state=(await host.command('settleProject',{taskId:tid})).state;await refresh();syncBuild();assert.equal(state.execution.state,'completed');assert.ok(state.volume_states.every(v=>v.status==='ready'));
   const beforeExport=requests.filter(r=>r.url.endsWith('/export')).length;
   button(build,'合册导出').props.onClick();await eventually(()=>requests.filter(r=>r.url.endsWith('/export')).length>beforeExport,'Manual export must submit');await refresh();syncBuild();
-  const link=find(build,n=>n.type==='a'&&n.props.children==='下载标书');
+  const link=find(build,n=>n.type==='a'&&n.props.children==='下载 Word');
   const download=await realFetch(new URL(link.props.href,host.state.base),{headers:{Cookie:cookie}});assert.equal(download.status,200);const bytes=Buffer.from(await download.arrayBuffer());assert.equal(bytes.subarray(0,2).toString(),'PK');assert.ok(bytes.length>1000);
   state=await run(page,'发起审核');assert.equal(props.mode,'review');assert.equal(state.review.status,'reviewed');assert.ok(state.review.report.report.requirements.length>0);assert.equal(state.session_id,sessionId);
   const evidence=await host.command('projectEvidence',{taskId:tid});assert.deepEqual([...new Set(evidence.records.map(r=>r.session_id))],[sessionId]);assert.deepEqual(evidence.records.map(r=>r.kind).sort(),['analyse','build','outline','review']);assert.ok(evidence.records.every(r=>r.projection.state==='completed'));

@@ -8,7 +8,7 @@ import DefaultModel from '@deepseek-ai/dsh-agent-default-model';
 import Attachments from '@deepseek-ai/dsh-attachment-local';
 import SessionTitle from '@deepseek-ai/dsh-session-title';
 import {mkdir,rm,writeFile,readFile,readdir} from 'node:fs/promises';
-import {join} from 'node:path';
+import {join,dirname} from 'node:path';
 import {randomUUID} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {createBusinessScope} from './helpers/runtime-host.mjs';
@@ -25,10 +25,17 @@ class Adapter extends LlmAdapter{
   const last=options.messages.findLast(m=>m.role==='tool'||['human','user','user-question-reply'].includes(m.source?.kind));const pendingReply=last?.source?.kind==='user-question-reply';
   const prompt=last?.content?.filter(b=>b.type==='text').map(b=>b.text).join('')??'';
   if(prompt.includes('native-cancel-child-fixture')){childSignal=options.signal;childStarted();await new Promise((resolve,reject)=>{if(options.signal.aborted)reject(options.signal.reason);else options.signal.addEventListener('abort',()=>reject(options.signal.reason),{once:true})});return}
+  if(prompt.includes('native-outline-first-write-fixture')&&last?.role!=='tool'){
+   const contract=JSON.parse(prompt.match(/本轮目录依据与原结构约束：([^\n]+)/)[1]);
+   const content='# 响应文件：工程册\n本册仅验证运行接线。\n\n## 目录\n- 工程目录\n\n首步写入已验证。\n';
+   const calls=[{id:'outline-fragment-write',path:contract.fragment_path,content},{id:'outline-other-denied',path:join(dirname(contract.fragment_path),'越权册.md'),content:'越权内容不得写入'},{id:'outline-combined-denied',path:join(dirname(dirname(contract.fragment_path)),'tender-response-docs.md'),content:'越权内容不得写入'}];
+   for(const [index,call]of calls.entries()){const block={type:'tool-call',id:call.id,name:'write',arguments:JSON.stringify({file_path:call.path,content:call.content})};yield {type:'block-start',index,blockType:block.type};yield {type:'block-end',index,block}}
+   yield {type:'finish',reason:{kind:'tool-calls'}};return;
+  }
   let block;
   if(prompt.includes('native-cancel-fixture'))block={type:'tool-call',id:'cancel-child',name:'task',arguments:JSON.stringify({subagent_type:'tender-outline-writer',response_file:'工程册',description:'native-cancel-child-fixture'})};
   else if(last?.role==='tool'||pendingReply)block={type:'text',text:last?.content.some(b=>b.type==='image')?'本页为工程识别通路验证，验证文件已交由同一模型的官方子Agent读取图片。'.repeat(8):'工程调用已返回'};
-  else{const text=last?.content?.filter(b=>b.type==='text').map(b=>b.text).join('')??'';block=options.messages.some(m=>m.role==='system'&&m.content.some(b=>b.type==='text'&&b.text.includes('你是投标资料管理员')))?{type:'text',text:JSON.stringify({doc_type:'company_profile',statement:'本资料记录工程验证信息与公司介绍，仅验证整理入库与检索的接线情况。',questions:['公司介绍在哪里'],fields:{},extra:{}})}:text.includes('调用read_image读取图片：')?{type:'tool-call',id:'image-call',name:'read_image',arguments:JSON.stringify({file_path:text.match(/调用read_image读取图片：(.*?)。/)[1]})}:text.includes('native-ocr-fixture')?{type:'tool-call',id:'ocr-call',name:'parse_document',arguments:JSON.stringify({file_name:'工程源.png'})}:text.includes('native-question-fixture')?{type:'tool-call',id:'question-call',name:'ask_user_question',arguments:JSON.stringify({questions:[{id:'service',question:'服务期限是多少？',options:[{label:'三年'},{label:'五年'}]}]})}:text.includes('native-subagent-fixture')?{type:'tool-call',id:'child-call',name:'task',arguments:JSON.stringify({subagent_type:'tender-outline-writer',response_file:'工程册',description:'只返回执行角色已就绪，不读写文件'})}:text.includes('native-parse-fixture')?{type:'tool-call',id:'parse-call',name:'parse_document',arguments:JSON.stringify({file_name:'工程源.docx'})}:{type:'text',text:'原目录角色就绪'};}
+  else{const text=last?.content?.filter(b=>b.type==='text').map(b=>b.text).join('')??'';block=options.messages.some(m=>m.role==='system'&&m.content.some(b=>b.type==='text'&&b.text.includes('你是投标资料管理员')))?{type:'text',text:JSON.stringify({doc_type:'company_profile',statement:'本资料记录工程验证信息与公司介绍，仅验证整理入库与检索的接线情况。',questions:['公司介绍在哪里'],fields:{},extra:{}})}:text.includes('调用read_image读取图片：')?{type:'tool-call',id:'image-call',name:'read_image',arguments:JSON.stringify({file_path:text.match(/调用read_image读取图片：(.*?)。/)[1]})}:text.includes('native-ocr-fixture')?{type:'tool-call',id:'ocr-call',name:'parse_document',arguments:JSON.stringify({file_name:'工程源.png'})}:text.includes('native-question-fixture')?{type:'tool-call',id:'question-call',name:'ask_user_question',arguments:JSON.stringify({questions:[{id:'service',question:'服务期限是多少？',options:[{label:'三年'},{label:'五年'}]}]})}:text.includes('native-subagent-fixture')?{type:'tool-call',id:'child-call',name:'task',arguments:JSON.stringify({subagent_type:'tender-outline-writer',response_file:'工程册',description:'native-outline-first-write-fixture'})}:text.includes('native-parse-fixture')?{type:'tool-call',id:'parse-call',name:'parse_document',arguments:JSON.stringify({file_name:'工程源.docx'})}:{type:'text',text:'原目录角色就绪'};}
   yield {type:'block-start',index:0,blockType:block.type};yield {type:'block-end',index:0,block};yield {type:'finish',reason:{kind:block.type==='tool-call'?'tool-calls':'stop'}};
  }
 }
@@ -55,8 +62,13 @@ if(process.env.BIDV4_NATIVE_FIXTURE==='1')test('正式预设与官方dsh会话�
   await writeFile(join(work,'outline/tender-response-docs.md'),engineeringOutline);await writeFile(join(work,'outline/fragments/工程册.md'),engineeringOutline);
   await business(scope.ctx,'outline_begin',{task_id:tid,action_id:'engineering-outline'});
   assert.equal((await business(scope.ctx,'tool',{name:'outline_plan',parameters:{operation:'complete',volume:'工程册',root_titles:'工程目录'}},{taskId:tid,sessionId:id,callId:'engineering-plan'})).ok,true);
+  const outlineAction={action_id:'engineering-outline',start_seq:0,kind:'outline',session_id:id,task_id:tid,model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(outlineAction));
   h.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-subagent-fixture'}]}));await h.agent.whenIdle();await scope.ctx.sessions.flush(h.agent.session);
   assert.equal(h.agent.session.snapshotEvents().findLast(e=>e.type==='turn/end').data.reason.kind,'completed');assert.ok(requests.length>=3,JSON.stringify({requests:requests.map(o=>({last:o.messages.findLast(m=>m.role==='tool'||['human','user','user-question-reply'].includes(m.source?.kind)),tools:o.tools?.map(t=>t.name)})),events:h.agent.session.snapshotEvents().filter(e=>e.type==='tool/result')}));assert.ok(requests[0].tools.some(t=>t.name==='read_image'));assert.ok(requests.every(o=>o.provider==='fixture'&&o.model==='configured-model'));
+  const outlineChild=(await scope.ctx.subagents.listChildren(id))[0];assert.ok(outlineChild);const childObservation=await scope.ctx.sessionQuery.observeSession(outlineChild.id,{projectionMode:'none'});
+  try{const events=childObservation.events;assert.equal(events.find(e=>e.type==='tool/call').data.callId,'outline-fragment-write','The very first child step must write its assigned fragment');const result=callId=>events.find(e=>e.type==='tool/result'&&e.data.message.toolCallId===callId).data.message;assert.equal(result('outline-fragment-write').isError,false);for(const callId of ['outline-other-denied','outline-combined-denied']){assert.equal(result(callId).isError,true);assert.match(JSON.stringify(result(callId)),/目录子代理只允许写入本册指定fragment/)}}finally{childObservation[Symbol.dispose]()}
+  assert.match(await readFile(join(work,'outline/fragments/工程册.md'),'utf8'),/首步写入已验证/);await assert.rejects(readFile(join(work,'outline/fragments/越权册.md')),{code:'ENOENT'});assert.equal(await readFile(join(work,'outline/tender-response-docs.md'),'utf8'),engineeringOutline);
+  await rm(join(dataRoot,'actions',tid,'latest.json'));await runtime.applyStageTools(h.agent,'analyse');
   await writeFile(join(dataRoot,'workspace',tid,'sources','工程源.png'),Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64'));
   h.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-ocr-fixture'}]}));await h.agent.whenIdle();
   const parsed=await readFile(join(dataRoot,'workspace',tid,'work/parse/工程源.png/工程源.png.meta.json'),'utf8');assert.equal(JSON.parse(parsed).conversion,'vision');
@@ -71,8 +83,9 @@ if(process.env.BIDV4_NATIVE_FIXTURE==='1')test('正式预设与官方dsh会话�
   try{await runtime.ingestKnowledge(digital.id)}finally{runtime.select=select}
   const digitalState=await business(scope.ctx,'route',{method:'GET',path:'/kb/items/'+digital.id});
   assert.equal(digitalState.parse_status,'ready');assert.equal(digitalState.extract_status,'failed');assert.match(digitalState.content,/有效数字正文/);assert.match(digitalState.error,/模型配置不可用/);
+  const questionStart=h.agent.session.snapshotEvents().length;
   h.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-question-fixture'}]}));await h.agent.whenIdle();await scope.ctx.sessions.flush(h.agent.session);
-  const record={action_id:'probe',start_seq:0,created_at:Date.now(),task_id:tid,session_id:id,kind:'probe',model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(record));await writeFile(join(dataRoot,'actions',tid,'probe.json'),JSON.stringify(record));
+  const record={action_id:'probe',start_seq:questionStart,created_at:Date.now(),task_id:tid,session_id:id,kind:'probe',model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(record));await writeFile(join(dataRoot,'actions',tid,'probe.json'),JSON.stringify(record));
   let state=await runtime.state(tid);assert.equal(state.execution.state,'needs_input');assert.equal(state.execution.questions[0].callId,'question-call');
   await assert.rejects(runtime.answer(tid,id,{call_ids:['question-call'],batches:[{call_id:'question-call',answers:[]}]}),/问题与回答不一致/);
   await business(scope.ctx,'route',{method:'POST',path:'/kb/items/'+knowledgeId+'/retrigger'});await writeFile(join(dataRoot,'knowledge-jobs',knowledgeId+'.json'),JSON.stringify({id:knowledgeId,pid:2147483647}));

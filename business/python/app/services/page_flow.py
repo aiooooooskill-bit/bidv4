@@ -7,6 +7,9 @@ from .errors import BusinessError
 def digest(value):
     return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True).encode()).hexdigest()
 
+class FileChangedDuringRead(ValueError):
+    pass
+
 @lru_cache(maxsize=256)
 def _file_hash(path: str, fingerprint: tuple, cache_root: str):
     # The Python runner starts a fresh process per operation. Keep digests in the
@@ -22,7 +25,7 @@ def _file_hash(path: str, fingerprint: tuple, cache_root: str):
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             h.update(chunk)
     if _fingerprint(Path(path).stat()) != fingerprint:
-        raise ValueError('文件在读取期间已变化，请重试')
+        raise FileChangedDuringRead('文件在读取期间已变化，请重试')
     value = h.hexdigest()
     db.set_setting(key, json.dumps({'fingerprint': fingerprint, 'sha256': value}))
     return value
@@ -33,7 +36,14 @@ def _fingerprint(info):
 def file_hash(path: Path):
     from ..config import data_dir
     path = path.resolve()
-    return _file_hash(str(path), _fingerprint(path.stat()), str(data_dir()))
+    # Status polling can overlap a model's file write. Re-read a fresh version,
+    # and still reject continuous changes rather than caching a mixed digest.
+    for attempt in range(3):
+        try:
+            return _file_hash(str(path), _fingerprint(path.stat()), str(data_dir()))
+        except FileChangedDuringRead:
+            if attempt == 2:
+                raise
 
 def analysis_source_version(tid):
     selected = source_selection(tid)

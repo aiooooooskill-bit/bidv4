@@ -8,7 +8,7 @@ const root=fileURLToPath(new URL('..',import.meta.url));
 const text=node=>Array.isArray(node)?node.map(text).join(''):node&&typeof node==='object'?text(node.props?.children):node==null||typeof node==='boolean'?'':String(node);
 
 test('安装与启用不要求外部排版软件',async()=>{
- const result=await checkInstallation(root,{dshVersion:'0.2.0-rc.2'});
+ const result=await checkInstallation(root,{dshVersion:'0.2.1-rc.2'});
  assert.equal(result.ok,true,JSON.stringify(result.errors));
  assert.ok(!result.checks.some(c=>/LibreOffice|排版引擎/.test(c.name)));
  assert.equal(result.layout,undefined);

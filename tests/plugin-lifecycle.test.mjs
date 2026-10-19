@@ -4,11 +4,14 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,readdir,writeFile,symlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {randomUUID,createHash} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {loadLayeredEnv} from '@deepseek-ai/dsh-app-boot';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
 import {chatToolNames} from '../server/agent.mjs';
+import {subtaskTools} from '../server/native/preset.mjs';
+import {startSubtask} from '../server/native/tools.mjs';
 import {root,dataRoot,business} from '../server/native/business.mjs';
 
 const testName='完整官方Web插件：六阶段HTTP执行、卸载取消子Agent、宿主存活与重新加载';
@@ -18,17 +21,16 @@ const bounded=(promise,label)=>Promise.race([promise,new Promise((_,reject)=>{co
 
 if(process.env.BIDV4_WEB_FIXTURE!=='1')test('完整插件回归只使用临时应用与官方Web配置',{timeout:100000},()=>runIsolatedTest('plugin-lifecycle.test.mjs','BIDV4_WEB_FIXTURE',new RegExp(testName),90000));
 else test(testName,{timeout:80000},async()=>{
- let ctx,blockChild=false,missingArtifacts=false,skipValidation=false;
+ let ctx,blockChild=false,missingArtifacts=false,skipValidation=false,blockedChildren=0,cancelledChildren=0;
  const started=Promise.withResolvers(),cancelled=Promise.withResolvers(),requests=[];
  const call=(name,args)=>({name,args});
  const endpoint=createServer(async(req,res)=>{
   try{
-   let raw='';for await(const chunk of req)raw+=chunk;
-   const request=JSON.parse(raw);requests.push(request);
+   const request=await readJson(req);requests.push(request);
    const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
    res.writeHead(200,{'Content-Type':'text/event-stream'});
    if(text.includes('web-cancel-child-fixture')){
-    res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());started.resolve();return;
+    blockedChildren++;res.write(': waiting for cancellation\n\n');res.once('close',()=>{cancelledChildren++;cancelled.resolve()});started.resolve();return;
    }
    const currentText=request.messages.findLast(m=>m.role==='user'&&String(m.content).includes('页面输入：'))?.content??'';
    const payload=currentText.match(/页面输入：(\{[^\n]+\})/),kind=payload?JSON.parse(payload[1]).kind:null;
@@ -63,7 +65,7 @@ else test(testName,{timeout:80000},async()=>{
       [call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})],
      ];calls=sequence[step]??[];
     }
-    if(kind==='body'){if(blockChild&&step===0){res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());started.resolve();return;}calls=step===0?[call('docx_section_create',{path:'body/工程验证章节.docx',title:'工程验证章节',paragraphs:'工程验证原段落'})]:step===1?[call('validate_body',{section:'body/工程验证章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}
+    if(kind==='body'){calls=blockChild&&step===0?[call('task',{subagent_type:'tender-body-writer',description:'web-cancel-child-fixture'})]:step===0?[call('docx_section_create',{path:'body/工程验证章节.docx',title:'工程验证章节',paragraphs:'工程验证原段落'})]:step===1?[call('validate_body',{section:'body/工程验证章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}
     if(kind==='revise')calls=step===0?[call('docx_section_revise',{path:'body/工程验证章节.docx',edits:JSON.stringify([{para:2,action:'replace',find:'工程验证原段落',text:'工程验证修订段落'}])})]:step===1&&!skipValidation?[call('validate_body',{section:'body/工程验证章节.docx'})]:[];
    }
    const delta=calls.length?{tool_calls:calls.map((c,index)=>({index,id:'fixture-'+randomUUID(),type:'function',function:{name:c.name,arguments:JSON.stringify(c.args)}}))}:{content:'工程夹具执行结束'};
@@ -113,6 +115,11 @@ else test(testName,{timeout:80000},async()=>{
    await ctx.agentPresets.select(hostAgent.agent,defaultPreset);
    assert.ok(hostTools.get('bid_fixture_write',hostAgent.agent));assert.equal(hostTools.get('ooo_bidpliot_status',hostAgent.agent),undefined);
    assert.equal(requests.length,0,'Preset create/resume/select and status reads must not request a model');
+   const parent=await ctx.agents.create({sessionId:'child-surface-parent',meta:{cwd:root,agentPreset:'ooo-bidpliot'},agentOptions:model,setup:displaySetup});
+   try{for(const [role,expected]of Object.entries(subtaskTools)){
+    const before=requests.length;const child=await startSubtask(ctx,{parent:parent.agent,role,prompt:[{type:'text',text:'Return a brief acknowledgement for the child tool surface probe.'}],signal:AbortSignal.timeout(10000),label:role});
+    try{assert.equal((await child.result).stopReason,'completed');assert.equal(requests.length,before+1,role);assert.deepEqual((requests.at(-1).tools??[]).map(t=>t.function.name).sort(),[...expected].sort(),role+' must expose exactly its business tools');assert.equal(requests.at(-1).model,'fixture')}finally{await child.dispose()}
+   }}finally{await parent.dispose()}
   }finally{await hostAgent.dispose();removeProbe()}
   const entry=[...ctx.loader.entries()].find(e=>e.options.id==='ooo-bidpliot');assert.ok(entry?.fiber);
   const base='http://127.0.0.1:'+ctx.webServer.port;
@@ -151,11 +158,11 @@ else test(testName,{timeout:80000},async()=>{
   for(const kind of ['analyse','outline','guide','promises','body','revise']){
    const state=await api('/page-flow/'+tid);
    const payload={kind,request_id:randomUUID(),input_version:state.input_versions[kind],...(kind==='outline'?{page_target:120,numbering:'decimal'}:{}),...(kind==='analyse'?{main_file:'工程源.png',supplements:[]}:{}),...(['body','revise'].includes(kind)?{sections:state.body_sections}:{}),...(kind==='revise'?{instruction:'替换工程段落'}:{})};
-   const admitted=await api('/page-flow/'+tid+'/action',payload);sessions.push(admitted.session_id);
+   const requestStart=requests.length;const admitted=await api('/page-flow/'+tid+'/action',payload);sessions.push(admitted.session_id);
    await bounded(runtime.handles.get(admitted.session_id).agent.whenIdle(),kind);await runtime.settling.get(tid);
    const result=await api('/page-flow/'+tid);assert.equal(result.execution.state,'completed',JSON.stringify({execution:result.execution,tools:runtime.handles.get(admitted.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result').map(e=>e.data)}));
    const stageAgent=runtime.handles.get(admitted.session_id).agent;
-   if(kind==='outline'){assert.ok(hostTools.get('outline_plan',stageAgent));assert.ok(hostTools.get('task',stageAgent));assert.equal(hostTools.get('docx_section_create',stageAgent),undefined,'目录阶段不暴露正文制作工具')}
+   if(kind==='outline'){assert.ok(hostTools.get('outline_plan',stageAgent));assert.ok(hostTools.get('task',stageAgent));assert.ok(requests.slice(requestStart).every(request=>!(request.tools??[]).some(t=>t.function.name==='docx_section_create')),'目录阶段模型schema不暴露正文制作工具：'+JSON.stringify(requests.slice(requestStart).map(request=>(request.tools??[]).map(t=>t.function.name))));const rejected=await hostTools.execute({callId:randomUUID(),name:'docx_section_create',arguments:{path:'body/禁止目录阶段创建.docx',title:'禁止',paragraphs:'禁止'},agent:stageAgent,signal:AbortSignal.timeout(10000)});assert.equal(rejected.isError,true);assert.match(rejected.error.message,/目录阶段不能修改正文或制作准备/)}
    if(['guide','body','revise'].includes(kind))assert.ok(hostTools.get('docx_section_create',stageAgent),'离开目录阶段后恢复原正文能力');
    const errors=runtime.handles.get(admitted.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result'&&(e.data.message.isError||e.data.message.content.some(b=>b.type==='text'&&/^\[(发布失败|创建失败|修订失败|合册失败)\]/.test(b.text))));assert.deepEqual(errors,[],kind);
   }
@@ -262,17 +269,20 @@ else test(testName,{timeout:80000},async()=>{
   await api('/page-flow/'+tid+'/stop',{session_id:stopping.execution.session_id,action_id:stopping.execution.action_id});
   assert.equal((await api('/page-flow/'+tid)).execution.state,'stopped');
   assert.ok(runtime.handles.get(stopping.execution.session_id).agent.session.snapshotEvents().every(e=>e.type!=='bid/action-stop'));
-  await entry.update({disabled:true});await ctx.loader.await();await bounded(cancelled.promise,'Child cancellation');
+  console.log('lifecycle checkpoint: parent stop complete');await bounded(cancelled.promise,'Stopped child cancellation');assert.equal(cancelledChildren,1);assert.ok(ctx.agents.list().every(agent=>agent.session.header.parentSession!==stopping.execution.session_id||agent.status!=='running'),'Parent stop leaves no running child');
+  const unloadState=await api('/page-flow/'+tid);await api('/page-flow/'+tid+'/action',{kind:'body',request_id:randomUUID(),input_version:unloadState.input_versions.body,sections:unloadState.body_sections});
+  await bounded((async()=>{while(blockedChildren<2)await new Promise(resolve=>setTimeout(resolve,20))})(),'Unload child startup');
+  console.log('lifecycle checkpoint: unloading active child');await entry.update({disabled:true});await ctx.loader.await();console.log('lifecycle checkpoint: active child unloaded');await bounded((async()=>{while(cancelledChildren<2)await new Promise(resolve=>setTimeout(resolve,20))})(),'Unload child cancellation');assert.equal(cancelledChildren,2,'Unloading an active plugin must also cancel its managed child');
   assert.equal(runtime.handles.size,0);assert.equal(runtime.settling.size,0);assert.equal(ctx.get('bidBusiness'),undefined);assert.deepEqual(await readdir(join(dataRoot,'locks')),[]);
   assert.equal((await fetch(base+'/api/bidv4/tasks',{headers:{Cookie:cookie}})).status,404);
   const host=await ctx.agents.create({sessionId:'host-after-plugin-unload',meta:{cwd:root},agentOptions:{provider:'fixture',model:'fixture'}});
   try{host.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'Host remains usable'}]}));await host.agent.whenIdle();assert.equal(host.agent.session.snapshotEvents().findLast(e=>e.type==='turn/end').data.reason.kind,'completed')}finally{await host.dispose()}
-  await entry.update({disabled:false});await ctx.loader.await();
+  await entry.update({disabled:false});await ctx.loader.await();console.log('lifecycle checkpoint: plugin reloaded');
   assert.ok(ctx.get('bidBusiness'),JSON.stringify(ctx.logger.buffer.slice(-30).map(e=>({name:e.name,args:e.args.map(String)}))));assert.notEqual(ctx.get('bidBusiness'),runtime);
   assert.equal((await api('/tasks')).tasks.length,3);
   const recovered=await api('/page-flow/'+tid);assert.deepEqual(recovered.body_files.sort(),state.body_files.sort());assert.equal(recovered.execution.state,'stopped');
   assert.ok(requests.length>6);assert.equal(sessions.length,6);
  }finally{
-  await ctx?.fiber.dispose();endpoint.closeAllConnections();await new Promise(resolve=>endpoint.close(resolve));
+  console.log('lifecycle checkpoint: host shutdown');await ctx?.fiber.dispose();console.log('lifecycle checkpoint: host shutdown complete');endpoint.closeAllConnections();await new Promise(resolve=>endpoint.close(resolve));
  }
 });

@@ -25,6 +25,7 @@ export async function createBusinessScope(parent,dataRoot){
   ['@deepseek-ai/dsh-session',{}],
   ['@deepseek-ai/dsh-session-query-sqlite',{path:':memory:',openAt:'never'}],
   ['@deepseek-ai/dsh-system-prompt',{includeHarnessIdentity:false,includeRuntimeContext:false}],
+  ['@deepseek-ai/dsh-working-directory',{defaultDirectory:dataRoot}],
   ['@deepseek-ai/dsh-tools',{}],['@deepseek-ai/dsh-skill',{}],['@deepseek-ai/dsh-agent',{}],
   ['@deepseek-ai/dsh-session-persistence-jsonl',{root:join(dataRoot,'sessions'),compression:'none'}],
   ['@deepseek-ai/dsh-agent-preset-registry',{default:'ooo-bidpliot'}],
@@ -41,9 +42,10 @@ export async function createBusinessScope(parent,dataRoot){
  scope.plugin({name:'ooo-bidpliot-business-runtime',async apply(ctx){
   try{
    for(const [name,config]of plugins){const module=await import(name);await ctx.plugin(module.default??module,config)}
-   ctx.inject(['agents','agentLoop','sessions','sessionQuery','sessionPersistence','sessionProjections','attachments','agentPresets','subagents','tools','systemPrompt','skills','userQuestions','llm','agentDefaultModel','fs','subprocess','tokenMeter','compaction','toolResultPruner'],context=>{ready.resolve(context)});
+   ctx.inject(['agents','agentLoop','sessions','sessionQuery','sessionPersistence','sessionProjections','attachments','agentPresets','subagents','tools','systemPrompt','workingDirectory','skills','userQuestions','llm','agentDefaultModel','fs','subprocess','tokenMeter','compaction','toolResultPruner'],context=>{ready.resolve(context)});
   }catch(error){ready.reject(error);throw error}
  }});
- return {ctx:await ready.promise,close};
+ const timer=setTimeout(()=>ready.reject(new Error('Business fixture services unavailable: '+JSON.stringify(scope.logger.buffer.slice(-20).map(entry=>({name:entry.name,args:entry.args.map(String)}))))),10000);
+ try{return {ctx:await ready.promise,close}}finally{clearTimeout(timer)}
  }catch(error){await close();throw error}
 }

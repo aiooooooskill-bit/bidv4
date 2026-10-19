@@ -3,14 +3,15 @@ import {resolve,join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {business,dataRoot,root,BusinessError} from './business.mjs';
-import {transcribe,subagentFailure} from './tools.mjs';
+import {transcribe,subagentFailure,startSubtask} from './tools.mjs';
 import {analysisProgress} from '../../shared/analysis-progress.js';
 import {actionSatisfied} from '../../shared/delivery-status.js';
 import {installExecutionGuard} from './execution-guard.mjs';
 import {jsonResponse} from './markdown.mjs';
 import {Workflows} from './workflow.mjs';
 import {chatToolNames} from '../agent.mjs';
-import {presetDefinition} from './preset.mjs';
+import {presetDefinition,subtaskProviderNames} from './preset.mjs';
+import {apply as applySpawnProvider} from '@deepseek-ai/dsh-subagent-spawn-in-process';
 import {conversationTasks,taskForAgent} from './conversations.mjs';
 const actions=join(dataRoot,'actions'),locks=join(dataRoot,'locks'),knowledgeJobs=join(dataRoot,'knowledge-jobs');
 const requiredAnalysis=['structure.md','requirements-submission.md','requirements-business.md','requirements-qualification.md','evaluation.md','requirements-format.md','disqualification.md','clarifications.md'];
@@ -24,7 +25,7 @@ function eventsView(events,questions,live){
  return {state,error:reason?.kind==='error'?reason.error?.message:state==='failed'?'执行中断，成果已保留，请读取成果后重新发起所需阶段。':undefined,questions:pending};
 }
 export class BusinessRuntime{
- constructor(ctx){this.ctx=ctx;this.settling=new Map();this.handles=new Map();this.admissions=new Set();this.pendingHandles=new Map();this.knowledge=new Map();this.closed=false;this.presetDisposers=[];this.stageTools=new Map();this.workflows=new Workflows(this)}
+ constructor(ctx){this.ctx=ctx;this.settling=new Map();this.executionOwners=new Map();this.handles=new Map();this.admissions=new Set();this.pendingHandles=new Map();this.knowledge=new Map();this.closed=false;this.presetDisposers=[];this.stageTools=new Map();this.workflows=new Workflows(this)}
  assertOpen(){if(this.closed)throw new BusinessError(503,'ooo-bidpliot 正在关闭，请重新启用后继续')}
  admit(tid,message){this.assertOpen();if(this.admissions.has(tid))throw new BusinessError(409,message);this.admissions.add(tid)}
  release(tid){this.admissions.delete(tid);if(!this.admissions.size)this.admissionDrain?.resolve()}
@@ -37,20 +38,47 @@ export class BusinessRuntime{
    try{process.kill(job.pid,0)}catch(e){if(e.code!=='ESRCH')throw e;await business(this.ctx,'kb_recover',{id:job.id});await unlink(path)}
   }
   this.toolNames=(await business(this.ctx,'schemas')).map(s=>s.name);
+  for(const providerName of subtaskProviderNames)applySpawnProvider(this.ctx,{providerName});
   this.presetDisposers.push(await this.ctx.agentPresets.register(presetDefinition));
   await mkdir(join(dataRoot,'conversations'),{recursive:true});
   for(const name of await readdir(join(dataRoot,'conversations'))){const value=await jsonFile(join(dataRoot,'conversations',name));conversationTasks.set(value.session_id,value.task_id)}
-  this.continuationOff=this.ctx.on('agent/pre-step',async({agent},next)=>{const tid=taskForAgent(agent);if(tid){const record=await jsonFile(join(actions,tid,'latest.json'));if(record?.session_id===agent.id)this.applyStageTools(agent,record.kind);if(record?.session_id===agent.id&&record.outcome?.state==='needs_input'){const questions=this.ctx.sessionProjections.snapshot(agent.session,['userQuestions']).values.userQuestions?.active??[];if(!questions.some(q=>q.state==='continued')){await this.updateRecord(record,{outcome:null,end_seq:null});this.track(await this.handle(record),tid);if((await this.workflows.snapshot(tid))?.state==='needs_input')this.workflows.resumeAfter(tid,agent)}}}return next()},{global:true});
+  this.continuationOff=this.ctx.on('agent/pre-step',async({agent,messages},next)=>{
+   const tid=taskForAgent(agent);
+   if(tid){
+    const owner=this.executionOwners.get(tid);
+    if(owner?.agent===agent&&!owner.waitingForIdle)await this.settling.get(tid);
+    const record=await jsonFile(join(actions,tid,'latest.json'));
+    if(record?.session_id===agent.id){
+     await this.applyStageTools(agent,record.kind);
+     const previous=record.outcome??this.executionView(record,agent);
+     if(previous.state==='needs_input'){
+      const calls=new Set(previous.questions.map(q=>q.callId));
+      const replies=new Set(messages.filter(m=>m.source.kind==='user-question-reply'&&calls.has(m.source.callId)).map(m=>m.source.callId));
+      const questions=this.ctx.sessionProjections.snapshot(agent.session,['userQuestions']).values.userQuestions?.active??[];
+      if(replies.size||!questions.some(q=>calls.has(q.callId)&&q.state==='continued')){
+       await this.updateRecord(record,{outcome:null,end_seq:null,start_seq:agent.session.snapshotEvents().findLast(e=>e.type==='turn/start').seq});
+       this.track(await this.handle(record),tid,record.action_id);
+       const workflow=await this.workflows.snapshot(tid);
+       if(workflow?.action_id===record.action_id&&['running','needs_input'].includes(workflow.state))this.workflows.resumeAfter(tid,agent);
+      }
+     }
+    }
+   }
+   return next();
+  },{global:true});
   this.requestOff=this.ctx.on('agent/request',async({agent},next)=>{const config=await next(),tid=taskForAgent(agent);if(!tid)return config;const record=await jsonFile(join(actions,tid,'latest.json'));if(record?.session_id!==agent.id||record.end_seq!=null||record.stopped_at)return config;const model=await this.select(record.kind,config);if(JSON.stringify(model)!==JSON.stringify(record.model))await this.updateRecord(record,{model});return record.kind==='review'?{...config,maxTokens:model.maxTokens}:config},{global:true});
   this.guardOff=installExecutionGuard(this.ctx,(tid,sessionId,message)=>this.preparationProblem(tid,sessionId,message));
 
  }
- applyStageTools(agent,kind){
-  const mode=kind==='review'?'review':kind==='outline'?'outline':'default',current=this.stageTools.get(agent.id);if(current?.mode===mode&&current.agent===agent)return;
-  current?.fiber?.dispose();
+ async applyStageTools(agent,kind){
+  const mode=kind==='review'?'review':kind==='outline'?'outline':'default',current=this.stageTools.get(agent.id);if(current?.mode===mode&&current.agent===agent)return current.ready;
+  if(current?.fiber){await current.fiber.dispose();while(current.fiber.inertia)await current.fiber.inertia}
   const allow=mode==='review'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','prepare_review_documents','review_basis','review_batch','save_review_batch','finish_review_report']:mode==='outline'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','task','check_pipeline_state','outline_plan','check_outline','assemble_tender','read_artifact','update_task_progress']:null;
-  const fiber=allow?agent.ctx.inject(['tools'],ctx=>{ctx.tools.restrict({allow})}):null;
-  this.stageTools.set(agent.id,{agent,mode,fiber});
+  const ready=Promise.withResolvers();
+  const fiber=allow?agent.ctx.inject(['tools'],ctx=>{try{ctx.tools.restrict({allow});ready.resolve()}catch(error){ready.reject(error);throw error}}):null;
+  if(!allow)ready.resolve();
+  this.stageTools.set(agent.id,{agent,mode,fiber,ready:ready.promise});
+  await ready.promise;
  }
  async skillsLink(cwd){await mkdir(cwd,{recursive:true});try{await symlink(join(root,'business/python/app/skills'),join(cwd,'skills'),process.platform==='win32'?'junction':'dir')}catch(e){if(e.code!=='EEXIST')throw e}}
  modelSelection(agent){
@@ -90,10 +118,16 @@ export class BusinessRuntime{
   const dir=join(actions,record.task_id);for(const name of (await readdir(dir)).filter(n=>n.endsWith('.json'))){const path=join(dir,name),stored=await jsonFile(path);if(stored.action_id===record.action_id)await atomic(path,{...stored,...patch})}
  }
  executionView(record,agent){
-  const events=agent.session.snapshotEvents().filter(e=>e.seq>=record.start_seq&&(record.end_seq==null||e.seq<=record.end_seq));
+  const owner=this.executionOwners.get(record.task_id),owned=owner?.actionId===record.action_id&&owner.agent===agent;
+  const tail=agent.session.snapshotEvents().filter(e=>e.seq>=record.start_seq);
+  // An unowned unfinished record cannot claim later turns in the same conversation.
+  const endSeq=record.end_seq??(owned?owner.endSeq:tail.find(e=>e.type==='turn/end')?.seq);
+  const events=tail.filter(e=>endSeq==null||e.seq<=endSeq);
   const calls=new Set(events.filter(e=>e.type==='tool/call').map(e=>e.data.callId));
-  const questions=this.ctx.sessionProjections.snapshot(agent.session,['userQuestions']).values.userQuestions??{};
-  return eventsView(events,{...questions,active:(questions.active??[]).filter(q=>calls.has(q.callId))},record.end_seq==null?agent:undefined);
+  const questions=owned&&!owner.waitingForIdle?owner.questions:this.ctx.sessionProjections.snapshot(agent.session,['userQuestions']).values.userQuestions??{};
+  const active=(questions.active??[]).filter(q=>calls.has(q.callId));
+  if(record.end_seq==null&&!owned)return {state:active.some(q=>q.state==='continued')?'needs_input':'failed',error:active.some(q=>q.state==='continued')?undefined:'执行中断，成果已保留，请读取成果后重新发起所需阶段。',questions:active.filter(q=>q.state==='continued')};
+  return eventsView(events,{...questions,active},record.end_seq==null&&owned&&owner.waitingForIdle?agent:undefined);
  }
  async projection(record,state){
   state??=await business(this.ctx,'state',{task_id:record.task_id});
@@ -196,9 +230,9 @@ export class BusinessRuntime{
     const prompt=instructions[payload.kind]+(payload.kind==='review'?'\n审核中的招标条款歧义、来源冲突、外部事实或证明不足，直接在报告“需确认”中列出原文依据、影响及尚待确认的范围，继续完整审核，不调用ask_user_question让用户逐项裁决。只有缺少开始审核所必需的文件或无法识别受审对象才提问；修改业务规则或替用户作新的承诺须询问。':'')+'\n页面输入：'+JSON.stringify(payload)+'\n制作状态：'+JSON.stringify(state.build_preparation)+'；目录篇幅：'+JSON.stringify(state.directory?.content.page_target??null)+(bidderSnapshot?'\n已确认投标主体信息（唯一身份依据）：'+JSON.stringify(bidderSnapshot)+'。先读取此快照，已有公司地址、电话、传真、邮箱、签字代表姓名和职务及签署日期直接使用，不再次提问。缺失或项目专属承诺才提问。所有公司资质与业绩只检索本主体；写作素材全库共用，注入后修订并检查旧项目和旧主体名称。':'')+'\n当前任务绝对路径：'+cwd+'；来源集合以work/parse/sources.json为准。';
     const outlineContext=payload.kind==='outline'?await business(this.ctx,'outline_begin',{task_id:tid,action_id:key}):null;
     const stagePrompt=outlineContext?prompt+'\n本轮目录派发/汇总契约：'+JSON.stringify(outlineContext):prompt;
-    record.prompt=stagePrompt;await this.updateRecord(record,{prompt:stagePrompt});this.applyStageTools(handle.agent,payload.kind);
+    record.prompt=stagePrompt;await this.updateRecord(record,{prompt:stagePrompt});await this.applyStageTools(handle.agent,payload.kind);
     if(!options.agent)handle.agent.followup(createUserMessage({content:[{type:'text',text:stagePrompt}],source:{kind:'human'}}));
-    this.track(handle,tid);return {session_id:sessionId,action_id:key,instructions:stagePrompt,replayed:false};
+    this.track(handle,tid,key);return {session_id:sessionId,action_id:key,instructions:stagePrompt,replayed:false};
    }catch(e){await unlink(join(locks,tid)).catch(()=>{});await unlink(path).catch(()=>{});if(previous)await atomic(join(dir,'latest.json'),previous);else await unlink(join(dir,'latest.json')).catch(()=>{});throw e}
   }finally{this.release(tid)}
  }
@@ -218,22 +252,45 @@ export class BusinessRuntime{
    if(handle.agent.status==='running')throw new BusinessError(409,'当前审查尚未结束');
    await writeFile(join(locks,tid),String(process.pid),{flag:'wx'});
    try{
-    await this.updateRecord(record,{outcome:null,end_seq:null,finished_state:undefined,review_error:undefined,continuations:(record.continuations??0)+1});
+    await this.updateRecord(record,{outcome:null,end_seq:null,start_seq:handle.agent.session.snapshotEvents().length,finished_state:undefined,review_error:undefined,continuations:(record.continuations??0)+1});
     this.assertOpen();if(this.workflows.records.get(tid)?.state==='stopped')throw new BusinessError(409,'自动流程已停止');
     handle.agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:'本轮审查尚未完成，继续同一执行和本轮已保存批次，不调用run、不重新开始审查。用review_batch读取当前未完成批次；已保存结果保留，需要更正时回读对应batch_id。必须继续到complete，再调用finish_review_report生成正式报告。单次回复结束不代表审查完成，不因估计令牌预算而提前收尾；上下文由宿主管理。全部完成后展示真实报告摘要与整册Word下载链接。'}]}));
-    this.track(handle,tid);
+    this.track(handle,tid,record.action_id);
    }catch(error){await unlink(join(locks,tid)).catch(()=>{});throw error}
   }finally{this.release(tid)}
  }
  async finishReview(record,handle){let finished=this.executionView(record,handle.agent).state;let review_error;if(finished==='completed'&&!record.stopped_at){try{await business(this.ctx,'review_finish',{task_id:record.task_id,session_id:record.session_id})}catch(error){finished='failed';review_error=error.message}}await this.writeReviewState(record,finished,review_error)}
  async recoverReview(record){if(record.finished_state||this.settling.has(record.task_id))return false;const handle=await this.handle(record);if(handle.agent.status==='running')return false;await this.finishReview(record,handle);return true}
- track(handle,tid){const done=handle.agent.whenIdle().then(async()=>{await this.ctx.sessions.flush(handle.agent.session);let record=await jsonFile(join(actions,tid,'latest.json'));if(record){const view=this.executionView(record,handle.agent);await this.updateRecord(record,{outcome:{state:view.state,error:view.error,questions:view.questions},...(view.state==='needs_input'?{}:{end_seq:handle.agent.session.snapshotEvents().at(-1)?.seq})});record=await jsonFile(join(actions,tid,'latest.json'))}if(record?.kind==='review')await this.finishReview(record,handle);if(record?.kind==='analyse')await this.freezeAnalysis(tid,record.session_id);if(['guide','promises'].includes(record?.kind)&&this.executionView(record,handle.agent).state==='completed'){try{await business(this.ctx,'record_preparation',{task_id:tid,stage:record.kind,session_id:record.session_id})}catch(error){await this.preparationProblem(tid,record.session_id,error.message)}}}).catch(e=>{console.error('ooo-bidpliot execution persistence:',e.message)}).finally(async()=>{await unlink(join(locks,tid)).catch(()=>{});if(this.settling.get(tid)===done)this.settling.delete(tid)});this.settling.set(tid,done)}
+ track(handle,tid,actionId){
+  const owner={actionId,agent:handle.agent,waitingForIdle:true};this.executionOwners.set(tid,owner);
+  const done=handle.agent.whenIdle().then(async()=>{
+   owner.waitingForIdle=false;owner.endSeq=handle.agent.session.snapshotEvents().at(-1)?.seq;
+   owner.questions=structuredClone(this.ctx.sessionProjections.snapshot(handle.agent.session,['userQuestions']).values.userQuestions??{});
+   await this.ctx.sessions.flush(handle.agent.session);
+   let record=await jsonFile(join(actions,tid,'latest.json'));if(record?.action_id!==actionId)return;
+   const view=this.executionView(record,handle.agent);
+   await this.updateRecord(record,{outcome:{state:view.state,error:view.error,questions:view.questions},...(view.state==='needs_input'?{}:{end_seq:owner.endSeq})});
+   record=await jsonFile(join(actions,tid,'latest.json'));
+   if(record.kind==='review')await this.finishReview(record,handle);
+   if(record.kind==='analyse')await this.freezeAnalysis(tid,record.session_id);
+   if(['guide','promises'].includes(record.kind)&&this.executionView(record,handle.agent).state==='completed'){
+    try{await business(this.ctx,'record_preparation',{task_id:tid,stage:record.kind,session_id:record.session_id})}catch(error){await this.preparationProblem(tid,record.session_id,error.message)}
+   }
+   record=await jsonFile(join(actions,tid,'latest.json'));
+   if(record?.action_id===actionId)return this.projection(record);
+  }).catch(e=>{console.error('ooo-bidpliot execution persistence:',e.message)}).finally(async()=>{
+   await unlink(join(locks,tid)).catch(()=>{});
+   if(this.settling.get(tid)===done){this.settling.delete(tid);this.executionOwners.delete(tid)}
+  });
+  this.settling.set(tid,done);
+ }
+
  async stop(tid,sessionId,actionId){const dir=join(actions,tid),record=await jsonFile(join(dir,'latest.json'));if(record?.session_id!==sessionId||(actionId&&record.action_id!==actionId))throw new BusinessError(409,'当前执行已变化');const handle=await this.handle(record);record.stopped_at=Date.now();await this.updateRecord(record,{stopped_at:record.stopped_at});handle.agent.cancel({kind:'user'});await handle.agent.whenIdle();await this.ctx.sessions.flush(handle.agent.session);await this.settling.get(tid);await this.freezeAnalysis(tid,sessionId);await unlink(join(locks,tid)).catch(()=>{});return {ok:true}}
  async answer(tid,sessionId,body){const record=await jsonFile(join(actions,tid,'latest.json'));if(record?.session_id!==sessionId)throw new BusinessError(409,'当前问题已变化');const handle=await this.handle(record);const view=await this.projection(record);const current=view.questions.map(q=>q.callId);if(view.state!=='needs_input'||JSON.stringify(current)!==JSON.stringify(body.call_ids))throw new BusinessError(409,'本次问题已变化，请读取最新问题');
   if(!Array.isArray(body.batches)||body.batches.length!==view.questions.length)throw new BusinessError(422,'请填写全部具体选项');
   const batches=view.questions.map(q=>{const matches=body.batches.filter(b=>b.call_id===q.callId);const answers=matches[0]?.answers;if(matches.length!==1||!Array.isArray(answers)||answers.length!==q.questions.length||new Set(answers.map(a=>a.id)).size!==answers.length||q.questions.some(item=>!answers.some(a=>a.id===item.id)))throw new BusinessError(422,'问题与回答不一致');for(const item of q.questions){const a=answers.find(a=>a.id===item.id);if(!Array.isArray(a.selected)||a.selected.some(v=>typeof v!=='string'||!item.options?.some(o=>o.label===v))||new Set(a.selected).size!==a.selected.length||(!item.multiSelect&&a.selected.length>1)||(a.custom!==undefined&&typeof a.custom!=='string')||(!a.selected.length&&!a.custom?.trim()))throw new BusinessError(422,'请填写有效的选择或说明')}return {callId:q.callId,answers}});
   await this.settling.get(tid);await writeFile(join(locks,tid),String(process.pid),{flag:'wx'});
-  try{await this.updateRecord(record,{outcome:null,end_seq:null});if(record.kind==='review')await this.writeReviewState(record,undefined);for(const batch of batches){if(!this.ctx.userQuestions.answer(handle.agent,batch.callId,{answers:batch.answers}))throw new BusinessError(409,'问题已结束')}this.track(handle,tid);return {ok:true}}catch(e){await unlink(join(locks,tid)).catch(()=>{});throw e}
+  try{await this.updateRecord(record,{outcome:null,end_seq:null,start_seq:handle.agent.status==='running'?handle.agent.session.snapshotEvents().findLast(e=>e.type==='turn/start').seq:handle.agent.session.snapshotEvents().length});if(record.kind==='review')await this.writeReviewState(record,undefined);for(const batch of batches){if(!this.ctx.userQuestions.answer(handle.agent,batch.callId,{answers:batch.answers}))throw new BusinessError(409,'问题已结束')}this.track(handle,tid,record.action_id);return {ok:true}}catch(e){await unlink(join(locks,tid)).catch(()=>{});throw e}
  }
 
  ingestKnowledge(id){
@@ -254,8 +311,8 @@ export class BusinessRuntime{
    await business(this.ctx,'kb_parsed',{id},{signal});stage='extract';
    await business(this.ctx,'kb_images',{id},{signal});
    handle??=await createAgent();
-   const p=await business(this.ctx,'kb_prompt',{id},{signal});const run=await this.ctx.subagents.start('spawn',{parent:handle.agent,signal,persona:p.system,toolFilter:{allow:[]},prompt:[{type:'text',text:p.prompt}]});
-   try{const result=await run.result;if(result.stopReason!=='completed')throw subagentFailure(run,result,'资料整理未完成');const text=result.output.filter(b=>b.type==='text').map(b=>b.text).join('');await business(this.ctx,'kb_finish',{id,metadata:jsonResponse(text)},{signal})}finally{await run.dispose()}
+   const p=await business(this.ctx,'kb_prompt',{id},{signal});const run=await startSubtask(this.ctx,{parent:handle.agent,signal,role:'knowledge',label:'投标资料整理',prompt:[{type:'text',text:p.prompt}]});
+   try{const result=await run.result;signal.throwIfAborted();if(result.stopReason!=='completed')throw await subagentFailure(this.ctx,run,result,'资料整理未完成');const text=result.output.filter(b=>b.type==='text').map(b=>b.text).join('');await business(this.ctx,'kb_finish',{id,metadata:jsonResponse(text)},{signal})}finally{await run.dispose()}
   }catch(e){await business(this.ctx,'kb_fail',{id,stage,error:signal.aborted?'资料处理已中断，请重试':e.message})}finally{await handle?.dispose()}
  }
  close(){

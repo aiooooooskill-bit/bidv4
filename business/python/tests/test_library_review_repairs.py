@@ -136,7 +136,7 @@ def test_consumed_certificate_versions_invalidate_only_related_chapters_and_volu
 
 def test_directory_edit_does_not_invalidate_other_ready_chapter(env):
     tid,root,content=env;complete_sections(tid,root)
-    content['response_documents'][0]['directory'][1]['节点概述']='只更新服务保障'
+    next(node for node in content['response_documents'][0]['directory'] if node['目录名称']=='服务保障')['节点概述']='只更新服务保障'
     statuses=build_state.snapshot(tid)['body_sections']
     assert [s['status'] for s in statuses]==['ready','stale']
 

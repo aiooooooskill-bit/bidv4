@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,symlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {randomUUID} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {loadLayeredEnv} from '@deepseek-ai/dsh-app-boot';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
 import {root} from '../server/native/business.mjs';
+import {startSubtask} from '../server/native/tools.mjs';
 
 const testName='正式Web预设：自动压缩、超限恢复、子Agent与冷恢复均使用官方压缩服务';
 const message=text=>createUserMessage({source:{kind:'human'},content:[{type:'text',text}]});
@@ -18,8 +20,7 @@ else test(testName,{timeout:50000},async()=>{
  const original=Array.from({length:150},(_,i)=>`evidence ${i} `+'原始取证内容'.repeat(40)).join('\n');
  const endpoint=createServer(async(req,res)=>{
   try{
-   let raw='';for await(const chunk of req)raw+=chunk;
-   const request=JSON.parse(raw);requests.push(request);
+   const request=await readJson(req);requests.push(request);
    const last=request.messages.at(-1);
    const summarizing=JSON.stringify(last).includes('You are now acting as a compaction engine');
    if(mode==='overflow'&&!summarizing&&!overflowed){
@@ -85,8 +86,9 @@ else test(testName,{timeout:50000},async()=>{
   assert.equal(requests.length-before,3,'首次超限、官方摘要、自动重试共三次请求');
   mode='pressure';
   const parent=await create('preset-parent');
-  const child=await ctx.subagents.start('spawn',{parent:parent.agent,signal:AbortSignal.timeout(10000),toolFilter:{allow:['read']},prompt:[{type:'text',text:'CHILD '+'子任务必须保留的背景'.repeat(20000)}]});
-  try{const result=await child.result;assert.equal(result.stopReason,'completed');assertBackend(child.localAgent);assertCompacted(child.localAgent)}finally{await child.dispose()}
+  const child=await startSubtask(ctx,{parent:parent.agent,role:'tender-outline-writer',prompt:[{type:'text',text:'CHILD '+'子任务必须保留的背景'.repeat(20000)}],signal:AbortSignal.timeout(10000),label:'compaction-child'});
+  const activeChild=ctx.agents.get(child.childId);assert.ok(activeChild);assertBackend(activeChild);
+  try{const result=await child.result;assert.equal(result.stopReason,'completed');assertCompacted(activeChild)}finally{await child.dispose()}
   const unrelated=await ctx.agents.create({sessionId:'preset-unrelated',meta:{cwd:root,agentPreset:'standard'},agentOptions:model,setup:async c=>{await ctx.agentPresets.mount(c,'standard')}});handles.push(unrelated);
   assert.notEqual(ctx.agentPresets.serviceFor(unrelated.agent,'compaction'),ctx.agentPresets.serviceFor(parent.agent,'compaction'));
   assert.equal(unrelated.agent.session.snapshotEvents().some(e=>e.type.startsWith('compaction/')),false);

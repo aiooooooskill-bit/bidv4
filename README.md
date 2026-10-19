@@ -4,7 +4,9 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前发行版本为 **0.1.5**，修改内容见 [版本说明](CHANGELOG.md)。默认通过 GitHub 发布附件的 TGZ 地址安装；本地固定目录安装作为用户明确选择的方式。数据库与生成文件保存在实际插件安装目录的 `data/`。交付组成与验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.7**，对应的 **DeepSeek Harness 客户端版本为 0.2.1-rc.2**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在实际插件安装目录的 `data/`，更新须保留原路径及其中数据。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+
+0.1.7 通过 GitHub Release 交付完整安装包，由用户自行安装。本次发布不更新生产插件或主项目运行环境；目录入口、原生会话恢复及停止流程的验证均在独立 dsh Web 环境进行。
 
 ## 项目 Agent 对话
 
@@ -14,25 +16,41 @@
 
 工作台的「自动完成」按解析解读、目录、写作准备与正文合册、审查连续执行，并复用仍有效的成果。缺少主体信息或具体承诺时暂停，用户在任一入口补充后继续；失败和停止保留已有文件。完成后可查看报告或下载整册。自动流程状态位于 `data/workflows/`，执行记录仍只有宿主原生日志一份。此改动不转换此前私有存储中的历史会话。
 
-## GitHub 安装包安装
+## 安装版本要求
 
-在 DeepSeek Harness 客户端的「插件 → 添加插件」中填写以下发布附件地址：
+本版本要求 DeepSeek Harness `0.2.1-rc.2`、Cordis `4.0.5`、loader `1.0.6`，不保留旧宿主兼容。官方宿主模块由客户端提供；插件安装包不再安装一套旧核心。开发与独立目录准备通过 devDependencies 提供相同版本的 SDK。浏览器 React 由宿主客户端模块提供，不作为桌面后端 Node 依赖检查。
 
-```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.5/ooo-bidpliot-0.1.5.tgz
+完整发行物包括 `ooo-bidpliot-0.1.7.tgz`、`ooo-bidpliot-0.1.7.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24+、Python 3.12+、uv 和可访问依赖仓库的网络。
+
+URL/压缩包安装的业务数据位于宿主管理的插件安装目录内，更新时必须保留该目录的 `data/` 及宿主会话、附件和工作区。不要把卸载后换目录重装当作数据更新。
+
+## GitHub 发行包安装
+
+安装本版本时，对本次官方 CLI 安装进程设置 `PNPM_CONFIG_SIDE_EFFECTS_CACHE=false`，让锁定的 Python 环境在实际安装位置重新准备。已实测 pnpm 11.25.0 的构建缓存会遗漏虚拟环境的解释器链接，导致同一 TGZ 重复安装后自检失败；仅批准构建脚本不足以避免此问题。此变量只影响当前安装进程，不修改全局配置或清理缓存。
+
+官方 Web profile 的命令示例：
+
+```sh
+PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.7/ooo-bidpliot-0.1.7.tgz"
 ```
 
-宿主下载包并安装 Node 依赖；安装脚本调用 uv 根据锁文件准备 Python 业务环境。若宿主提示构建脚本待授权，按提示允许本插件的安装脚本后重试。需要本机已有 Node.js 24+、Python 3.12+ 和 uv，安装时可联网访问依赖仓库。安装后检查插件版本、页面入口和同名 Agent 预设均正常。
+已有桌面安装使用客户端自身的官方 CLI，指定原 `desktop` profile，同样传入上述变量。不要向正在运行的客户端安装或更新。完整 TGZ 地址为：
 
-桌面客户端内置 pnpm `11.7.0` 时，重复解析压缩包 URL 可能出现 `ERR_PNPM_MISSING_TARBALL_INTEGRITY`，也可能在依赖安装完成后未结束安装任务。0.1.1 曾通过其 GitHub 地址完成安装并验证页面和 Agent；历史过程与边界见 [0.1.1 发布验收](docs/RELEASE-0.1.1-ACCEPTANCE.md)。完整包的 SHA-256 可在发布页核对。前述错误需处理宿主包管理器状态，不能据此认定安装包损坏。
+```text
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.7/ooo-bidpliot-0.1.7.tgz
+```
 
-URL 安装的业务数据在宿主管理的插件安装目录内；卸载或更换 URL 版本前先备份该目录的 data 及宿主会话／附件。需要自行掌握固定目录及原位更新时，可使用下述 ZIP 解压安装。
+TGZ 用于宿主的 URL/压缩包安装；ZIP 用于解压到固定目录后准备环境和注册。安装包包含已构建的页面、业务工具、技能、角色和模板；Node/Python 依赖仍需下载。安装时插件的 `postinstall` 使用 uv 准备锁定的 Python 环境。宿主若提示批准构建脚本，按提示批准本版本 URL 对应的 `ooo-bidpliot` 精确规则后重试，并继续传入上述变量。安装完成后启用插件，检查侧边工作台和唯一的 `ooo-bidpliot` Agent 预设。
+
+已有安装更新前，先等业务任务结束并关闭使用该目录的宿主，独立备份或暂存原插件 `data/`，同时备份宿主的会话、附件与工作区。宿主管理的 TGZ 安装应在退出客户端后使用宿主官方 CLI 更新原 profile；保持原安装路径，恢复并核对原数据后再启动客户端。包管理器替换插件文件不等于已经完成数据保留检查。
+
+GitHub 自动生成的 Source code 压缩包用于查看源码；完整插件安装使用 Release 中上述 TGZ/ZIP 附件，并按 `SHA256SUMS.txt` 校验。
 
 ## 本地目录安装
 
 合册默认只导出可编辑Word，不安装或调用LibreOffice，不生成PDF。标题使用Office/WPS原生标题样式和多级编号；目录、材料页码引用及居中页脚使用原生域，并设置打开文档时请求自动更新。封面独立分节且不计页码；目录从第1页开始，正文及附件连续计入。实际分页和域更新由打开文件的Office/WPS完成，平台不提供预先计算的页码，也不将网页预览视为最终分页。是否自动执行更新由所用办公软件及其设置决定，文档不含自动执行宏。
 
-已验证环境为 macOS arm64、Node.js 24.15.0、Python 3.13.13、uv 和 dsh `0.2.0-rc.2`。准备要求 Node.js 24+ 和 Python 3.12+。0.1.3 已改用跨平台文件锁、Windows Python 路径和 UTF-8 业务进程；**Windows 实机尚未验证**，Linux 也未进行实机验收。macOS 通过了实际压缩包的中文与空格路径安装、完整业务与上下文压缩回归。模型和凭证使用现有宿主配置。
+已验证环境为 macOS arm64、Node.js 24.15.0、Python 3.13.13、uv 和 dsh `0.2.1-rc.2`。准备要求 Node.js 24+ 和 Python 3.12+。0.1.3 已改用跨平台文件锁、Windows Python 路径和 UTF-8 业务进程；**Windows 实机尚未验证**，Linux 也未进行实机验收。macOS 通过了实际压缩包的中文与空格路径安装、完整业务与上下文压缩回归。模型和凭证使用现有宿主配置。
 
 将交付目录放在固定且可写的位置，例如自己的应用目录。不要放入 dsh profile 的 `node_modules`，也不要把新目录切换当成更新。关闭使用该目录的宿主后，在插件目录执行：
 
@@ -42,7 +60,7 @@ node scripts/doctor.mjs
 dsh plugin --profile web add "link:$(pwd)"
 ```
 
-Windows PowerShell 的目录安装命令为 `dsh plugin --profile web add "link:$((Get-Location).Path)"`；桌面客户端可直接填写上述 GitHub TGZ 地址。
+Windows PowerShell 的目录安装命令为 `dsh plugin --profile web add "link:$((Get-Location).Path)"`；桌面客户端的 TGZ 安装按前文官方 CLI 步骤执行，已准备的固定目录可通过客户端添加。
 
 也可以在 dsh 的「添加插件」中选择本地目录并填写准备完成的绝对路径。安装后启用 `ooo-bidpliot`，确认侧边页面入口和聊天 Agent 预设均存在。`doctor` 会检查完整资源、技能/角色/模板、Node/Python 依赖和 dsh 版本；缺环境明确失败，插件启用时不会隐式下载。
 
@@ -50,7 +68,7 @@ Windows PowerShell 的目录安装命令为 `dsh plugin --profile web add "link:
 
 ## 原位更新与卸载重装
 
-**0.1.4 数据目录要求：** 授权代表已取消企业归属，代表表结构随之调整。本版本不自动迁移旧数据库；从 0.1.3 或更早版本升级时，保留旧插件目录和 data 备份，在新数据目录安装 0.1.4，不将旧 app.db 直接复制到新版本。以下原位更新步骤适用于数据结构一致的交付。
+**0.1.4 的历史数据结构调整：** 授权代表取消企业归属时，代表表结构随之调整。0.1.3 或更早版本的旧数据库不能直接覆盖到当前安装目录，应保留旧插件目录与 data 备份。以下原位更新步骤适用于数据结构一致的交付；0.1.6 的宿主适配与本次卸载修复均不改变业务数据库结构。
 
 先关闭使用该目录的宿主，再从新的干净交付目录运行：
 
@@ -78,7 +96,7 @@ npm run build
 node scripts/delivery.mjs export /absolute/new-delivery
 ```
 
-白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。GitHub [v0.1.5 发布页](https://github.com/aiooooooskill-bit/bidv4/releases/tag/v0.1.5) 提供完整插件安装包（客户端 URL 安装用 TGZ / 本地目录安装用 ZIP）与 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；GitHub 自动生成的 Source code 压缩包不包含已构建的 dist，请使用发布页附件。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
+白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。`npm run release:package` 生成当前版本完整 TGZ/ZIP 和 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；源码压缩包不保证包含已构建的 dist，应使用打包脚本生成的完整交付物。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
 
 ## 页面流程
 
@@ -130,8 +148,8 @@ npm run verify:delivery
 
 `verify` 先检查类型和构建，再运行Node与Python回归，任一步失败即停止。对已启用目录应在隔离副本执行。`verify:delivery` 从空临时目录重新准备 Node/Python 环境，调用官方安装/卸载接口，验收页面业务、独立聊天循环、原位更新、重启、卸载重装和数据保留；并验证缺资源/依赖拒绝、关闭尾事件和其他宿主Agent正常。模型请求仅发送到本机确定性夹具。
 
-`node scripts/verify-delivery.mjs --keep-open` 会在通过后保留临时宿主供浏览器验收；只使用临时项目，不读取正式模型凭证或修改用户数据。输出的本机 `/login` 地址用于该临时宿主。测试结果写入 `docs/evidence/plugin-delivery-validation-20261013.json`。
+`node scripts/verify-delivery.mjs --keep-open` 会在通过后保留临时宿主供浏览器验收；只使用临时项目，不读取正式模型凭证或修改用户数据。输出的本机 `/login` 地址用于该临时宿主，可用 `--report` 指定结果文件。
 
-0.1.4 修改内容与验证范围见 [版本说明](CHANGELOG.md)；历史交付结果记录在 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。记录是带日期的快照；代码变化后重新执行受影响的检查，不沿用旧结果作为通过依据。检查不审核模型生成内容，双插件调整按用户要求暂缓。
+当前改动见 [版本说明](CHANGELOG.md)，0.1.6 宿主适配及历史部署事实见 [适配验收](docs/DEEPSEEK-021-ACCEPTANCE.md)，0.1.7 卸载修复见 [专项验收](docs/P2-UNLOAD-017-ACCEPTANCE.md)，目录、停止与原生问答接续见 [目录验收](docs/DIRECTORY-017-ACCEPTANCE.md)。记录均注明日期与范围；最终发行包及公开下载核对见 Release 的 validation.json 附件。代码变化后重新执行受影响的检查，不沿用旧结果作为通过依据。
 
 原灵燕MIT版权保留于 [business/LICENSE](business/LICENSE)，源码与改动来源见 [UPSTREAM](docs/UPSTREAM.md)。

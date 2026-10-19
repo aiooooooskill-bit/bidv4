@@ -64,6 +64,8 @@ export function registerChatTools(ctx,link){
  },['task_id','kind'],async(args,exec)=>{
   const tid=args.task_id;await runtime.bindConversation(tid,exec.agent);
   if(args.kind==='stop')throw new BusinessError(409,'请使用原生停止按钮停止当前执行');
+  // Settling waits for this Agent to become idle; awaiting it from its own turn deadlocks.
+  if(runtime.executionOwners.get(tid)?.waitingForIdle&&runtime.executionOwners.get(tid)?.agent===exec.agent)throw new BusinessError(409,'当前阶段仍在本会话执行，请完成当前阶段并结束本轮；不要重复调用run。自动流程会继续后续阶段。');
   if(args.kind==='full'){
    const workflow=await runtime.workflows.start(tid,{...args,agent:exec.agent});
    const record=workflow.state==='running'?(await runtime.latestRecord(tid,workflow.stage))?.record:null;
@@ -78,7 +80,7 @@ export function registerChatTools(ctx,link){
   const state=await runtime.state(args.task_id);if(state.execution?.state!=='needs_input')throw new BusinessError(409,'项目当前没有待答问题');
   await runtime.bindConversation(args.task_id,exec.agent);
   await runtime.answer(args.task_id,state.execution.session_id,{call_ids:state.execution.questions.map(q=>q.callId),batches:args.batches});
-  if(state.workflow?.state==='needs_input')runtime.workflows.resumeAfter(args.task_id,exec.agent);
+  if(state.workflow?.action_id===state.execution.action_id&&['running','needs_input'].includes(state.workflow.state))runtime.workflows.resumeAfter(args.task_id,exec.agent);
   return {task_id:args.task_id,instructions:'答复已保存，在本会话继续未完成阶段。'};
  });
  register('ooo_bidpliot_read','读取真实成果以在原生对话中展示解读或最终内容。Markdown返回正文；review返回本轮完整审查报告。文件下载使用status/run返回的真实链接。',{

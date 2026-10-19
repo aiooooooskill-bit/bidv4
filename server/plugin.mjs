@@ -34,6 +34,9 @@ export async function apply(ctx){
  ctx.reflect.provide('bidBusiness',runtime);
  const requests=new Set();let closing=false;
  ctx.effect(function*(){
+  // Own the exact scope disposer so the parent cannot close it during drain.
+  // Composite effects stop on rejection, so release resources in finally too.
+  yield scope.dispose;
   yield async()=>{
    closing=true;
    try{for(const request of requests){request.controller.abort();if(!request.req.complete)request.req.destroy()}await Promise.all([...requests].map(request=>request.done.promise))}
