@@ -52,7 +52,7 @@ export async function apply(ctx){
   try{
    const url=new URL((req.url??'/').slice('/api/bidv4'.length)||'/', 'http://localhost');const path=url.pathname,method=req.method??'GET',query=Object.fromEntries(url.searchParams);
    if(path.startsWith('/assets/')){if(!['GET','HEAD'].includes(method))throw new BusinessError(405,'操作不支持');const dir=resolve(root,'dist'),asset=resolve(dir,decodeURIComponent(path.slice('/assets/'.length)));if(!asset.startsWith(dir+sep))throw new BusinessError(404,'文件不存在');const mime={'.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm'};await file(res,asset,null,mime[extname(asset)],method==='HEAD');return}
-   parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req,method==='POST'&&(path==='/materials/files'||(path==='/files'&&query.purpose==='bid'))):{body:{},cleanup:async()=>{}};
+   parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req,method==='POST'&&(path==='/materials/files'||/^\/materials\/files\/[^/]+\/replace$/.test(path)||(path==='/files'&&query.purpose==='bid'))):{body:{},cleanup:async()=>{}};
    const body=parsed.body;
    if(path==='/tasks'&&method==='GET'){send(res,await runtime.tasks());return}
    if(path==='/tasks'&&method==='POST'){send(res,await business(scope.ctx,'create_task',body),201);return}
@@ -79,12 +79,13 @@ export async function apply(ctx){
    if(method==='PUT'&&(match=path.match(/^\/projects\/([^/]+)\/bidder$/))){send(res,await runtime.saveBidder(match[1],body));return}
    if(query.task_id&&method!=='GET')await runtime.assertIdle(query.task_id);
    const route=routes.find(r=>r.method===method&&new RegExp('^'+r.path.replace(/\{\w+\}/g,'[^/]+')+'$').test(path));if(!route)throw new BusinessError(404,'操作不存在');
+   if((match=path.match(/^\/kb\/items\/([^/]+)(?:\/(replace|retrigger))?$/))&&method!=='GET'&&runtime.knowledge.has(match[1]))throw new BusinessError(409,'该资料正在识别，请处理结束后再操作');
    const value=await business(scope.ctx,'route',{method,path,query,body,upload:parsed.upload},{signal:controller.signal});
    if(value?.file_path){await file(res,value.file_path,value.file_name,value.media_type);return}
    if(value?.bytes){res.writeHead(200,{'Content-Type':value.media_type,'X-Content-Type-Options':'nosniff'});res.end(Buffer.from(value.bytes,'base64'));return}
    send(res,value,route.status);
    if(path==='/kb/files'&&method==='POST'&&value.id)void runtime.ingestKnowledge(value.id).catch(e=>console.error('ooo-bidpliot knowledge:',e.message));
-   if((match=path.match(/^\/kb\/items\/([^/]+)\/retrigger$/))&&method==='POST')void runtime.ingestKnowledge(match[1]).catch(e=>console.error('ooo-bidpliot knowledge:',e.message));
+   if((match=path.match(/^\/kb\/items\/([^/]+)\/(?:retrigger|replace)$/))&&method==='POST')void runtime.ingestKnowledge(match[1]).catch(e=>console.error('ooo-bidpliot knowledge:',e.message));
   }catch(error){if(!res.headersSent)send(res,{detail:error.message},error.status??500);else res.destroy()}
   finally{try{await parsed?.cleanup()}finally{requests.delete(request);request.done.resolve()}}
   }})

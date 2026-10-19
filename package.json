@@ -52,7 +52,8 @@
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",
-    "micromark-util-decode-string": "2.0.1"
+    "micromark-util-decode-string": "2.0.1",
+    "@floating-ui/dom": "1.7.6"
   },
   "devDependencies": {
     "@deepseek-ai/dsh": "0.2.1-rc.2",
@@ -153,7 +154,8 @@
     "docs/evidence/deepseek-017-production-20261019.json",
     "docs/evidence/p2-unload-017-validation-20261019.json",
     "docs/evidence/directory-017-reentry-web-20261019.jpg",
-    "docs/evidence/directory-017-restart-web-20261019.jpg"
+    "docs/evidence/directory-017-restart-web-20261019.jpg",
+    "docs/RELEASE-018-ACCEPTANCE.md"
   ],
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh": {

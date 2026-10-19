@@ -348,5 +348,26 @@
     "module": "bidder",
     "function": "save_bidder",
     "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/kb/items/{kid}/replace",
+    "module": "knowledge",
+    "function": "replace_file",
+    "status": 202
+  },
+  {
+    "method": "POST",
+    "path": "/materials/files/{fid}/replace",
+    "module": "materials",
+    "function": "replace_file",
+    "status": 200
+  },
+  {
+    "method": "POST",
+    "path": "/templates/{key}/replace",
+    "module": "templates",
+    "function": "replace_template",
+    "status": 200
   }
 ]

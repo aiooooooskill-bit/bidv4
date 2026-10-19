@@ -24,7 +24,7 @@ def insert(co,name):
     cs.attach_asset(item['id'],co['id'])
     return item
 
-def test_invalid_json_retains_parsed_text_index_and_retry_cache(library,monkeypatch):
+def test_invalid_json_retains_parsed_text_until_full_recognition(library,monkeypatch):
     co,_=library;i=insert(co,'虚构财务报表.docx')
     path=store.kb_files_dir()/i['file_name'];doc=Document();doc.add_paragraph('虚构财报：星河公司年度净资产为九百万元。');doc.save(path)
     document.prepare(path,store.kb_parse_dir(i['file_name']));ingest.parsed(i['id'])
@@ -34,9 +34,9 @@ def test_invalid_json_retains_parsed_text_index_and_retry_cache(library,monkeypa
     assert detail['parse_status']=='ready' and detail['extract_status']=='failed'
     assert detail['availability']['usable'] and '净资产' in detail['content']
     result=search_company_assets('净资产');assert '九百万元' in result and 'AI整理失败' in result
-    assert ingest.schedule_ingest(i['id'])
-    monkeypatch.setattr(document,'convert',lambda *_:pytest.fail('Retry must reuse successfully parsed text'))
-    assert document.prepare(path,store.kb_parse_dir(i['file_name']))['cached']
+    asyncio.run(knowledge.retrigger(i['id'],db.kb_get_item(i['id'])['revision']))
+    assert not store.kb_parse_dir(i['file_name']).exists()
+    assert not document.prepare(path,store.kb_parse_dir(i['file_name'])).get('cached')
     ingest.parsed(i['id']);ingest.finish(i['id'],{'doc_type':'financial_report','fields':{}})
     assert asyncio.run(knowledge.get_item(i['id']))['error'] is None
 

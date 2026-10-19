@@ -1,4 +1,5 @@
 from .errors import BusinessError, FileDownload, IncomingFile, Response
+from .library_files import mutation_lock, replacement_upload
 """版式库 API：版式文件管理（上传/删除/设默认/预览）。
 
 版式=格式资产（与素材=内容资产分离，2026-09-08 用户拍板拆库）：版式活在
@@ -26,6 +27,7 @@ class TemplateInfo(BaseModel):
     builtin:bool=False
     size:int=0
     mtime:float=0
+    version:str=''
 from ..tools import docx_ops
 _CHUNK = 1024 * 1024
 _MAX_TEMPLATE_BYTES = 20 * 1024 * 1024
@@ -43,7 +45,7 @@ def _resolve(key: str) -> Path:
     return p
 
 async def list_templates() -> list[TemplateInfo]:
-    return [TemplateInfo(**d) for d in docx_ops.list_templates_info()]
+    return [TemplateInfo(**d, version=str(_resolve(d['key']).stat().st_mtime_ns)) for d in docx_ops.list_templates_info()]
 
 async def upload_template(file: IncomingFile=None) -> TemplateInfo:
     raw = file.filename or ''
@@ -74,13 +76,30 @@ async def upload_template(file: IncomingFile=None) -> TemplateInfo:
     row = next((d for d in docx_ops.list_templates_info() if d['key'] == dest.name))
     return TemplateInfo(**row)
 
-async def delete_template(key: str):
+def _editable_template(key: str, version: str):
     if key == docx_ops.BUILTIN_TEMPLATE_KEY:
-        raise BusinessError(status_code=400, detail='内置版式不可删除')
-    p = _resolve(key)
-    p.unlink()
-    if docx_ops.active_template_name() == p.name:
-        db.set_setting(docx_ops.TEMPLATE_SETTING_KEY, '')
+        raise BusinessError(400, '内置版式不可更换或删除')
+    path = _resolve(key)
+    if str(path.stat().st_mtime_ns) != version:
+        raise BusinessError(409, '版式已更新，请重新读取后再操作')
+    return path
+
+
+async def replace_template(key: str, version: str, file: IncomingFile):
+    with mutation_lock('templates', key):
+        path = _editable_template(key, version)
+        async with replacement_upload(file, docx_ops.templates_dir(), {'.docx'}, _MAX_TEMPLATE_BYTES) as (temp, name, digest):
+            _editable_template(key, version)
+            os.replace(temp, path)
+    return {'key': key}
+
+
+async def delete_template(key: str, version: str):
+    with mutation_lock('templates', key):
+        p = _editable_template(key, version)
+        p.unlink()
+        if docx_ops.active_template_name() == p.name:
+            db.set_setting(docx_ops.TEMPLATE_SETTING_KEY, '')
     return {'ok': True}
 
 async def activate_template(key: str):

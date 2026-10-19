@@ -98,15 +98,6 @@ def finish(kid,metadata):
     reindex_item(kid)
     return db.kb_get_item(kid)
 
-def schedule_ingest(kid):
-    item=db.kb_get_item(kid)
-    if not item or item['parse_status'] in ('pending','parsing','extracting') or item['extract_status']=='running':return False
-    if item['parse_status']=='ready':
-        db.kb_update_item(kid,extract_status='running',error=None)
-    else:
-        db.kb_update_item(kid,parse_status='pending',error=None)
-    return True
-
 def parsed(kid):
     """Commit valid text before asking a model to structure it."""
     db.kb_update_item(kid,parse_status='ready',extract_status='running',error=None)

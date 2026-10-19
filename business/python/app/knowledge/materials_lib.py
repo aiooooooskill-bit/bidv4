@@ -109,10 +109,19 @@ def schedule_parse(fid: str) -> bool:
     try:
         run_parse(fid)
     except Exception as error:
+        from ..services.errors import BusinessError
+        if isinstance(error, BusinessError):
+            raise
         db.mt_update_file(fid,parse_status='failed',error=str(error))
     return True
 
 def run_parse(fid: str) -> dict:
+    from ..services.library_files import mutation_lock
+    with mutation_lock('mt', fid):
+        return _run_parse(fid)
+
+
+def _run_parse(fid: str) -> dict:
     """解析主体：本地 parse_convert → md + outline 落盘 → ready。无 LLM、无图片。"""
     f = db.mt_get_file(fid)
     if not f:
@@ -159,8 +168,10 @@ def run_parse(fid: str) -> dict:
     try:
         _sync_blocks(fid)
         reindex_blocks(fid)
-    except Exception:
+    except Exception as error:
         logger.exception("素材块索引同步异常：%s", fid)
+        db.kb_replace_segments(fid, [])
+        db.mt_update_file(fid, parse_status="failed", error=f"素材索引更新失败，请重新解析：{error}")
     return db.mt_get_file(fid) or {}
 
 

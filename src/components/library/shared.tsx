@@ -4,7 +4,7 @@ export type Company={id:string;name:string;credit_code:string;note:string;profil
 export type Representative={id:string;name:string;title:string;phone:string;email:string;note:string;revision:number};
 export type Metadata={doc_type:string;statement?:string;questions?:string[];fields?:Record<string,{value:string;source?:string}>;extra?:Record<string,{value:string;source?:string}>;confidence?:number};
 export type AssetAvailability={usable:boolean;has_text:boolean;has_fields:boolean;source:'human'|'machine'|'raw';label:string};
-export type Kb={availability:AssetAvailability;id:string;title:string;file_name:string;doc_type:string;company_id:string;review_status:string;parse_status:string;extract_status:string;updated_at:string;error?:string;business:Metadata;suggested:Metadata;ocr:string;original_ocr:string;content:string;original_content:string;revision:number;meta:Record<string,any>;segments:any[]};
+export type Kb={availability:AssetAvailability;id:string;title:string;file_name:string;file_hash:string;doc_type:string;company_id:string;review_status:string;parse_status:string;extract_status:string;updated_at:string;error?:string;business:Metadata;suggested:Metadata;ocr:string;original_ocr:string;content:string;original_content:string;revision:number;meta:Record<string,any>;segments:any[]};
 export type Overview={companies:Company[];representatives:Representative[];types:{code:string;name:string}[];field_labels:Record<string,string>};
 export type Page<T>={items:T[];total:number;page:number;pages:number;page_size:number};
 export type Shared={overview:Overview;dirty:boolean;onDirty:(v:boolean,saving?:boolean)=>void;onSaved:(m:string)=>void|Promise<void>;onError:(e:any)=>void;epoch:number};
