@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -29,7 +29,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "tsc --noEmit",
-    "test": "node --test --test-concurrency=4 tests/*.test.mjs",
+    "test": "node scripts/test-js.mjs",
     "verify": "npm run check && npm run build && npm test && npm run test:business",
     "start": "dsh web --no-open --host 127.0.0.1 --port 3080",
     "tools:install": "uv sync --locked --project business/python",
@@ -52,7 +52,8 @@
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",
-    "micromark-util-decode-string": "2.0.1"
+    "micromark-util-decode-string": "2.0.1",
+    "@floating-ui/dom": "1.7.6"
   },
   "devDependencies": {
     "@deepseek-ai/dsh": "0.2.1-rc.2",
@@ -153,7 +154,8 @@
     "docs/evidence/deepseek-017-production-20261019.json",
     "docs/evidence/p2-unload-017-validation-20261019.json",
     "docs/evidence/directory-017-reentry-web-20261019.jpg",
-    "docs/evidence/directory-017-restart-web-20261019.jpg"
+    "docs/evidence/directory-017-restart-web-20261019.jpg",
+    "docs/RELEASE-018-ACCEPTANCE.md"
   ],
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh": {

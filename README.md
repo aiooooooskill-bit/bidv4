@@ -4,9 +4,9 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.7**，对应的 **DeepSeek Harness 客户端版本为 0.2.1-rc.2**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在实际插件安装目录的 `data/`，更新须保留原路径及其中数据。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.8**，对应的 **DeepSeek Harness 客户端版本为 0.2.1-rc.2**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
 
-0.1.7 通过 GitHub Release 交付完整安装包，由用户自行安装。本次发布不更新生产插件或主项目运行环境；目录入口、原生会话恢复及停止流程的验证均在独立 dsh Web 环境进行。
+0.1.8 通过 GitHub Release 交付完整安装包，由用户自行安装。本次发布不更新生产插件或主项目运行环境；目录入口、原生会话恢复及停止流程的验证均在独立 dsh Web 环境进行。
 
 ## 项目 Agent 对话
 
@@ -20,9 +20,9 @@
 
 本版本要求 DeepSeek Harness `0.2.1-rc.2`、Cordis `4.0.5`、loader `1.0.6`，不保留旧宿主兼容。官方宿主模块由客户端提供；插件安装包不再安装一套旧核心。开发与独立目录准备通过 devDependencies 提供相同版本的 SDK。浏览器 React 由宿主客户端模块提供，不作为桌面后端 Node 依赖检查。
 
-完整发行物包括 `ooo-bidpliot-0.1.7.tgz`、`ooo-bidpliot-0.1.7.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24+、Python 3.12+、uv 和可访问依赖仓库的网络。
+完整发行物包括 `ooo-bidpliot-0.1.8.tgz`、`ooo-bidpliot-0.1.8.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24+、Python 3.12+、uv 和可访问依赖仓库的网络。
 
-URL/压缩包安装的业务数据位于宿主管理的插件安装目录内，更新时必须保留该目录的 `data/` 及宿主会话、附件和工作区。不要把卸载后换目录重装当作数据更新。
+业务数据独立保存在 `ooo-bidpliot-data/`，与插件安装树位于同一上级目录。客户端包管理安装放在 profile 下，与 `node_modules/` 并列；固定目录安装则与插件文件夹直接并列。Mac 和 Windows 均按实际安装路径推导，不硬编码用户名或磁盘盘符。插件内 `data` 只是文件系统入口（Mac/Linux 符号链接、Windows junction），不存放数据实体；升级重新建立入口，数据库、原件和成果不随插件目录替换。
 
 ## GitHub 发行包安装
 
@@ -31,18 +31,18 @@ URL/压缩包安装的业务数据位于宿主管理的插件安装目录内，�
 官方 Web profile 的命令示例：
 
 ```sh
-PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.7/ooo-bidpliot-0.1.7.tgz"
+PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.8/ooo-bidpliot-0.1.8.tgz"
 ```
 
 已有桌面安装使用客户端自身的官方 CLI，指定原 `desktop` profile，同样传入上述变量。不要向正在运行的客户端安装或更新。完整 TGZ 地址为：
 
 ```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.7/ooo-bidpliot-0.1.7.tgz
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.8/ooo-bidpliot-0.1.8.tgz
 ```
 
 TGZ 用于宿主的 URL/压缩包安装；ZIP 用于解压到固定目录后准备环境和注册。安装包包含已构建的页面、业务工具、技能、角色和模板；Node/Python 依赖仍需下载。安装时插件的 `postinstall` 使用 uv 准备锁定的 Python 环境。宿主若提示批准构建脚本，按提示批准本版本 URL 对应的 `ooo-bidpliot` 精确规则后重试，并继续传入上述变量。安装完成后启用插件，检查侧边工作台和唯一的 `ooo-bidpliot` Agent 预设。
 
-已有安装更新前，先等业务任务结束并关闭使用该目录的宿主，独立备份或暂存原插件 `data/`，同时备份宿主的会话、附件与工作区。宿主管理的 TGZ 安装应在退出客户端后使用宿主官方 CLI 更新原 profile；保持原安装路径，恢复并核对原数据后再启动客户端。包管理器替换插件文件不等于已经完成数据保留检查。
+首次改为独立存储前，等任务结束并关闭客户端，完整备份现有业务数据及宿主会话、附件。在停机状态下把原 `data/` 的内容原样转存到该安装对应的 `ooo-bidpliot-data/`，核对数据库及全部文件后建立入口，再升级原 profile。此为本次一次性数据位置调整，不改变数据库结构；新版不会自动猜测、搬运或覆盖旧数据，遇到尚未转存的实体 `data/` 会明确拒绝启动。此后正常升级无需复制或恢复数据，仍应保留独立备份。不要删除独立数据文件夹。
 
 GitHub 自动生成的 Source code 压缩包用于查看源码；完整插件安装使用 Release 中上述 TGZ/ZIP 附件，并按 `SHA256SUMS.txt` 校验。
 
@@ -76,7 +76,7 @@ Windows PowerShell 的目录安装命令为 `dsh plugin --profile web add "link:
 node scripts/delivery.mjs update /absolute/new-delivery /absolute/fixed-install
 ```
 
-更新先在同一磁盘的临时目录重新安装锁定依赖、检查并完整构建，再替换固定安装目录，保留原 `data/`；完成后重新启动宿主加载新代码。准备或验证失败会恢复原代码和数据；若文件系统连回滚也拒绝，保留恢复目录并报告路径，不删除尚未恢复的数据。宿主运行标记或执行锁仍有效时拒绝准备、构建和更新。
+更新先在同一磁盘的临时目录重新安装锁定依赖、检查并完整构建，再替换固定安装目录，独立数据实体保持不动，保留 `data` 入口；完成后重新启动宿主加载新代码。准备或验证失败会恢复原代码和数据；若文件系统连回滚也拒绝，保留恢复目录并报告路径，不删除尚未恢复的数据。宿主运行标记或执行锁仍有效时拒绝准备、构建和更新。
 
 卸载只使用官方命令解除插件注册，保留固定目录：
 
@@ -85,7 +85,7 @@ dsh plugin --profile web remove ooo-bidpliot
 dsh plugin --profile web add link:/absolute/fixed-install
 ```
 
-重装必须指向原固定目录。不要删除该目录或覆盖 `data/`。官方包管理器可能保留物理链接，以 profile 的依赖/bundle 注册和实际功能卸载状态为准。
+重装保持原安装位置；独立数据不会随插件目录删除。不要删除 `ooo-bidpliot-data/`，也不要用实体目录覆盖插件 `data` 入口。官方包管理器可能保留物理链接，以 profile 的依赖/bundle 注册和实际功能卸载状态为准。
 
 ## 创建干净交付目录
 
@@ -107,6 +107,8 @@ node scripts/delivery.mjs export /absolute/new-delivery
 数字DOCX/PDF使用原确定性解析器；扫描页与图片由dsh同一模型转写。扫描页逐页渲染识别，无128页硬上限；单张图片2000万像素预算保留。识别输出必须齐备，不换模型、不把部分OCR标成成功。大文件范围与审核方法见 [当前审核实现](docs/REVIEW-CURRENT.md)。
 
 解读、目录与规划直接展示原生文件，隐藏内部来源编号并保留关联。手动保存/取消、冲突和草稿保护沿用现有页面。错误集中到顶部操作提示；只有实际缺少具体值才出现页面选项，无结果确认门或聊天“回复继续”。
+
+公司资料、写作素材和上传的 Word 版式支持查看、下载、重命名、更换原件、重新解析和删除；原件更换沿用记录与归属，按版本检查并保留项目已引用内容。后台状态变化静默同步，未保存的表单和章节选择保持原样。公司资料的结构化字段按类别展示并可人工核对。
 
 资料库中的授权代表独立维护、全库共用，不归属于企业。项目确认制作信息时，选择本次投标主体、授权代表（或法定代表人）和签署日期，选择结果仅保存到该项目。
 
@@ -135,7 +137,7 @@ data/
 
 Python仅作为短生命周期的业务工具进程，既不提供HTTP服务，也不调用模型或编排Agent。旧独立引擎、3188代理及其设置、DeepAgents/LangGraph/FastAPI/uvicorn已删除。执行Agent按授权拥有完整文件访问权限；任务路径用于业务归属。
 
-业务执行复用宿主官方 Agent、会话、JSONL 持久化、循环和子 Agent 服务，执行预设中的技能及工具保持作用域隔离。执行会话保存到宿主当前配置的会话存储，图片存于 `DSH_HOME/attachments/v1`；工作台数据和成果继续保存于插件 `data/`。请求和顶层工具执行沿用宿主官方落盘屏障与策略。没有修改或覆盖 dsh 官方源码。
+业务执行复用宿主官方 Agent、会话、JSONL 持久化、循环和子 Agent 服务，执行预设中的技能及工具保持作用域隔离。执行会话保存到宿主当前配置的会话存储，图片存于 `DSH_HOME/attachments/v1`；工作台数据和成果保存于独立 `ooo-bidpliot-data/`，插件 `data` 仅为原生会话工作目录保留稳定的文件系统入口。请求和顶层工具执行沿用宿主官方落盘屏障与策略。没有修改或覆盖 dsh 官方源码。
 
 重启从官方执行会话读取状态和具体问题。阶段操作使用独立 action_id 和事件范围，后续轮次不覆盖历史阶段状态；审查回执按轮次保存，旧问题和停止请求不能作用于新阶段。中断执行保留已有文件，未知写入结果不自动重复；不承诺恢复旧引擎检查点。历史用户数据库与文件保留，没有转换或清空。
 
@@ -153,3 +155,17 @@ npm run verify:delivery
 当前改动见 [版本说明](CHANGELOG.md)，0.1.6 宿主适配及历史部署事实见 [适配验收](docs/DEEPSEEK-021-ACCEPTANCE.md)，0.1.7 卸载修复见 [专项验收](docs/P2-UNLOAD-017-ACCEPTANCE.md)，目录、停止与原生问答接续见 [目录验收](docs/DIRECTORY-017-ACCEPTANCE.md)。记录均注明日期与范围；最终发行包及公开下载核对见 Release 的 validation.json 附件。代码变化后重新执行受影响的检查，不沿用旧结果作为通过依据。
 
 原灵燕MIT版权保留于 [business/LICENSE](business/LICENSE)，源码与改动来源见 [UPSTREAM](docs/UPSTREAM.md)。
+
+## 独立数据目录（0.1.8）
+
+Mac 客户端默认布局示例：
+
+```text
+~/.dsh/profiles/desktop/
+  node_modules/ooo-bidpliot/    # 可替换的插件代码
+  ooo-bidpliot-data/           # 独立业务数据
+```
+
+Windows 使用相同的 profile 相对布局，如 `C:\Users\<用户>\.dsh\profiles\desktop\`；实际位置以宿主安装 profile 为准。固定目录如 `D:\招投标\ooo-bidpliot\`，数据在 `D:\招投标\ooo-bidpliot-data\`。Windows 使用目录 junction，不依赖开发者模式或管理员符号链接权限；实际 Windows 主机验收范围以发行验证报告为准。宿主原生会话与附件仍由 DeepSeek 自己管理，不随业务数据移动。
+
+开发与隔离验证沿用现有 `DATA_DIR` 环境变量，必须是安装树和 `node_modules` 外的绝对路径。`npm test` 自动使用临时数据目录，不读取生产数据。

@@ -1,4 +1,4 @@
-import {mkdir,readFile,writeFile,rename,unlink,readdir,symlink} from 'node:fs/promises';
+import {mkdir,readFile,writeFile,rename,unlink,readdir,symlink,readlink,lstat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
@@ -80,7 +80,11 @@ export class BusinessRuntime{
   this.stageTools.set(agent.id,{agent,mode,fiber,ready:ready.promise});
   await ready.promise;
  }
- async skillsLink(cwd){await mkdir(cwd,{recursive:true});try{await symlink(join(root,'business/python/app/skills'),join(cwd,'skills'),process.platform==='win32'?'junction':'dir')}catch(e){if(e.code!=='EEXIST')throw e}}
+ async skillsLink(cwd){
+  await mkdir(cwd,{recursive:true});const path=join(cwd,'skills'),target=join(root,'business/python/app/skills');
+  try{const info=await lstat(path);if(!info.isSymbolicLink())throw new BusinessError(409,'项目 skills 入口被实体目录占用，请先保留并检查');if(resolve(cwd,await readlink(path))===resolve(target))return;await unlink(path)}catch(e){if(e.code!=='ENOENT')throw e}
+  await symlink(target,path,process.platform==='win32'?'junction':'dir');
+ }
  modelSelection(agent){
   const pending=this.ctx.sessionProjections.stateOf(agent.session,'modelSelection')?.pending,header=agent.session.requestHeader();
   const selection=pending??header?.config??agent.options;
