@@ -1,17 +1,16 @@
 import {readFile,writeFile,mkdir,rename} from 'node:fs/promises';
 import {resolve,basename} from 'node:path';
-import {createHash} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import {business,dataRoot} from './business.mjs';
+import {startSubtask,subagentFailure,subtaskRole} from './subtasks.mjs';
+import {subtaskTools,subtaskProfiles} from './preset.mjs';
+export {startSubtask,subagentFailure} from './subtasks.mjs';
 const roles=JSON.parse(await readFile(new URL('./roles.json',import.meta.url),'utf8'));
 export const name='bid-business-tools';
-export const inject=['tools','subprocess','subagents','llm','systemPrompt'];
+export const inject=['tools','subprocess','subagents','llm','systemPrompt','sessionQuery'];
 import {taskForAgent} from './conversations.mjs';
 import {outlineAssignments} from './execution-guard.mjs';
 const taskOf=agent=>taskForAgent(agent)??basename(agent.session.header.cwd);
-export function subagentFailure(run,result,message){
- const reason=run.localAgent?.session.snapshotEvents().findLast(event=>event.type==='turn/end')?.data.reason;
- return new Error(result.diagnostic??(reason?.kind==='error'?reason.error?.message:undefined)??message);
-}
 export async function transcribe(ctx,prepared,exec){
  if(!prepared.needs_ocr)return prepared;
  const {provider,model}=exec.agent.session.requestHeader()?.config??exec.agent.options;
@@ -21,12 +20,23 @@ export async function transcribe(ctx,prepared,exec){
  for(const page of prepared.pages){
   exec.signal.throwIfAborted();
   await business(ctx,'ocr_page',{plan:prepared.plan,page:page.page},{signal:exec.signal});
-  const run=await ctx.subagents.start('spawn',{parent:exec.agent,signal:exec.signal,label:'第'+page.page+'页文字识别',persona:prepared.prompt+'\n只调用read_image读取给定图片，然后返回完整转写，不修改任何文件，不提问。',toolFilter:{allow:['read_image']},prompt:[{type:'text',text:'调用read_image读取图片：'+page.path+'。仅返回Markdown转写。'}]});
-  try{const result=await run.result;if(result.stopReason!=='completed')throw subagentFailure(run,result,'图片识别未完成');const text=result.output.filter(b=>b.type==='text').map(b=>b.text).join('\n');if(!text.trim())throw new Error('图片识别未返回文字');outputs.push({page:page.page,text})}finally{await run.dispose()}
+  const run=await startSubtask(ctx,{parent:exec.agent,signal:exec.signal,label:'第'+page.page+'页文字识别',role:'ocr',prompt:[{type:'text',text:prepared.prompt+'\n调用read_image读取图片：'+page.path+'。仅返回Markdown转写。'}]});
+  try{const result=await run.result;exec.signal.throwIfAborted();if(result.stopReason!=='completed')throw await subagentFailure(ctx,run,result,'图片识别未完成');const text=result.output.filter(b=>b.type==='text').map(b=>b.text).join('\n');if(!text.trim())throw new Error('图片识别未返回文字');outputs.push({page:page.page,text})}finally{await run.dispose()}
  }
  return business(ctx,'ocr_finish',{plan:prepared.plan,outputs},{signal:exec.signal});
 }
-export async function apply(ctx,config={}){
+export async function apply(ctx){
+ const installed=new Map();
+ const install=agent=>{
+  const role=subtaskRole(agent);if(!role||installed.has(agent))return;
+  const fiber=agent.ctx.inject(['tools','systemPrompt'],c=>{
+   c.tools.restrict({allow:subtaskTools[role]});
+   c.systemPrompt.section({name:'deployment:persona-prefix',order:c.systemPrompt.getSectionOrder('DEPLOYMENT_PERSONA_PREFIX'),text:subtaskProfiles[role].persona});
+  });installed.set(agent,fiber);
+ };
+ ctx.on('agent/created',({agent})=>install(agent));
+ ctx.on('agent/disposed',({agent})=>{const fiber=installed.get(agent);installed.delete(agent);return fiber?.dispose()});
+ ctx.effect(()=>async()=>{await Promise.all([...installed.values()].map(fiber=>fiber.dispose()));installed.clear()},'ooo-bidpliot: internal role composition');
  const schemas=await business(ctx,'schemas');
  for(const definition of schemas){ctx.tools.register({...definition,output:{schema:{},render:(_args,value)=>[{type:'text',text:typeof value==='string'?value:JSON.stringify(value)}]},async execute(parameters,exec){
   const taskId=taskOf(exec.agent);let active;try{active=JSON.parse(await readFile(resolve(dataRoot,'actions',taskId,'latest.json'),'utf8'))}catch(e){if(e.code!=='ENOENT')throw e}if(active?.kind==='review'&&!['review_basis','review_batch','save_review_batch','finish_review_report'].includes(definition.name))throw new Error('当前审查仅允许读取文件与保存审查依据和报告');if(!['publish_artifact','assemble_tender','update_task_progress','docx_section_create','docx_material_inject','docx_source_inject','docx_image_insert','docx_comment_add','docx_diagram_insert','docx_html_figure','docx_section_revise','docx_section_repartition','docx_assemble_volume','save_review_batch','finish_review_report'].includes(definition.name))return business(ctx,'tool',{name:definition.name,parameters},{signal:exec.signal,taskId,sessionId:exec.agent.session.id,callId:exec.callId});const key=createHash('sha256').update(exec.agent.session.id+':'+exec.callId).digest('hex');const dir=resolve(dataRoot,'tool-receipts',taskId);await mkdir(dir,{recursive:true});const path=resolve(dir,key+'.json');
@@ -54,13 +64,14 @@ export async function apply(ctx,config={}){
    const bidder=await business(ctx,'bidder_snapshot',{task_id:taskId},{signal:exec.signal});
    description+='\n已确认投标主体与签字信息（直接读取已有值，不再次提问；签署日期只用本次确认值）：'+JSON.stringify(bidder.snapshot)+'\n公司资料仅检索本主体，精读人工核对值用 read_company_asset；写作素材全库共用，拷入后修订本项目内容与旧名。';
   }
-  const run=await ctx.subagents.start('spawn',{parent:exec.agent,signal:exec.signal,label:role.description,persona:role.persona,toolFilter:role.name==='tender-body-writer'?{allow:['read','read_image','write','edit','glob','grep','skill','docx_section_create','docx_section_read','docx_section_revise','docx_diagram_insert','docx_html_figure','docx_source_inject','docx_material_inject','docx_image_insert','docx_comment_add','validate_body','check_name_residue','search_references','search_company_assets','read_company_asset','parse_document','fetch_url']}:{allow:['read','read_image','write','edit','glob','grep']},prompt:[{type:'text',text:description}]});
-  if(outline)outlineAssignments.set(run.id,outline.fragment_path);
+  const childId=randomUUID();let run;
+  if(outline)outlineAssignments.set(childId,outline.fragment_path);
   try{
-   const result=await run.result;if(result.stopReason!=='completed')throw subagentFailure(run,result,'子Agent未完成');
+   run=await startSubtask(ctx,{parent:exec.agent,signal:exec.signal,childId,label:role.description,role:role.name,prompt:[{type:'text',text:description}]});
+   const result=await run.result;exec.signal.throwIfAborted();if(result.stopReason!=='completed')throw await subagentFailure(ctx,run,result,'子Agent未完成');
    if(outline)await business(ctx,'outline_check',{task_id:taskId,volume:response_file,child_completed:true},{signal:exec.signal});
-   await business(ctx,'inherit_asset_reads',{task_id:taskId,session_id:exec.agent.session.id,from_session_id:run.id},{signal:exec.signal});
+   await business(ctx,'inherit_asset_reads',{task_id:taskId,session_id:exec.agent.session.id,from_session_id:run.childId},{signal:exec.signal});
    return result.output.filter(b=>b.type==='text').map(b=>b.text).join('\n');
-  }finally{outlineAssignments.delete(run.id);await run.dispose()}
+  }finally{outlineAssignments.delete(childId);await run?.dispose()}
  }});
 }

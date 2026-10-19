@@ -9,6 +9,7 @@ export const name='ooo-bidpliot-agent';export const inject=['tools','bidBusiness
 export const chatToolNames=[statusTool,'ooo_bidpliot_project','ooo_bidpliot_run','ooo_bidpliot_answer','ooo_bidpliot_read'];
 export function apply(ctx){
  const allowed=[...chatToolNames,...ctx.bidBusiness.toolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','parse_document','task','prepare_review_documents'];
+ ctx.tools.presentAs('native');
  // The host chat treats relative Markdown links as local files. Use the
  // official Web runtime's loopback address, without exposing its auth token.
  const link=path=>new URL(path,'http://127.0.0.1:'+ctx.webServer.port).href;

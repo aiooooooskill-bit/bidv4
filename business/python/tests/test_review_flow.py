@@ -527,6 +527,40 @@ def test_reviewed_list_uses_persistent_digests(setup, monkeypatch):
     assert task_stage.enrich([db.get_task(tid)])[0]['review_status'] == 'reviewed'
 
 
+@pytest.mark.parametrize('continuous', [False, True])
+def test_status_digest_rereads_a_changed_file_without_caching_mixed_bytes(setup, monkeypatch, continuous):
+    import builtins, hashlib
+    tid, *_ = setup
+    path = artifact_store.work_dir(tid) / '执行中文件.md'
+    path.write_bytes(b'initial content')
+    original_open = builtins.open
+    reads = []
+    class ConcurrentWrite:
+        def __enter__(self):
+            self.stream = original_open(path, 'rb')
+            reads.append(True)
+            return self.stream.__enter__()
+        def __exit__(self, *args):
+            result = self.stream.__exit__(*args)
+            if continuous or len(reads) == 1:
+                path.write_bytes(('completed version ' + str(len(reads))).encode())
+            return result
+    def changing_open(filename, *args, **kwargs):
+        return ConcurrentWrite() if Path(filename) == path.resolve() else original_open(filename, *args, **kwargs)
+    monkeypatch.setattr(builtins, 'open', changing_open)
+    key = 'file-digest:' + hashlib.sha256(str(path.resolve()).encode()).hexdigest()
+    if continuous:
+        with pytest.raises(page_flow.FileChangedDuringRead, match='文件在读取期间已变化'):
+            page_flow.file_hash(path)
+        assert len(reads) == 3
+        assert db.get_setting(key) is None
+    else:
+        digest = page_flow.file_hash(path)
+        assert len(reads) == 2
+        assert digest == hashlib.sha256(path.read_bytes()).hexdigest()
+        assert json.loads(db.get_setting(key))['sha256'] == digest
+
+
 def test_file_digest_is_reused_by_an_actual_second_python_process(setup):
     import subprocess, sys
     tid, *_ = setup

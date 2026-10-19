@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 import {join,basename} from 'node:path';
@@ -25,20 +26,23 @@ const call=(name,args)=>({name,args});
 const requests=[],fixtureErrors=[];const reviewCalls=reviewSequence(installation);
 let blocking=false,hostContext,analysisGate,analysisTask,reviewEarlyEnd='normal';
 const pausedReviews=new Set();
-let analysisStreaming=false;
+let analysisStreaming=false,crashAfterBody=false,reuseBuild=false,repeatBuildQuestion=false;
+const crashBlocked=Promise.withResolvers();
 const blocked=Promise.withResolvers(),cancelled=Promise.withResolvers();
 const endpoint=createServer(async(req,res)=>{
  try{
   if(req.method==='GET'&&req.url==='/login'&&hostContext){res.writeHead(302,{Location:hostContext.connection.authenticatedUrl('http://127.0.0.1:'+hostContext.webServer.port)});res.end();return;}
-  let raw='';for await(const chunk of req)raw+=chunk;
-  const request=JSON.parse(raw);requests.push({tools:request.tools?.map(t=>t.function?.name??t.name),model:request.model});
+  const request=await readJson(req);requests.push({tools:request.tools?.map(t=>t.function?.name??t.name),model:request.model});
   const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
   const latestUser=request.messages.findLast(m=>m.role==='user'),latestText=typeof latestUser?.content==='string'?latestUser.content:JSON.stringify(latestUser?.content??[]);
   const instructionOf=m=>{if(m.role==='user')return typeof m.content==='string'?m.content:JSON.stringify(m.content);if(m.role==='tool'){try{return JSON.parse(m.content).instructions??''}catch{}}return ''};
   const stageAnchor=request.messages.findLastIndex(m=>instructionOf(m).includes('页面输入：'));
   const stageText=stageAnchor>=0?instructionOf(request.messages[stageAnchor]):'';
   const payload=stageText.match(/页面输入：(\{[^\n]+\})/),kind=payload&&!latestText.includes('查询项目进度')?JSON.parse(payload[1]).kind:null;
-  const cwd=stageText.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+  const recordedCwd=stageText.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+  // A restored fixture keeps its original event bytes. Follow the current
+  // bid-project context's root when its historical prompt came from another installation.
+  const cwd=recordedCwd?join(installation,'data/workspace',basename(recordedCwd)):undefined;
   const stageMessages=kind?request.messages.slice(stageAnchor):request.messages;
   const step=stageMessages.filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
   const write=(path,content)=>call('write',{file_path:join(cwd,'work',path),content});
@@ -89,7 +93,10 @@ const endpoint=createServer(async(req,res)=>{
   }else if(text.includes('调用read_image读取图片：')){
    if(step===0)calls=[call('read_image',{file_path:text.match(/调用read_image读取图片：(.+?)。/)?.[1]})];
    else content='# 招标资料转写\n项目名称：本地目录安装与数据保留验收\n维护期：三年。\n采购内容为信息系统建设、上线培训及后续维护。投标人应提供清晰的项目实施安排、人员职责、交付文件和验收方法。投标文件须包含响应目录、实施方案、技术措施、质量管理和服务保障。所有原始附件应完整保存，生成的正文与整册文件应可查询、预览及下载。本文是确定性本机验收夹具的模拟招标材料，不代表实际采购项目。';
+  }else if(text.includes('delivery-resume-body-child')){
+   if(step===0)calls=[call('validate_body',{section:'body/交付验收章节.docx'})];
   }else if(text.includes('delivery-body-child')){
+   if(crashAfterBody&&step===1){res.write(': checkpoint after durable body write\n\n');crashBlocked.resolve();return;}
    if(step===0)calls=[call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})];
    if(step===1)calls=[call('validate_body',{section:'body/交付验收章节.docx'})];
   }else if(kind==='review'){
@@ -110,8 +117,11 @@ const endpoint=createServer(async(req,res)=>{
    if(kind==='promises'&&step===0)calls=[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |')];
    if(kind==='body'){if(blocking&&step===0){res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());blocked.resolve();return;}calls=step===0?[call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})]:step===1?[call('validate_body',{section:'body/交付验收章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}
    if(kind==='revise')calls=step===0?[call('docx_section_revise',{path:'body/交付验收章节.docx',edits:JSON.stringify([{para:2,action:'replace',find:'本地目录交付原段落',text:'本地目录交付修订段落'}])})]:step===1?[call('validate_body',{section:'body/交付验收章节.docx'})]:[];
-   if(kind==='build'){
+   if(kind==='build'&&reuseBuild){
+    const sequence=[[call('build_preparation',{})],[call('task',{subagent_type:'tender-body-writer',description:'delivery-resume-body-child'})],[call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})]];calls=sequence[step]??[];
+   }else if(kind==='build'){
     const replied=text.includes('answer_to_pending_question');
+    const replyCount=stageMessages.filter(message=>message.role==='user'&&String(typeof message.content==='string'?message.content:JSON.stringify(message.content)).includes('answer_to_pending_question')).length;
     const tools=stageMessages.filter(m=>m.role==='tool');
     const answered=tools.some(m=>String(m.content).includes('答复已保存'));
     const adjustedStep=step-(answered?1:0);
@@ -123,7 +133,8 @@ const endpoint=createServer(async(req,res)=>{
      [call('validate_body',{section:'body/写作指引.md'})],
      [call('build_preparation',{stage:'guide'})],
      [call('ask_user_question',{questions:[{id:'term',question:'维护期是多少？',options:[{label:'三年'},{label:'五年'}]}]})],
-     replied?[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |')]:[],
+     ...(repeatBuildQuestion?[replied?[call('ask_user_question',{questions:[{id:'delivery',question:'交付期限是多少？',options:[{label:'两个月'},{label:'三个月'}]}]})]:[]]:[]),
+     replied&&(!repeatBuildQuestion||replyCount>=2)?[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |'+(repeatBuildQuestion?'\n| 交付期限 | 两个月 |':''))]:[],
      [call('build_preparation',{stage:'promises'})],
      [call('task',{subagent_type:'tender-body-writer',description:'delivery-body-child'})],
      [call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})],
@@ -165,6 +176,8 @@ await writeFile(join(profile,'cordis.patch.yml'),JSON.stringify([
 process.env.BID_DELIVERY_FIXTURE_KEY='local-delivery-test-only';
 const {ctx}=await runProfile({environment:loadLayeredEnv('dsh'),profile:'web',patchFiles:[],args:['--no-open','--host','127.0.0.1','--port',process.env.BID_DELIVERY_PORT??'0']});
 hostContext=ctx;
+const expectsBusiness=(JSON.parse(await readFile(join(profile,'package.json'),'utf8')).dsh?.profile?.bundles??[]).includes('ooo-bidpliot');
+if(expectsBusiness)assert.ok(ctx.get('bidBusiness'),'Business plugin failed to start: '+JSON.stringify(ctx.logger.buffer.slice(-30).map(entry=>({name:entry.name,args:entry.args.map(String)}))));
 const base='http://127.0.0.1:'+ctx.webServer.port;
 const login=await fetch(ctx.connection.authenticatedUrl(base),{redirect:'manual'});
 const cookie=login.headers.getSetCookie().map(c=>c.split(';')[0]).join(';');assert.ok(cookie);
@@ -289,6 +302,82 @@ async function finishAnalysis(){
  await timeout(handle.agent.whenIdle(),'analysis completion');await runtime.settling.get(analysisTask.taskId);analysisGate=undefined;
  return {state:(await api('/page-flow/'+analysisTask.taskId)).execution,...sessionEvidence(handle.agent.session.snapshotEvents())};
 }
+async function startFullWorkflow(){
+ const {task}=await api('/tasks',{title:'页面自动全流程验收',request_id:randomUUID()});
+ const upload=new FormData();upload.set('file',new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64')]),'交付验收原件.png');await api('/files?task_id='+task.id,upload);
+ const state=await api('/page-flow/'+task.id);await api('/page-flow/'+task.id+'/sources',{main_file:'交付验收原件.png',supplements:[],input_version:state.input_versions.analyse},'PUT');
+ const company=await api('/library/companies',{name:'自动流程验收公司',profile:{legal_name:'验收法人',legal_title:'总经理',address:'验收地址',phone:'123',email:'fixture@example.test',fax:'无'}});
+ await api('/projects/'+task.id+'/bidder',{company_id:company.id,signer_id:'legal',sign_date:'2026-10-15',revision:0},'PUT');
+ await api('/page-flow/'+task.id+'/workflow',{});return task.id;
+}
+async function fullQuestionFlushRace(rounds=1){
+ const runtime=ctx.get('bidBusiness'),gates=Array.from({length:rounds},()=>({entered:Promise.withResolvers(),release:Promise.withResolvers()})),gatedCalls=new Set(),roundEvidence=[],settlements=[];
+ const flush=ctx.sessions.flush,update=runtime.updateRecord,updates=[];
+ let taskId,gateCount=0,off,agent,originalHashes,upstream,prefix;
+ const actionRecords=async()=>Promise.all((await readdir(join(installation,'data/actions',taskId))).filter(file=>file.endsWith('.json')&&file!=='latest.json').map(async file=>JSON.parse(await readFile(join(installation,'data/actions',taskId,file),'utf8'))));
+ const hashes=async()=>Object.fromEntries(await Promise.all(analysis.map(async key=>[key,sha(await readFile(join(installation,'data/workspace',taskId,'work/analysis',key+'.md')))])));
+ runtime.updateRecord=async function(record,patch){
+  const value=await update.call(this,record,patch);
+  if(record.kind==='build'&&['outcome','end_seq','start_seq'].some(key=>Object.hasOwn(patch,key)))updates.push({actionId:record.action_id,patch:structuredClone(patch)});
+  return value;
+ };
+ ctx.sessions.flush=async function(session){
+  const owner=taskId&&runtime.executionOwners.get(taskId),agent=owner?.agent;
+  if(gateCount<rounds&&owner?.waitingForIdle===false&&agent.session===session&&agent.status==='idle'){
+   const record=JSON.parse(await readFile(join(installation,'data/actions',taskId,'latest.json'),'utf8'));
+   const questions=owner.questions?.active?.filter(question=>question.state==='continued'&&!gatedCalls.has(question.callId))??[];
+   if(record.kind==='build'&&record.action_id===owner.actionId&&questions.length){
+    const gate=gates[gateCount++];for(const question of questions)gatedCalls.add(question.callId);
+    // Persist the genuine SDK snapshot, but hold the runtime's outcome write.
+    await flush.call(this,session);
+    gate.entered.resolve({agent,record,questions,boundary:owner.endSeq,events:session.snapshotEvents()});
+    await gate.release.promise;return;
+   }
+  }
+  return flush.call(this,session);
+ };
+ try{
+  taskId=await startFullWorkflow();
+  for(const [index,gate]of gates.entries()){
+   const held=await timeout(gate.entered.promise,'full build question '+(index+1)+' final flush');agent=held.agent;
+   if(index===0){originalHashes=await hashes();upstream=(await actionRecords()).filter(record=>record.kind!=='build');prefix=held.events}
+   const oldSettlement=runtime.settling.get(taskId);let oldSettled=false;void oldSettlement.then(()=>{oldSettled=true});settlements.push(oldSettlement);
+   assert.ok(oldSettlement);assert.equal(agent.status,'idle');assert.equal(held.record.outcome,index===0?undefined:null);assert.equal(held.record.end_seq,index===0?undefined:null);
+   const requestCount=requests.length,replyStarted=Promise.withResolvers();
+   off=ctx.on('session/event',(session,event)=>{if(session.id===agent.id&&event.type==='turn/start'&&event.seq>held.boundary)replyStarted.resolve(event)},{global:true});
+   for(const question of held.questions)assert.ok(ctx.userQuestions.answer(agent,question.callId,{answers:question.questions.map(item=>({id:item.id,selected:[item.options[0].label]}))}));
+   const replyTurn=await timeout(replyStarted.promise,'native answer '+(index+1)+' turn before flush release');
+   assert.equal(agent.status,'running');assert.equal(oldSettled,false,'The real reply turn starts while the previous outcome is still unpersisted');
+   assert.equal(requests.length,requestCount,'The reply must wait for old persistence before issuing another model request');
+   const during={oldSettled,agentStatus:agent.status,modelRequests:requests.length,boundary:held.boundary,replyTurnSeq:replyTurn.seq};
+   off();off=undefined;gate.release.resolve();const settled=await oldSettlement;
+   roundEvidence.push({questions:held.questions,prefix:held.events,during,settled});
+  }
+  await runtime.workflows.wait(taskId);await agent.whenIdle();await runtime.settling.get(taskId);await runtime.workflows.wait(taskId);
+  await ctx.sessions.flush(agent.session);
+  return {taskId,sessionId:agent.id,state:await api('/page-flow/'+taskId),records:await actionRecords(),events:agent.session.snapshotEvents(),prefix,originalHashes,hashes:await hashes(),upstream,during:roundEvidence[0].during,questions:roundEvidence[0].questions,rounds:roundEvidence,distinctSettlements:new Set(settlements).size,updates,fixtureErrors,admissions:runtime.admissions.size,owners:runtime.executionOwners.size,settling:runtime.settling.size,workflowStarts:runtime.workflows.starts.size,workflowJobs:runtime.workflows.jobs.size,workflowResumptions:runtime.workflows.resumptions.size,locks:await readdir(join(installation,'data/locks'))};
+ }finally{for(const gate of gates)gate.release.resolve();off?.();ctx.sessions.flush=flush;runtime.updateRecord=update}
+}
+async function fullQuestionStop(){
+ const runtime=ctx.get('bidBusiness'),taskId=await startFullWorkflow();await runtime.workflows.wait(taskId);
+ const state=await api('/page-flow/'+taskId);assert.equal(state.workflow.state,'needs_input');assert.equal(state.execution.kind,'build');
+ const agent=runtime.handles.get(state.session_id).agent,prefix=agent.session.snapshotEvents();
+ const hashes=async()=>Object.fromEntries(await Promise.all(analysis.map(async key=>[key,sha(await readFile(join(installation,'data/workspace',taskId,'work/analysis',key+'.md')))])));
+ const originalHashes=await hashes();
+ crashAfterBody=true;
+ try{
+  for(const question of state.execution.questions)assert.ok(ctx.userQuestions.answer(agent,question.callId,{answers:question.questions.map(item=>({id:item.id,selected:['三年']}))}));
+  await timeout(crashBlocked.promise,'durable body child before native stop');
+  const bodyPath=join(installation,'data/workspace',taskId,'work/body/交付验收章节.docx'),savedBodyHash=sha(await readFile(bodyPath));
+  const requestsAtStop=requests.length;assert.equal(agent.status,'running');
+  // Exercise the real native Stop button path; do not call workflows.stop.
+  agent.cancel({kind:'user'});await agent.whenIdle();
+  await Promise.all([...runtime.settling.values(),...runtime.workflows.starts.values(),...runtime.workflows.jobs.values(),...Array.from(runtime.workflows.resumptions.values(),entry=>entry.promise)]);
+  await runtime.workflows.wait(taskId);await runtime.settling.get(taskId);await ctx.sessions.flush(agent.session);
+  const records=await Promise.all((await readdir(join(installation,'data/actions',taskId))).filter(file=>file.endsWith('.json')&&file!=='latest.json').map(async file=>JSON.parse(await readFile(join(installation,'data/actions',taskId,file),'utf8'))));
+  return {taskId,sessionId:agent.id,state:await api('/page-flow/'+taskId),records,prefix,events:agent.session.snapshotEvents(),originalHashes,hashes:await hashes(),savedBodyHash,bodyHash:sha(await readFile(bodyPath)),requestsAtStop,requestsAfterDrain:requests.length,fixtureErrors,admissions:runtime.admissions.size,owners:runtime.executionOwners.size,settling:runtime.settling.size,workflowStarts:runtime.workflows.starts.size,workflowJobs:runtime.workflows.jobs.size,workflowResumptions:runtime.workflows.resumptions.size,locks:await readdir(join(installation,'data/locks'))};
+ }finally{crashAfterBody=false}
+}
 const nativeFollowers=new Map();
 let ending=false;
 async function close(){
@@ -320,6 +409,12 @@ process.on('message',async({id,command,args})=>{
    const records=await Promise.all((await readdir(folder)).filter(name=>name.endsWith('.json')&&name!=='latest.json').map(async name=>JSON.parse(await readFile(join(folder,name),'utf8'))));
    const observation=await ctx.sessionQuery.observeSession(state.session_id,{projectionMode:'none'});
    try{result={sessionId:state.session_id,records:await Promise.all(records.map(async record=>({...record,projection:await runtime.projection(record)}))),events:observation.events,presets:await ctx.agentPresets.list(),children:await ctx.subagents.listChildren(state.session_id)}}finally{observation[Symbol.dispose]()}
+  }
+  else if(command==='relocateFixtureSession'){
+   const runtime=ctx.get('bidBusiness'),state=await api('/page-flow/'+args.taskId),agent=(await runtime.handle({session_id:state.session_id})).agent;
+   // The checked-in synthetic legacy session was made in another temporary
+   // directory. Set its fixture location through the official durable API.
+   assert.equal(basename(agent.session.header.cwd),args.taskId);await ctx.workingDirectory.set(agent,join(installation,'data/workspace',args.taskId));await ctx.sessions.flush(agent.session);result={ok:true};
   }
   else if(command==='projectTool'){
    const runtime=ctx.get('bidBusiness'),state=await runtime.state(args.taskId),agent=(await runtime.handle({session_id:state.session_id})).agent;
@@ -357,20 +452,25 @@ process.on('message',async({id,command,args})=>{
    }finally{await handle.dispose()}
   }
   else if(command==='fullWorkflow'){
-   const {task}=await api('/tasks',{title:'页面自动全流程验收',request_id:randomUUID()});
-   const upload=new FormData();upload.set('file',new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64')]),'交付验收原件.png');await api('/files?task_id='+task.id,upload);
-   let state=await api('/page-flow/'+task.id);await api('/page-flow/'+task.id+'/sources',{main_file:'交付验收原件.png',supplements:[],input_version:state.input_versions.analyse},'PUT');
-   const company=await api('/library/companies',{name:'自动流程验收公司',profile:{legal_name:'验收法人',legal_title:'总经理',address:'验收地址',phone:'123',email:'fixture@example.test',fax:'无'}});
-   await api('/projects/'+task.id+'/bidder',{company_id:company.id,signer_id:'legal',sign_date:'2026-10-15',revision:0},'PUT');
-   await api('/page-flow/'+task.id+'/workflow',{});await ctx.get('bidBusiness').workflows.wait(task.id);
-   state=await api('/page-flow/'+task.id);result={taskId:task.id,state};
+   const taskId=await startFullWorkflow();await ctx.get('bidBusiness').workflows.wait(taskId);
+   result={taskId,state:await api('/page-flow/'+taskId)};
   }
+  else if(command==='fullQuestionFlushRace')result=await fullQuestionFlushRace();
+  else if(command==='fullQuestionRepeat'){repeatBuildQuestion=true;try{result=await fullQuestionFlushRace(2)}finally{repeatBuildQuestion=false}}
+  else if(command==='fullQuestionStop')result=await fullQuestionStop();
   else if(command==='nativeAnswer'){
    const runtime=ctx.get('bidBusiness'),state=await api('/page-flow/'+args.taskId),agent=(await runtime.handle({session_id:state.session_id})).agent;
    for(const question of state.execution.questions)assert.ok(ctx.userQuestions.answer(agent,question.callId,{answers:question.questions.map(q=>({id:q.id,selected:['三年']}))}));
    await agent.whenIdle();await runtime.settling.get(args.taskId);await runtime.workflows.wait(args.taskId);result=await api('/page-flow/'+args.taskId);
   }
   else if(command==='waitWorkflow'){await ctx.get('bidBusiness').workflows.wait(args.taskId);result={...(await api('/page-flow/'+args.taskId)),fixture_errors:fixtureErrors}}
+  else if(command==='crashAfterBody'){crashAfterBody=true;result={ok:true}}
+  else if(command==='resumeExistingBuild'){reuseBuild=true;result={ok:true}}
+  else if(command==='crashCheckpoint'){
+   await timeout(crashBlocked.promise,'durable body checkpoint');
+   const runtime=ctx.get('bidBusiness'),state=await api('/page-flow/'+args.taskId),agent=runtime.handles.get(state.session_id).agent;await ctx.sessions.flush(agent.session);
+   result={state,bodyHash:sha(await readFile(join(installation,'data/workspace',args.taskId,'work/body/交付验收章节.docx'))),events:agent.session.snapshotEvents(),requestCount:requests.length};
+  }
   else if(command==='analysisStart')result=await startAnalysis(args);
   else if(command==='analysisRelease')result=await finishAnalysis();
   else if(command==='analysisState')result={streaming:analysisStreaming,modelRequests:requests.length,handles:ctx.get('bidBusiness').handles.size,events:analysisTask?sessionEvidence(ctx.get('bidBusiness').handles.get(analysisTask.sessionId).agent.session.snapshotEvents()):undefined};

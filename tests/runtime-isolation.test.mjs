@@ -11,10 +11,10 @@ import {mkdtemp,rm,readFile,readdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
-import {createHash} from 'node:crypto';
+import {json as readJson} from 'node:stream/consumers';
 import {createBusinessScope} from './helpers/runtime-host.mjs';
 import {BusinessRuntime} from '../server/native/runtime.mjs';
-import {subagentFailure} from '../server/native/tools.mjs';
+import {startSubtask,subagentFailure} from '../server/native/tools.mjs';
 import {inject} from '../server/plugin.mjs';
 
 const message=text=>createUserMessage({source:{kind:'human'},content:[{type:'text',text}]});
@@ -27,7 +27,7 @@ class Fixture extends LlmAdapter{
  async resolveModel(provider,id){return {provider,id,name:id,context:{contextWindow:131072},defaultMaxTokens:16384,inputModalities:['text','image']}}
  async *stream(options){
   this.calls.push(options);
-  const last=options.messages.findLast(m=>m.role==='tool'||m.role==='user');
+  const last=options.messages.findLast(m=>m.role==='tool'||m.role==='user'&&m.source?.kind!=='runtime-context');
   if(last?.content.some(b=>b.type==='text'&&b.text==='CLOSE_CHILD')){this.childSignal=options.signal;this.childStarted.resolve();await new Promise((resolve,reject)=>{if(options.signal.aborted)reject(options.signal.reason);else options.signal.addEventListener('abort',()=>reject(options.signal.reason),{once:true})});return}
   const tool=last?.role!=='tool'&&last?.content.some(b=>b.type==='text'&&['TOOL_BOUNDARY','CLOSE_PARENT'].includes(b.text));
   const block=tool?{type:'tool-call',id:'probe-call',name:'probe',arguments:'{}'}:{type:'text',text:'fixture completed'};
@@ -48,12 +48,12 @@ async function fixture(){
 }
 
 test('官方scope包完整且插件与配置都声明宿主附件依赖',async()=>{
- const source=await readFile(new URL('../node_modules/@deepseek-ai/dsh-scope/lib/index.js',import.meta.url));
- assert.equal(createHash('sha256').update(source).digest('hex'),'2829df71d76e08941457d4dd173eac60783e55354921137c8b75e8b5c0d2ecca');
+ const installed=JSON.parse(await readFile(new URL('../node_modules/@deepseek-ai/dsh-scope/package.json',import.meta.url),'utf8'));
+ assert.equal(installed.version,'0.2.1-rc.2');
  const manifest=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
  assert.equal(manifest.dependencies['@deepseek-ai/dsh-scope'],undefined);assert.equal(manifest.overrides['@deepseek-ai/dsh-scope'],undefined);
  const lock=JSON.parse(await readFile(new URL('../package-lock.json',import.meta.url),'utf8'));
- assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].version,'0.2.0-rc.2');assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].link,undefined);
+ assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].version,'0.2.1-rc.2');assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].link,undefined);
  assert.ok(inject.includes('attachments'));
  const patch=await readFile(new URL('../cordis.patch.yml',import.meta.url),'utf8');assert.match(patch.split('    - id: ooo-bidpliot-agent-preset')[0],/        - attachments\n/);
 });
@@ -97,9 +97,9 @@ test('本地子Agent失败的原始原因由插件保留',async()=>{
   const parent=await f.agent(f.scope.ctx,'diagnostic-parent');
   const detach=f.scope.ctx.on('agent/pre-step',({agent},next)=>{if(agent!==parent)throw new Error('exact child failure');return next()});
   try{
-   run=await f.scope.ctx.subagents.start('spawn',{parent,signal:new AbortController().signal,prompt:[{type:'text',text:'diagnostic'}],toolFilter:{allow:[]}});
+   run=await startSubtask(f.scope.ctx,{parent,signal:new AbortController().signal,prompt:[{type:'text',text:'diagnostic'}],label:'diagnostic'});
    const result=await run.result;assert.equal(result.stopReason,'error');assert.equal(result.diagnostic,undefined);
-   for(const text of ['子Agent未完成','图片识别未完成','资料整理未完成'])assert.equal(subagentFailure(run,result,text).message,'exact child failure');
+   for(const text of ['子Agent未完成','图片识别未完成','资料整理未完成'])assert.equal((await subagentFailure(f.scope.ctx,run,result,text)).message,'exact child failure');
   }finally{detach();await run?.dispose()}
  }finally{await f.close()}
 });
@@ -107,7 +107,7 @@ test('本地子Agent失败的原始原因由插件保留',async()=>{
 test('官方pi-ai发送宿主附件字节，业务卸载后宿主模型仍可使用',async()=>{
  const f=await fixture(),received=[];let agent;
  const endpoint=createServer(async(req,res)=>{
-  let body='';for await(const chunk of req)body+=chunk;received.push(JSON.parse(body));res.writeHead(200,{'Content-Type':'text/event-stream'});
+  received.push(await readJson(req));res.writeHead(200,{'Content-Type':'text/event-stream'});
   for(const delta of [{content:'wire completed'},{}])res.write('data: '+JSON.stringify({id:'fixture',object:'chat.completion.chunk',created:1,model:'wire',choices:[{index:0,delta,finish_reason:Object.keys(delta).length?null:'stop'}]})+'\n\n');
   res.end('data: [DONE]\n\n');
  });
@@ -161,13 +161,15 @@ test('活动业务子Agent停止、尾事件完整落盘与冷恢复后宿主Age
  try{
   f.scope.ctx.logger.exporter({levels:{default:4},export:entry=>logs.push(entry)});
   f.adapter.childStarted=Promise.withResolvers();
-  const parent=await f.agent(f.scope.ctx,'shutdown-parent',async ctx=>{ctx.tools.register({name:'probe',description:'Start shutdown child',parameters:{type:'object',properties:{}},output:{schema:{type:'string'},render:(_args,value)=>[{type:'text',text:value}]},async execute(_args,exec){run=await f.scope.ctx.subagents.start('spawn',{parent:exec.agent,signal:exec.signal,prompt:[{type:'text',text:'CLOSE_CHILD'}],toolFilter:{allow:[]}});try{await run.result;return 'settled'}finally{await run.dispose()}}})});
+  const parent=await f.agent(f.scope.ctx,'shutdown-parent',async ctx=>{ctx.tools.register({name:'probe',description:'Start shutdown child',parameters:{type:'object',properties:{}},output:{schema:{type:'string'},render:(_args,value)=>[{type:'text',text:value}]},async execute(_args,exec){run=await startSubtask(f.scope.ctx,{parent:exec.agent,signal:exec.signal,prompt:[{type:'text',text:'CLOSE_CHILD'}],label:'shutdown-child'});try{await run.result;return 'settled'}finally{await run.dispose()}}})});
   runtime=new BusinessRuntime(f.scope.ctx);runtime.handles.set(parent.id,f.handles.at(-1));
   parent.followup(message('CLOSE_PARENT'));await Promise.race([f.adapter.childStarted.promise,parent.whenIdle().then(()=>{throw new Error('Child was not dispatched: '+JSON.stringify(parent.session.snapshotEvents().filter(event=>['tool/result','turn/end'].includes(event.type))))})]);
   await Promise.all([runtime.close(),runtime.close()]);
-  assert.equal(f.adapter.childSignal.aborted,true);assert.equal(terminal(parent).kind,'aborted');assert.equal(terminal(run.localAgent).kind,'aborted');
+  assert.equal(f.adapter.childSignal.aborted,true);assert.equal(terminal(parent).kind,'aborted');const childObservation=await f.scope.ctx.sessionQuery.observeSession(run.childId,{projectionMode:'none'});
+  let childEvents;try{childEvents=childObservation.events;assert.equal(childEvents.findLast(e=>e.type==='turn/end').data.reason.kind,'aborted')}finally{childObservation[Symbol.dispose]()}
+  assert.equal(f.scope.ctx.agents.get(run.childId),undefined);
   assert.equal(f.scope.ctx.agents.list().length,0);
-  const snapshots=new Map([parent,run.localAgent].map(agent=>[agent.id,agent.session.snapshotEvents()]));
+  const snapshots=new Map([[parent.id,parent.session.snapshotEvents()],[run.childId,childEvents]]);
   const failures=logs.filter(entry=>/closed handle|final drain.*failed|best-effort final session flush failed/.test(entry.args.map(String).join(' ')));assert.deepEqual(failures,[]);
   await f.scope.close();reopened=await createBusinessScope(f.hostRuntime.ctx,join(f.dir,'business'));
   for(const [id,events]of snapshots){

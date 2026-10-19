@@ -1,0 +1,119 @@
+{
+  "version": "0.1.7",
+  "host": "0.2.1-rc.2",
+  "startedAt": "2026-10-19T12:26:09.431894+08:00",
+  "passed": true,
+  "status": "isolated-p2-snapshot-passed-no-production-install",
+  "finding": "P2: session save rejection short-circuited scope and host-claim cleanup during whole-plugin unload",
+  "change": {
+    "productionFile": "server/plugin.mjs",
+    "strategy": "Keep exact SDK scope-disposer ownership; nested finally closes runtime, awaits scope and releases host even when session flush rejects",
+    "businessLogicChanged": false,
+    "schemaChanged": false,
+    "dependenciesChanged": false,
+    "compatibilityLayerAdded": false
+  },
+  "redGreen": {
+    "regressionFile": "tests/plugin-unload-failure.test.mjs",
+    "oldImplementationFailed": true,
+    "oldFailure": "Business scope stayed active and host claim remained after whole-plugin disable",
+    "oldLog": "/tmp/bidv4-017-unload-before.log",
+    "newImplementationPassed": true,
+    "newTests": 1,
+    "newLog": "/tmp/bidv4-017-unload-after.log",
+    "assertions": [
+      "original save error observable",
+      "scope disposed",
+      "host claim and locks released",
+      "business Agent and pending handles removed",
+      "HTTP endpoint unregistered",
+      "source and output bytes preserved",
+      "original session events preserved",
+      "host ordinary Agent still works",
+      "same-process re-enable retains project/session without model dispatch",
+      "all typed SQLite values/schema/user_version retained after reopen"
+    ]
+  },
+  "validation": {
+    "typecheck": {
+      "passed": true,
+      "command": "npm run check"
+    },
+    "build": {
+      "passed": true,
+      "command": "npm run build"
+    },
+    "diffWhitespace": {
+      "passed": true,
+      "command": "git diff --check"
+    },
+    "python": {
+      "passed": true,
+      "tests": 661,
+      "log": "/tmp/bidv4-017-business.log"
+    },
+    "delivery": {
+      "passed": true,
+      "stages": 23,
+      "report": "deepseek-017-delivery-validation-20261019.json"
+    },
+    "signedDesktopPackage": {
+      "passed": true,
+      "stages": 9,
+      "report": "deepseek-017-desktop-package-20261019.json"
+    },
+    "independentReview": {
+      "passed": true,
+      "findings": []
+    },
+    "javascript": {
+      "passed": true,
+      "status": "completed",
+      "command": "node --test --test-concurrency=1 tests/*.test.mjs",
+      "log": "/tmp/bidv4-017-js-serial.log",
+      "priorAttempts": [
+        {
+          "concurrency": 4,
+          "passed": false,
+          "tests": 185,
+          "pass": 184,
+          "fail": 1,
+          "reason": "plugin-lifecycle outer fixture timeout during parallel delivery/App gates",
+          "log": "/tmp/bidv4-017-js.log"
+        },
+        {
+          "concurrency": 2,
+          "passed": false,
+          "tests": 185,
+          "pass": 183,
+          "fail": 2,
+          "reason": "plugin-lifecycle 80s and review-integration 60s internal fixture budgets expired; checkpoints completed, results remain failures",
+          "log": "/tmp/bidv4-017-js-final.log"
+        }
+      ],
+      "tests": 185,
+      "pass": 185,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "durationMs": 608375.601416,
+      "timeoutsOrAssertionsChanged": false
+    }
+  },
+  "artifact": {
+    "tgzSha256": "9ea502437b94e5a3c37c26dda3f9e2ed3801faf0bcfb1e6c3f79b0b28467438a",
+    "zipSha256": "64a463bd39d5d70bc3b88ffaae8dbabda59221ef6b66c9ce0166fc81559f5e19",
+    "sourceFilesCompared": 641,
+    "retainedCandidateDirectory": "/Users/ooo/Documents/AIwork/operations/deepseek-017-20261019/candidate"
+  },
+  "production": {
+    "status": "waiting-current-user-task-natural-completion-and-isolated-gates",
+    "currentVersion": "0.1.6",
+    "userChoice": "wait for the current real task to finish; do not interrupt it",
+    "formalDataModifiedByThisFix": false,
+    "sourceMainUpdated": false,
+    "followUpAutomationId": "deepseek-0-1-7"
+  },
+  "completedAt": "2026-10-19T12:35:14.336251+08:00",
+  "snapshotScope": "Initial P2 candidate only; final directory/runtime code and release archive require the separate final validation report"
+}

@@ -6,6 +6,7 @@ import {mkdir,writeFile,readFile,symlink,cp} from 'node:fs/promises';
 import {join,dirname,basename} from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {randomUUID,createHash} from 'node:crypto';
 import {loadLayeredEnv} from '@deepseek-ai/dsh-app-boot';
 import {root,dataRoot,business} from '../../server/native/business.mjs';
@@ -29,8 +30,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
  const call=(name,args)=>({name,args});
  const endpoint=createServer(async(req,res)=>{
   try{
-   let raw='';for await(const chunk of req)raw+=chunk;
-   const request=JSON.parse(raw);requestCount++;
+   const request=await readJson(req);requestCount++;
    const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
    const anchor=request.messages.findLastIndex(m=>m.role==='user'&&String(m.content).includes('页面输入：'));
    const currentText=request.messages[anchor]?.content??'';
