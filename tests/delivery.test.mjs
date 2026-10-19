@@ -12,11 +12,11 @@ async function fixture(fn){const dir=await mkdtemp(join(tmpdir(),'ooo-bidpliot-d
 async function sourceFixture(dir){
  const source=join(dir,'source');await mkdir(join(source,'scripts'),{recursive:true});await mkdir(join(source,'server'),{recursive:true});await mkdir(join(source,'dist'),{recursive:true});
  await cp(join(root,'scripts/delivery.mjs'),join(source,'scripts/delivery.mjs'));await cp(join(root,'server/installation.mjs'),join(source,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(source,'server/platform.mjs'));await cp(join(root,'server/data-location.mjs'),join(source,'server/data-location.mjs'));
- await symlink(join(root,'node_modules'),join(source,'node_modules'),process.platform==='win32'?'junction':'dir');await writeFile(join(source,'package.json'),JSON.stringify({name:'ooo-bidpliot',type:'module',files:['scripts','server','dist']}));await writeFile(join(source,'package-lock.json'),'{}');await writeFile(join(source,'dist/client.js'),'complete client');return source;
+ await writeFile(join(source,'package.json'),JSON.stringify({name:'ooo-bidpliot',type:'module',files:['scripts','server','dist']}));await writeFile(join(source,'package-lock.json'),'{}');await writeFile(join(source,'dist/client.js'),'complete client');return source;
 }
 test('交付白名单包含运行资源，排除用户数据、环境、备份和缓存',()=>fixture(async dir=>{
  const source=await sourceFixture(dir);
- for(const name of ['data','backups']){await mkdir(join(source,name));await writeFile(join(source,name,'private.db'),'never ship')}
+ for(const name of ['data','backups','node_modules']){await mkdir(join(source,name));await writeFile(join(source,name,'private.db'),'never ship')}
  await mkdir(join(source,'server/__pycache__'));await writeFile(join(source,'server/__pycache__/private.pyc'),'never ship');
  const target=join(dir,'delivery'),result=await command(join(source,'scripts/delivery.mjs'),['export',target]);assert.equal(result.code,0,result.output);
  const manifest=JSON.parse(await readFile(join(target,'delivery-files.json'),'utf8'));assert.equal(manifest.version,null);assert.ok(manifest.files.includes('dist/client.js'));assert.ok(manifest.files.every(p=>!/(^|\/)(data|backups|node_modules|__pycache__)(\/|$)/.test(p)));assert.ok(!(await readdir(target)).includes('data'));

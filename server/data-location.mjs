@@ -1,6 +1,5 @@
 import * as path from 'node:path';
 import {mkdir,lstat,realpath,symlink} from 'node:fs/promises';
-import {canonicalizeWatchPath} from '@deepseek-ai/dsh-home-paths';
 
 // Package-manager installs keep data beside node_modules, never inside it.
 // A fixed-directory installation keeps code and data as sibling directories.
@@ -11,10 +10,18 @@ export function defaultDataDirectory(installation,paths=path){
  }
  return paths.join(container,'ooo-bidpliot-data');
 }
+// Preparation runs before package dependencies exist, so path handling uses Node only.
+async function canonicalDirectory(directory){
+ let current=path.resolve(directory);const suffix=[];
+ for(;;){
+  try{return path.join(await realpath(current),...suffix.reverse())}
+  catch(error){if(error.code!=='ENOENT'||path.dirname(current)===current)throw error;suffix.push(path.basename(current));current=path.dirname(current)}
+ }
+}
 export async function resolveDataDirectory(installation){
  const configured=process.env.DATA_DIR;
  if(configured!==undefined&&(!configured.trim()||!path.isAbsolute(configured)))throw new Error('DATA_DIR 必须是独立数据目录的绝对路径');
- return canonicalizeWatchPath(configured??defaultDataDirectory(installation));
+ return canonicalDirectory(configured??defaultDataDirectory(installation));
 }
 const inside=(parent,target)=>{const part=path.relative(parent,target);return part===''||(part!=='..'&&!part.startsWith('..'+path.sep)&&!path.isAbsolute(part))};
 export async function mountDataDirectory(installation){

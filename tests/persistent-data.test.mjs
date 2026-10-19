@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join,win32,posix} from 'node:path';
 import {defaultDataDirectory} from '../server/data-location.mjs';
 import {spawn} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
+import {fileURLToPath,pathToFileURL} from 'node:url';
 const root=fileURLToPath(new URL('..',import.meta.url));
 const run=(code,home)=>new Promise((resolve,reject)=>{const c=spawn(process.execPath,['--input-type=module','-e',code],{env:Object.fromEntries(Object.entries({...process.env,DSH_HOME:home}).filter(([k])=>k!=='DATA_DIR')),stdio:['ignore','pipe','pipe']});let out='';c.stdout.on('data',b=>out+=b);c.stderr.on('data',b=>out+=b);c.on('error',reject);c.on('close',status=>resolve({status,out}))});
 const mounted=installation=>`import {mountDataDirectory} from ${JSON.stringify(new URL('../server/data-location.mjs',import.meta.url).href)};console.log(await mountDataDirectory(${JSON.stringify(installation)}))`;
@@ -44,3 +44,12 @@ test('macOS 与 Windows 的客户端安装、pnpm 虚拟存储和固定目录路
   [win32,'\\\\server\\share\\plugins\\ooo-bidpliot','\\\\server\\share\\plugins\\ooo-bidpliot-data'],
  ])assert.equal(defaultDataDirectory(code,paths),expected);
 });
+
+test('安装前没有任何第三方依赖仍能准备数据入口，且拒绝代码内和node_modules内的数据位置',()=>fixture(async base=>{
+ const code=join(base,'bare-code'),home=join(base,'home');await mkdir(join(code,'server'),{recursive:true});await cp(join(root,'server/data-location.mjs'),join(code,'server/data-location.mjs'));
+ const entry=pathToFileURL(join(code,'server/data-location.mjs')).href;
+ let r=await run(`const {mountDataDirectory}=await import(${JSON.stringify(entry)});await mountDataDirectory(${JSON.stringify(code)})`,home);assert.equal(r.status,0,r.out);
+ for(const bad of [join(code,'..data'),join(base,'node_modules/user-data')]){
+  r=await run(`process.env.DATA_DIR=${JSON.stringify(bad)};`+mounted(code),home);assert.equal(r.status,1);assert.match(r.out,/必须相互独立|不能放在 node_modules/);
+ }
+}));
