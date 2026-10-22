@@ -66,7 +66,7 @@ const endpoint=createServer(async(req,res)=>{
     [call('ooo_bidpliot_project',{operation:'sources',task_id:tid,main_file:'交付验收原件.png',supplements:[]})],
     [call('ooo_bidpliot_project',{operation:'company',company:{name:'对话验收公司',profile:{legal_name:'验收法人',legal_title:'总经理',address:'验收地址',phone:'123',email:'fixture@example.test',fax:'无'}}})],
     [call('ooo_bidpliot_project',{operation:'bidder',task_id:tid,company_id:values[4]?.id,signer_id:'legal',sign_date:'2026-10-15'})],
-    [call('ooo_bidpliot_run',{task_id:tid,kind:'full'})],
+    [call('ooo_bidpliot_run',{task_id:tid,kind:'full',include_review:true})],
    ];
    if(step<sequence.length)calls=sequence[step];
    else if(step===7&&latestText.includes('继续'))calls=[call('ooo_bidpliot_answer',{task_id:tid,batches:values[6].execution.questions.map(q=>({call_id:q.callId,answers:q.questions.map(question=>({id:question.id,selected:['三年']}))}))})];
@@ -312,13 +312,13 @@ async function finishAnalysis(){
  await timeout(handle.agent.whenIdle(),'analysis completion');await runtime.settling.get(analysisTask.taskId);analysisGate=undefined;
  return {state:(await api('/page-flow/'+analysisTask.taskId)).execution,...sessionEvidence(handle.agent.session.snapshotEvents())};
 }
-async function startFullWorkflow(){
+async function startFullWorkflow(options={include_review:true}){
  const {task}=await api('/tasks',{title:'页面自动全流程验收',request_id:randomUUID()});
  const upload=new FormData();upload.set('file',new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64')]),'交付验收原件.png');await api('/files?task_id='+task.id,upload);
  const state=await api('/page-flow/'+task.id);await api('/page-flow/'+task.id+'/sources',{main_file:'交付验收原件.png',supplements:[],input_version:state.input_versions.analyse},'PUT');
  const company=await api('/library/companies',{name:'自动流程验收公司',profile:{legal_name:'验收法人',legal_title:'总经理',address:'验收地址',phone:'123',email:'fixture@example.test',fax:'无'}});
  await api('/projects/'+task.id+'/bidder',{company_id:company.id,signer_id:'legal',sign_date:'2026-10-15',revision:0},'PUT');
- await api('/page-flow/'+task.id+'/workflow',{});return task.id;
+ await api('/page-flow/'+task.id+'/workflow',options);return task.id;
 }
 async function fullQuestionFlushRace(rounds=1){
  const runtime=ctx.get('bidBusiness'),gates=Array.from({length:rounds},()=>({entered:Promise.withResolvers(),release:Promise.withResolvers()})),gatedCalls=new Set(),roundEvidence=[],settlements=[];
@@ -462,7 +462,7 @@ process.on('message',async({id,command,args})=>{
    }finally{await handle.dispose()}
   }
   else if(command==='fullWorkflow'){
-   const taskId=await startFullWorkflow();await ctx.get('bidBusiness').workflows.wait(taskId);
+   const taskId=await startFullWorkflow(args??{});await ctx.get('bidBusiness').workflows.wait(taskId);
    result={taskId,state:await api('/page-flow/'+taskId)};
   }
   else if(command==='fullQuestionFlushRace')result=await fullQuestionFlushRace();

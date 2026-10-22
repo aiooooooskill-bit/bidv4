@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fixture,nodes,response} from './helpers/component-fixture.mjs';
+import {fixture,nodes,find,response} from './helpers/component-fixture.mjs';
 import {projectStatus} from '../server/native/chat-tools.mjs';
 import {BusinessRuntime} from '../server/native/runtime.mjs';
 import {transcribe} from '../server/native/tools.mjs';
@@ -13,10 +13,10 @@ test('有未保存修改时自动完成不发请求，保存后可启动，停�
  const dirty=value=>{f.api.useNavigationGuard().mark('guide-editor',value);guard.render()};
  const flow=state(),control=f.mount('WorkflowControls',{tid:'t1',flow,onChanged:async()=>{}});
  try{
-  dirty(true);let button=control.render();assert.equal(button.props.disabled,true);assert.match(button.props.title,/先保存/);
+  dirty(true);let button=find(control,n=>n.type==='button');assert.equal(button.props.disabled,true);assert.match(button.props.title,/先保存/);
   button.props.onClick();await control.settle();assert.equal(requests.length,0,'A stale handler must also refuse unsaved input');
-  dirty(false);button=control.render();assert.equal(button.props.disabled,false);button.props.onClick();await control.settle();assert.equal(requests[0].method,'POST');
-  flow.workflow.state='running';dirty(true);button=control.render();assert.equal(button.props.children,'停止流程');assert.equal(button.props.disabled,false);button.props.onClick();await control.settle();assert.deepEqual(requests[1].body,{workflow_id:'workflow-1'});assert.equal(requests[1].method,'DELETE');
+  dirty(false);button=find(control,n=>n.type==='button');assert.equal(button.props.disabled,false);button.props.onClick();await control.settle();assert.equal(requests.length,0);find(control,n=>n.type==='button'&&n.props.children==='开始自动完成').props.onClick();await control.settle();assert.equal(requests[0].method,'POST');assert.equal(requests[0].body.include_review,false);
+  flow.workflow.state='running';dirty(true);button=find(control,n=>n.type==='button');assert.equal(button.props.children,'停止流程');assert.equal(button.props.disabled,false);button.props.onClick();await control.settle();assert.deepEqual(requests[1].body,{workflow_id:'workflow-1'});assert.equal(requests[1].method,'DELETE');
  }finally{control.unmount();guard.unmount();f.close()}
 });
 

@@ -25,7 +25,7 @@ export class Workflows{
    if(record.session_id&&(state.execution?.action_id!==record.action_id||state.execution.state==='stopped'||(state.execution.state==='failed'&&!sameReviewBasis)))record.session_id=null;
    for(let index=0;index<record.index;index++){const stage=stages[index];let valid=true;if(['analyse','outline'].includes(stage)){try{await this.runtime.requireCurrent(tid,stage,state)}catch(e){if(e.status!==409)throw e;valid=false}}if(stage==='build')valid=deliveryReady(state);if(!valid){record.index=index;record.completed=record.completed.slice(0,index);record.session_id=null;break}}
    if(!record.session_id){record.attempt=(record.attempt??0)+1;record.payload=null}
-  }else record={id:randomUUID(),state:'running',index:0,completed:[],options:{page_target:options.page_target??null,numbering:options.numbering??'decimal'},session_id:null,attempt:0};
+  }else record={id:randomUUID(),state:'running',index:0,completed:[],options:{page_target:options.page_target??null,numbering:options.numbering??'decimal',include_review:options.include_review===true},session_id:null,attempt:0};
   record.state='running';delete record.error;await save(tid,record);
   this.records.set(tid,record);const ready=Promise.withResolvers();const job=this.run(tid,record,options.agent,ready).finally(()=>{this.jobs.delete(tid);this.records.delete(tid)});this.jobs.set(tid,job);
   // Both entries own the same job; chat execution continues in its current turn.
@@ -55,7 +55,7 @@ export class Workflows{
  async wait(tid){await this.starts.get(tid);await this.jobs.get(tid);return this.snapshot(tid)}
  async run(tid,record,agent,ready){
   try{
-   while(record.index<stages.length&&record.state==='running'){
+   while(record.index<(record.options.include_review?stages.length:stages.length-1)&&record.state==='running'){
     const kind=stages[record.index];let settlement=this.runtime.settling.get(tid);record.stage=kind;await save(tid,record);
     let state=await this.runtime.state(tid);
     if(!record.session_id){
@@ -65,7 +65,7 @@ export class Workflows{
      if(kind==='build')reusable=deliveryReady(state);
      if(kind==='review')reusable=state.review.status==='reviewed';
      if(reusable){record.completed.push(kind);record.index++;record.payload=null;continue}
-     record.payload??={kind,request_id:record.id+':'+record.index+':'+record.attempt,input_version:state.input_versions[kind],...(kind==='analyse'?{main_file:state.source_selection.main,supplements:state.source_selection.supplements.map(s=>s.file)}:{}),...(kind==='outline'?record.options:{}),...(kind==='build'?{sections:[]}:{} )};
+     record.payload??={kind,request_id:record.id+':'+record.index+':'+record.attempt,input_version:state.input_versions[kind],...(kind==='analyse'?{main_file:state.source_selection.main,supplements:state.source_selection.supplements.map(s=>s.file)}:{}),...(kind==='outline'?{page_target:record.options.page_target,numbering:record.options.numbering}:{}),...(kind==='build'?{sections:[]}:{} )};
      await save(tid,record);
      const action=await this.runtime.action(tid,record.payload,{workflowId:record.id,...(agent?{agent}:{})});settlement=this.runtime.settling.get(tid);agent=null;record.session_id=action.session_id;record.action_id=action.action_id;await save(tid,record);ready.resolve();if(record.state==='stopped'){await this.runtime.stop(tid,record.session_id,record.action_id);break}
     }

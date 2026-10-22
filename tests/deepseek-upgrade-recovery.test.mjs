@@ -48,7 +48,7 @@ else test(name,{timeout:160000},async()=>{
   assert.equal(await host.command('modelCount'),0,'读取旧历史不自动续跑或迁移');
   // Now interrupt a fresh official 0.2.1 child after its DOCX side effect has
   // been durably recorded, before validation or parent tool settlement.
-  const fresh=await host.command('fullWorkflow'),taskId=fresh.taskId,sessionId=fresh.state.session_id;
+  const fresh=await host.command('fullWorkflow',{include_review:true}),taskId=fresh.taskId,sessionId=fresh.state.session_id;
   await host.command('crashAfterBody');await answer(host,taskId,fresh.state);
   const checkpoint=await host.command('crashCheckpoint',{taskId});
   assert.equal(checkpoint.state.execution.state,'running');assert.equal(checkpoint.state.body_sections[0].status,'draft');

@@ -176,3 +176,26 @@
 .bp-root textarea{padding:10px 12px;line-height:1.7}
 .bp-root input:focus-visible,.bp-root textarea:focus-visible,.bp-root select:focus-visible{outline:2px solid var(--bid-color-focus);outline-offset:2px}
 @media(max-width:760px){.bp-root .run-options{grid-template-columns:1fr;margin:12px;padding:14px}.bp-root .run-options-title{align-items:flex-start;flex-direction:column}.bp-root .bidder-summary{flex-wrap:wrap}}
+
+/* Automatic workflow confirmation uses the shared dialog and design tokens. */
+.bp-root .workflow-options{padding:24px}
+.bp-root .workflow-heading{display:flex;align-items:center;justify-content:space-between}
+.bp-root .workflow-heading h2{font-size:18px;font-weight:600;margin:0}
+.bp-root .workflow-close{border:0;background:transparent;color:var(--bid-color-text-muted);border-radius:6px;width:30px;height:30px;padding:0;font:inherit;font-size:22px;cursor:pointer}
+.bp-root .workflow-close:hover{background:var(--bid-color-hover)}
+.bp-root .workflow-intro{color:var(--bid-color-text-muted);margin:8px 0 22px}
+.bp-root .workflow-caption{font-size:13px;font-weight:600;margin-bottom:10px}
+.bp-root .workflow-steps{display:flex;flex-wrap:wrap;align-items:center;background:var(--bid-color-surface-soft);border:1px solid var(--bid-color-border);border-radius:8px;padding:18px 16px;gap:12px}
+.bp-root .workflow-step{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px}
+.bp-root .workflow-number{border-radius:50%;width:24px;height:24px;display:grid;place-items:center;background:var(--bid-color-selected);color:var(--bid-color-primary);font-size:12px;font-weight:600}
+.bp-root .workflow-arrow{color:var(--bid-color-text-disabled);margin-right:4px}
+.bp-root .workflow-optional{margin-top:22px}
+.bp-root .workflow-review{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid var(--bid-color-border);border-radius:8px;cursor:pointer}
+.bp-root .workflow-review[data-selected="true"]{border-color:var(--bid-color-primary);background:var(--bid-color-selected)}
+.bp-root .workflow-review input{accent-color:var(--bid-color-primary);width:17px;height:17px;margin:3px 0 0;flex:none;cursor:pointer}
+.bp-root .workflow-review-title{font-weight:600}
+.bp-root .workflow-tag{font-size:11px;color:var(--bid-color-text-muted);background:var(--bid-color-page);border-radius:4px;padding:2px 6px;margin-left:8px;font-weight:400}
+.bp-root .workflow-review p{margin:4px 0 0;color:var(--bid-color-text-muted);font-size:13px}
+.bp-root .workflow-warning{margin-top:12px;padding:10px 12px;color:var(--bid-color-warning-text);background:var(--bid-color-warning-bg);border:1px solid var(--bid-color-warning-border);border-radius:6px;font-size:13px;display:flex;gap:8px}
+.bp-root .workflow-summary{font-size:12px;color:var(--bid-color-text-muted);margin:16px 0 0}
+.bp-root .workflow-actions{border-top:1px solid var(--bid-color-border);padding:16px 24px;display:flex;justify-content:flex-end;gap:10px}
