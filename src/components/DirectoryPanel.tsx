@@ -25,13 +25,15 @@ export function DirectoryPanel({tid,value,onSaved,onSelect,locked=false,selected
  const mutate=(fn:(data:DirectoryData)=>void)=>{if(disabled)return;setDraft(current=>{if(!current)return current;const next=structuredClone(current);fn(next);return next})};
  const node=(data:DirectoryData,id:string)=>findInDocs(data.response_documents??[],id);
  const saveCurrent=useRef<(force?:boolean)=>Promise<void>>(async()=>{}),saveLock=useRef(false);
+ const originals=useRef(new Map<string,{volume:string;title:string}>());
  const save=async(force=false)=>{
   if(!draft||disabled||saveLock.current)return;saveLock.current=true;setBusy(true);setSaved(false);
   try{
    const validate=(nodes:EditNode[],titles:Set<string>,depth=1)=>nodes.forEach(n=>{if(!n.目录名称.trim())throw new ApiError(422,'章节标题不能为空');if(depth>5)throw new ApiError(422,'目录最多支持五层');if(!n.children?.length){if(titles.has(n.目录名称))throw new ApiError(422,'请为同册叶子章节使用不同标题：'+n.目录名称);titles.add(n.目录名称)}validate(n.children??[],titles,depth+1)});
    draft.response_documents?.forEach(doc=>validate(doc.directory??[],new Set()));
    const content=JSON.parse(JSON.stringify(draft,(key,value)=>key==='_id'?undefined:value));
-   await request(`/artifacts/${value.artifact_id}/content`,json('PUT',{content,base_content_seq:base,force}));
+   const renamed_sections=docs.flatMap(doc=>allNodes(doc.directory??[]).flatMap(n=>{const original=originals.current.get(n._id!);return original&&original.title!==n.目录名称?[{volume:original.volume,from_title:original.title,to_title:n.目录名称}]:[]}));
+   await request(`/artifacts/${value.artifact_id}/content`,json('PUT',{content,base_content_seq:base,force,renamed_sections}));
    setDraft(null);setConflict(false);setSaved(true);clearNotice(tid+':directory-save');await onSaved();
   }catch(e){const changed=e instanceof ApiError&&e.status===409&&e.message.includes('内容已被其他修改');if(changed)setConflict(true);reportError(e,{id:tid+':directory-save',scope:tid,title:'目录保存未完成',retry:()=>saveCurrent.current(force),retryLabel:'重试保存',message:changed?'目录已在另一处更新，本次草稿已保留。请选择采用哪个版本。':undefined})}
   finally{saveLock.current=false;setBusy(false)}
@@ -77,7 +79,7 @@ export function DirectoryPanel({tid,value,onSaved,onSelect,locked=false,selected
  });
  return <section className="directory-panel">
   <div className="document-toolbar"><strong>投标目录</strong><span role="status">{busy?'保存中…':dirty?'未保存':saved?'已保存':''}</span><span className="bp-spacer"/>
-   {draft?<><button className="bp-btn" disabled={disabled} onClick={()=>dirty?setLeaving(true):setDraft(null)}>取消</button><button className="bp-btn" disabled={disabled} onClick={()=>void save()}>保存目录</button></>:<button className="bp-btn" disabled={disabled} onClick={()=>{setBase(value.content_seq);setInitial(signature(value.content));setSaved(false);setMenu(null);setDraft(editable(value.content))}}>编辑目录</button>}
+   {draft?<><button className="bp-btn" disabled={disabled} onClick={()=>dirty?setLeaving(true):setDraft(null)}>取消</button><button className="bp-btn" disabled={disabled} onClick={()=>void save()}>保存目录</button></>:<button className="bp-btn" disabled={disabled} onClick={()=>{setBase(value.content_seq);setInitial(signature(value.content));setSaved(false);setMenu(null);const next=editable(value.content);originals.current=new Map((next.response_documents??[]).flatMap(doc=>allNodes(doc.directory??[]).map(n=>[n._id!,{volume:doc.name?.trim()||'主册',title:n.目录名称}] as const)));setDraft(next)}}>编辑目录</button>}
   </div>
   <div className="directory-docs">{docs.map((doc,index)=><div className="directory-volume" key={index}>
    {docs.length>1?<p className="directory-book-name">{businessText(doc.name??'响应文件')}</p>:null}

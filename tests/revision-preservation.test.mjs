@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {join} from 'node:path';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {installExecutionGuard} from '../server/native/execution-guard.mjs';
+import {dataRoot} from '../server/native/business.mjs';
+import {runIsolatedTest} from './helpers/isolated-app.mjs';
+const boundary='局部修订不能重建现稿，正常定向修订和正文生成阶段继续可用';
+if(process.env.BIDV4_REVISION_ERROR_FIXTURE!=='1')test(boundary,()=>runIsolatedTest('revision-preservation.test.mjs','BIDV4_REVISION_ERROR_FIXTURE',new RegExp(boundary)));
+else test(boundary,async()=>{
+ const tid='revise-preserve',cwd=join(dataRoot,'workspace',tid),dir=join(dataRoot,'actions',tid);await mkdir(join(cwd,'work/body'),{recursive:true});await mkdir(dir,{recursive:true});const path=join(cwd,'work/body/A.docx');await writeFile(path,'existing bytes');
+ const record={kind:'revise',action_id:'revision',session_id:'parent',section_paths:['body/A.docx']};await writeFile(join(dir,'latest.json'),JSON.stringify(record));
+ const agent={id:'parent',session:{id:'parent',header:{cwd}}};let guard,calls=0;
+ const state={bidder:{confirmed:true,stale:false},build_preparation:{guide:'ready',promises:'ready'},body_sections:[{path:'body/A.docx'}],body_files:['body/A.docx']};
+ const ctx={agents:new Map([['parent',agent]]),on(name,fn){if(name==='tools/execute')guard=fn;return()=>{}},effect(){},fs:{async resolve(path){return {targetKey:path}}},subprocess:{spawn(){return {stdin:{on(){},end(){}},done:Promise.resolve({exitCode:0}),collected:{stdout:{readFrom:()=>({text:JSON.stringify({result:state})})}},terminate(){},waitForExit(){}}}}};
+ installExecutionGuard(ctx,()=>{});const run=(name,args)=>guard({agent,name,arguments:args,signal:new AbortController().signal},async()=>{calls++;return {content:[]}});
+ for(const replace of [true,false])await assert.rejects(run('docx_section_create',{path:'body/A.docx',replace}),/局部修订阶段不能/);
+ assert.equal(calls,0);assert.equal(await readFile(path,'utf8'),'existing bytes');
+ await run('docx_section_revise',{path:'body/A.docx'});assert.equal(calls,1);
+ await writeFile(join(dir,'latest.json'),JSON.stringify({...record,kind:'body',action_id:'new-body'}));await run('docx_section_create',{path:'body/A.docx',replace:true});assert.equal(calls,2);
+});

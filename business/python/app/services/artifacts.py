@@ -2,10 +2,12 @@ from .errors import BusinessError, FileDownload, IncomingFile, Response
 '类型化 Artifact 端点（artifact-system-design.md §6/§7，2026-09-04 两态移除）。\n\n- GET  /api/contracts                     平台契约目录元数据（客户端启动对账用）\n- GET  /api/artifacts                     索引列表（?task_id= 任务全部 / ?conversation_id= 按来源筛选）\n- GET  /api/artifacts/{aid}/meta          轻量探测（版本号，编辑器轮询用）\n- GET  /api/artifacts/{aid}/content       当前内容（application/json）\n- GET  /api/artifacts/{aid}/file          文件型产物原始字节（tender.volume docx）\n- PUT  /api/artifacts/{aid}/content       编辑保存（content_seq 探测 + force 用户裁决覆盖）\n- POST  /api/artifacts/{aid}/restore      恢复上一版（恢复点安全网）\n\n并发策略遵循文件夹语义：发布即覆盖（覆盖前留恢复点），无编辑租约；\n编辑器轮询探测外部更新，冲突由用户在客户端二选一裁决。\n'
 import json
 import hashlib
+import time
 from datetime import datetime, timezone
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .. import artifact_store, contracts, db
 from .edit_guard import require_idle
+from .directory_edits import SectionRename
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec='seconds')
@@ -14,6 +16,7 @@ class ContentUpdate(BaseModel):
     content: object
     base_content_seq: int
     force: bool = False
+    renamed_sections: list[SectionRename] = Field(default_factory=list)
 
 async def list_contracts():
     return {'contracts': [{'key': c.key, 'kind': c.kind, 'schema_id': c.schema_id, 'schema_version': c.schema_version, 'cardinality': c.cardinality, 'llm_write_mode': c.llm_write_mode, 'editable': c.editable, 'default_display_name': c.default_display_name} for c in contracts.list_contracts()]}
@@ -106,8 +109,28 @@ async def update_artifact_content(aid: str, body: ContentUpdate):
             prev = artifact_store.read_content_resolved(aid, row)
             if prev is not None:
                 artifact_store.save_restore_point(aid, row, row['content_seq'], prev)
-        artifact_store.replace_current_content(aid, row, content_text)
         new_seq = row['content_seq'] + 1
         updated_at = _now()
-        db.upsert_artifact_index({**row, 'content_seq': new_seq, 'updated_at': updated_at})
+        if row['kind'] == 'tender.directory':
+            from . import directory_edits, page_flow
+            previous = artifact_store.read_content_resolved(aid, row)
+            marker = directory_edits.user_save_path(row)
+            previous_marker = marker.read_text() if marker.is_file() else None
+            accepted = {'content_seq': new_seq, 'content_sha256': hashlib.sha256(content_text.encode()).hexdigest(), 'input_version': page_flow.input_versions(row['task_id'])['outline'], 'saved_at': time.time_ns() / 1_000_000}
+            with directory_edits.preserve_bodies(row['task_id'], json.loads(previous), body.content, body.renamed_sections):
+                try:
+                    artifact_store.replace_current_content(aid, row, content_text)
+                    artifact_store._atomic_write(marker, json.dumps(accepted))
+                    db.upsert_artifact_index({**row, 'content_seq': new_seq, 'updated_at': updated_at})
+                except BaseException:
+                    artifact_store.replace_current_content(aid, row, previous)
+                    if previous_marker is None:
+                        marker.unlink(missing_ok=True)
+                    else:
+                        artifact_store._atomic_write(marker, previous_marker)
+                    db.upsert_artifact_index(row)
+                    raise
+        else:
+            artifact_store.replace_current_content(aid, row, content_text)
+            db.upsert_artifact_index({**row, 'content_seq': new_seq, 'updated_at': updated_at})
     return {'ok': True, 'content_seq': new_seq, 'updated_at': updated_at}

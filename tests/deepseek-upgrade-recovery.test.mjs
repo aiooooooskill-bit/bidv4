@@ -10,7 +10,7 @@ import {analysisFixture} from './helpers/analysis-session-fixture.mjs';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
 import {root,dataRoot} from '../server/native/business.mjs';
 
-const name='0.2.1升级验收：0.2.0原始任务冷续跑、强制退出恢复、成果复用与主会话保留';
+const name='历史只读保留及当前版本强制退出恢复、成果复用与主会话保留';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const json=async path=>JSON.parse(await readFile(path,'utf8'));
 const state=async(host,taskId)=>(await host.api('/page-flow/'+taskId)).json();
@@ -44,17 +44,8 @@ else test(name,{timeout:160000},async()=>{
   assert.equal(previous.modelRequests,0,'Opening old task history must not dispatch a model');
   assert.ok(previous.events.some(e=>e.type==='tool/call'&&e.data.name==='ask_user_question'));
   const oldState=await state(host,manifest.taskId);
-  assert.equal(oldState.session_id,manifest.sessionId);assert.equal(oldState.execution.state,'needs_input');assert.equal(oldState.build_preparation.guide,'ready');
-  await host.command('relocateFixtureSession',{taskId:manifest.taskId});
-  const before=await fileHashes(manifest.taskId);
-  await answer(host,manifest.taskId,oldState);
-  const completed=await host.command('waitWorkflow',{taskId:manifest.taskId});
-  assert.equal(completed.workflow.state,'completed',JSON.stringify({workflow:completed.workflow,errors:completed.fixture_errors}));assert.equal(completed.session_id,manifest.sessionId);
-  const after=await host.command('projectEvidence',{taskId:manifest.taskId});
-  assert.deepEqual(after.events.slice(0,previous.events.length),previous.events,'Every original 0.2.0 event remains the unchanged history prefix');
-  assert.deepEqual([...new Set(after.records.map(r=>r.session_id))],[manifest.sessionId]);
-  const reused=await fileHashes(manifest.taskId);for(const [path,digest]of Object.entries(before))assert.equal(reused[path],digest,'Retain old completed '+path);
-  assert.equal(completed.volume_states[0].status,'ready');assert.equal(completed.review.status,'reviewed');
+  assert.equal(oldState.session_id,manifest.sessionId);assert.equal(oldState.execution.state,'needs_input');assert.equal(oldState.build_preparation.guide,'stale','旧准备依据过期不能自动变为当前就绪');
+  assert.equal(await host.command('modelCount'),0,'读取旧历史不自动续跑或迁移');
   // Now interrupt a fresh official 0.2.1 child after its DOCX side effect has
   // been durably recorded, before validation or parent tool settlement.
   const fresh=await host.command('fullWorkflow'),taskId=fresh.taskId,sessionId=fresh.state.session_id;

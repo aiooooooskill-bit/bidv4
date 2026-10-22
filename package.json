@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -10,7 +10,8 @@
     "./client": "./dist/client.js",
     "./package.json": "./package.json",
     "./agent": "./server/agent.mjs",
-    "./tools": "./server/native/tools.mjs"
+    "./tools": "./server/native/tools.mjs",
+    "./stage-context": "./server/native/stage-context.mjs"
   },
   "dsh": {
     "bundle": {
@@ -31,7 +32,7 @@
     "check": "tsc --noEmit",
     "test": "node scripts/test-js.mjs",
     "verify": "npm run check && npm run build && npm test && npm run test:business",
-    "start": "dsh web --no-open --host 127.0.0.1 --port 3080",
+    "start": "dsh web --patch cordis.web.patch.yml --no-open --host 127.0.0.1 --port 3080",
     "tools:install": "uv sync --locked --project business/python",
     "test:business": "node scripts/test-business.mjs",
     "directory:prepare": "node scripts/prepare.mjs",
@@ -43,42 +44,44 @@
     "release:package": "node scripts/package-release.mjs"
   },
   "dependencies": {
+    "@floating-ui/dom": "1.7.6",
     "busboy": "1.6.0",
     "docx-preview": "0.4.0",
     "html2canvas": "1.4.1",
     "mermaid": "12.0.0",
+    "micromark-util-decode-string": "2.0.1",
     "pdfjs-dist": "6.3.289",
     "react-markdown": "10.1.0",
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
-    "unified": "11.0.5",
-    "micromark-util-decode-string": "2.0.1",
-    "@floating-ui/dom": "1.7.6"
+    "unified": "11.0.5"
   },
   "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.6",
     "@deepseek-ai/dsh": "0.2.1-rc.2",
-    "@types/react": "18.3.12",
-    "@types/react-dom": "18.3.1",
-    "esbuild": "0.28.2",
-    "typescript": "5.7.2",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-persona": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.2",
     "@deepseek-ai/dsh-subagent": "0.2.1-rc.2",
     "@deepseek-ai/dsh-subagent-spawn-in-process": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-persona": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.2",
     "@deepseek-ai/dsh-tool-fs": "0.2.1-rc.2",
     "@deepseek-ai/dsh-tool-fs-search": "0.2.1-rc.2",
     "@deepseek-ai/dsh-tool-skill": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.2",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "esbuild": "0.28.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "@deepseek-ai/cordis": "4.0.5",
-    "@deepseek-ai/cordis-plugin-loader": "1.0.6",
-    "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-scope": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2"
+    "typescript": "5.7.2",
+    "@deepseek-ai/dsh-compaction": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2"
   },
   "engines": {
     "node": ">=24",
@@ -91,28 +94,31 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh": "0.2.1-rc.2",
     "@deepseek-ai/cordis": "4.0.5",
     "@deepseek-ai/cordis-plugin-loader": "1.0.6",
+    "@deepseek-ai/dsh": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.1-rc.2",
     "@deepseek-ai/dsh-llm": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-persona": "0.2.1-rc.2",
     "@deepseek-ai/dsh-scope": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.2",
     "@deepseek-ai/dsh-subagent": "0.2.1-rc.2",
     "@deepseek-ai/dsh-subagent-spawn-in-process": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-persona": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.2",
     "@deepseek-ai/dsh-tool-fs": "0.2.1-rc.2",
     "@deepseek-ai/dsh-tool-fs-search": "0.2.1-rc.2",
     "@deepseek-ai/dsh-tool-skill": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.2",
-    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.2",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "@deepseek-ai/dsh-compaction": "0.2.1-rc.2",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.2"
   },
   "files": [
     "cordis.patch.yml",
+    "cordis.web.patch.yml",
     "dist",
     "server",
     "shared",
@@ -141,21 +147,7 @@
     "docs/evidence/delivery-page-20261013.jpg",
     "docs/evidence/delivery-agent-20261013.jpg",
     "docs/evidence/delivery-agent-document-20261013.jpg",
-    "docs/REVIEW-CURRENT.md",
-    "docs/DEEPSEEK-021-ACCEPTANCE.md",
-    "docs/P2-UNLOAD-017-ACCEPTANCE.md",
-    "docs/DIRECTORY-017-ACCEPTANCE.md",
-    "docs/evidence/deepseek-021-delivery-validation-20261019.json",
-    "docs/evidence/deepseek-021-desktop-host-20261019.json",
-    "docs/evidence/deepseek-021-desktop-package-20261019.json",
-    "docs/evidence/deepseek-021-production-20261019.json",
-    "docs/evidence/deepseek-017-delivery-validation-20261019.json",
-    "docs/evidence/deepseek-017-desktop-package-20261019.json",
-    "docs/evidence/deepseek-017-production-20261019.json",
-    "docs/evidence/p2-unload-017-validation-20261019.json",
-    "docs/evidence/directory-017-reentry-web-20261019.jpg",
-    "docs/evidence/directory-017-restart-web-20261019.jpg",
-    "docs/RELEASE-018-ACCEPTANCE.md"
+    "docs/REVIEW-CURRENT.md"
   ],
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh": {
@@ -213,6 +205,12 @@
       "optional": true
     },
     "react-dom": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-compaction": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
       "optional": true
     }
   }

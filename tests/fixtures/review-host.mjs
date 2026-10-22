@@ -36,7 +36,7 @@ const endpoint=createServer(async(req,res)=>{
   const request=await readJson(req);
   if(req.url==='/__fixture_utf8_probe'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(request));return}
   const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
-  const cwd=text.match(/当前任务绝对路径：([^；]+)；/)[1];
+  const cwd=text.match(/^当前任务绝对路径：([^\r\n]+)$/m)[1];
   const latest=request.messages.findLastIndex(m=>m.role==='user'&&String(typeof m.content==='string'?m.content:JSON.stringify(m.content)).includes('页面输入：'));
   const step=request.messages.slice(latest+1).filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;requestStep=step;
   res.writeHead(200,{'Content-Type':'text/event-stream'});

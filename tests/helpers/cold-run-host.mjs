@@ -13,7 +13,7 @@ const analysis=['structure','requirements-submission','requirements-business','r
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const textOf=message=>typeof message?.content==='string'?message.content:JSON.stringify(message?.content??[]);
 const call=(id,name,args)=>({id,name,args});
-const draft='# 响应文件：冷恢复验收册\n\nscope：本机工程验收\n\n## 目录\n- 验收章节\n\n## 来源标注\n\n## 目录说明\n';
+const draft='# 响应文件：冷恢复验收册\n\nscope：本机工程验收\n\n## 目录\n- 封面\n- 目录\n- 验收章节\n\n## 来源标注\n\n## 目录说明\n';
 let ctx,taskId,sessionId,ending=false;
 const requests=[],fixtureErrors=[],checkpoint=Promise.withResolvers();
 const endpoint=createServer(async(req,res)=>{
@@ -35,7 +35,7 @@ const endpoint=createServer(async(req,res)=>{
   const resume=[
    [call('cold-outline-resume','ooo_bidpliot_run',{task_id:taskId,kind:'outline',page_target:null,numbering:'decimal'})],
    [call('cold-draft-read','read',{file_path:join(work,'outline/tender-response-docs.md')})],
-   [call('cold-outline-contract','outline_plan',{operation:'complete',volume:'冷恢复验收册',root_titles:'验收章节'})],
+   [call('cold-outline-contract','outline_plan',{operation:'complete',volume:'冷恢复验收册',root_titles:'封面\n目录\n验收章节'})],
    [call('cold-outline-check','check_outline',{})],
    [call('cold-outline-publish','assemble_tender',{})],
   ];

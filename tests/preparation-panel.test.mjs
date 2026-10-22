@@ -91,13 +91,18 @@ test('侧边提交与顶部停止共用锁，收起再展开不复制提交，�
 test('过期准备只导航到原编辑页签，Escape 尊重已由弹窗处理的事件',async()=>{
  const calls=[],flow=flowFor({session_id:'s1',state:'stopped',kind:'build',questions:[]});
  flow.build_preparation={guide:'stale',promises:'stale'};flow.build_preparation_changes={guide:['目录已调整'],promises:['主体已调整']};
+ flow.files=[{path:'body/写作指引.md',content:'已有写作指引'},{path:'body/关键事实与承诺.md',content:'已有承诺'}];
+ flow.body_files=['body/方案.docx'];
  const original=structuredClone(flow),f=await fixture(async()=>{throw new Error('no network expected')});
  const view=f.mount('BuildWorkspace',{...buildProps(flow),disabled:false,execute:async(...args)=>{calls.push(args);return true}});
  try{
-  assert.ok(hasPanel(view));assert.ok(nodes(view.render()).some(n=>n.props.children==='目录已调整'));
-  button(view,'查看写作指引').props.onClick();assert.ok(button(view,'生成写作指引'));
-  button(view,'查看关键事实与承诺').props.onClick();assert.ok(button(view,'生成承诺清单'));
+  find(view,n=>n.props.onSelect).props.onSelect('技术','方案');
+  assert.equal(hasPanel(view),false);assert.ok(nodes(view.render()).some(n=>n.props.children==='目录已调整'));
+  find(view,n=>n.type==='button'&&Array.isArray(n.props.children)&&n.props.children.join('')==='核对写作指引').props.onClick();assert.ok(button(view,'生成写作指引'));
+  button(view,'目录与章节').props.onClick();
+  find(view,n=>n.type==='button'&&Array.isArray(n.props.children)&&n.props.children.join('')==='核对关键事实与承诺').props.onClick();assert.ok(button(view,'生成承诺清单'));
   assert.deepEqual(flow,original);assert.deepEqual(calls,[],'页面导航不能伪造准备已核对');
+  flow.execution=execution();view.render();assert.ok(hasPanel(view));
   const consumed=new Event('keydown',{cancelable:true});Object.defineProperty(consumed,'key',{value:'Escape'});consumed.preventDefault();window.dispatchEvent(consumed);
   assert.ok(hasPanel(view),'已由 Modal 消费的 Escape 不能顺带关闭面板');
   const escape=new Event('keydown',{cancelable:true});Object.defineProperty(escape,'key',{value:'Escape'});window.dispatchEvent(escape);assert.equal(hasPanel(view),false);

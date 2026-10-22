@@ -55,7 +55,7 @@ def test_thin_dispatch_enriched_with_all_blocks(env):
     out = build_enriched_description('写 3.1 项目理解', tid)
     assert out is not None
     assert out.startswith('写 3.1 项目理解\n〔系统附')
-    assert f'任务目录前缀：{artifact_store.work_dir(tid).parent}/' in out
+    assert f'当前任务绝对路径：{artifact_store.work_dir(tid).parent}' in out
     assert f'DOCX工具path：body/3.1 项目理解与需求分析.docx；validate_body.section：body/3.1 项目理解与需求分析.docx；文件工具路径：{artifact_store.work_dir(tid).parent}/work/body/3.1 项目理解与需求分析.docx' in out
     assert re.search('今天日期：\\d{4}-\\d{2}-\\d{2}$', out, re.MULTILINE)
     assert '写作模式：推理撰写' in out
@@ -99,7 +99,7 @@ def test_multi_section_dispatch_shared_plus_per_section(env):
     assert f'DOCX工具path：body/3.1 项目理解与需求分析.docx；validate_body.section：body/3.1 项目理解与需求分析.docx；文件工具路径：{artifact_store.work_dir(tid).parent}/work/body/3.1 项目理解与需求分析.docx' in out
     assert f'DOCX工具path：body/3.2 总体设计方案.docx；validate_body.section：body/3.2 总体设计方案.docx；文件工具路径：{artifact_store.work_dir(tid).parent}/work/body/3.2 总体设计方案.docx' in out
     assert _data_part(out).count('承诺清单全部值') == 1
-    assert _data_part(out).count(f'任务目录前缀：{artifact_store.work_dir(tid).parent}/') == 1
+    assert _data_part(out).count(f'当前任务绝对路径：{artifact_store.work_dir(tid).parent}') == 1
     assert out.count('写作纪律（完整方法论已在下方给出') == 1
     assert '- 门户与工作台：' in out
     assert '- 3.2 总体设计方案：' not in out
@@ -111,15 +111,11 @@ def test_multi_section_dispatch_any_unmatched_passthrough(env):
     tid = _seed(env)
     assert build_enriched_description('写 一个不存在的节、另一个也没有的节', tid) is None
 
-def test_partial_names_fallback_enriches_resolvable(env):
-    """一真一假节名：碎片失败后首行整体兜底命中真节、按单节拼装——与 2026-09-15
-    前旧版整段探针行为一致（对两节全瘦放行更糟）；假名留给模型自纠，对账/extra
-    侧报告兜底。"""
+def test_partial_names_do_not_silently_drop_unknown_sections(env):
+    """Every requested section must bind; a known title cannot hide an unknown one."""
     tid = _seed(env)
     out = build_enriched_description('写 3.1 项目理解、一个不存在的节', tid)
-    assert out is not None
-    assert '本任务共' not in out
-    assert f'DOCX工具path：body/3.1 项目理解与需求分析.docx；validate_body.section：body/3.1 项目理解与需求分析.docx；文件工具路径：{artifact_store.work_dir(tid).parent}/work/body/3.1 项目理解与需求分析.docx' in out
+    assert out is None
 
 def test_separator_inside_title_falls_back_to_whole_line(env):
     """节名自身含顿号且前缀撞库：碎片探针歧义全灭 → 首行整体单探针兜底命中，
@@ -148,8 +144,10 @@ def test_rich_description_multi_section_anchors(env):
     assert len(rich) > 300
     out = build_enriched_description(rich, tid)
     assert out is not None
-    assert f'DOCX工具path（3.1 项目理解与需求分析）：body/3.1 项目理解与需求分析.docx；validate_body.section（3.1 项目理解与需求分析）：body/3.1 项目理解与需求分析.docx；文件工具路径（3.1 项目理解与需求分析）：{artifact_store.work_dir(tid).parent}/work/body/3.1 项目理解与需求分析.docx' in out
-    assert f'DOCX工具path（3.2 总体设计方案）：body/3.2 总体设计方案.docx；validate_body.section（3.2 总体设计方案）：body/3.2 总体设计方案.docx；文件工具路径（3.2 总体设计方案）：{artifact_store.work_dir(tid).parent}/work/body/3.2 总体设计方案.docx' in out
+    for title in ['3.1 项目理解与需求分析','3.2 总体设计方案']:
+        assert f'节：{title}】' in out
+        assert f'DOCX工具path：body/{title}.docx；validate_body.section：body/{title}.docx' in out
+        assert f'文件工具路径：{artifact_store.work_dir(tid).parent}/work/body/{title}.docx' in out
 
 def test_writer_skill_inlined_with_no_reread_hint(env):
     """写作方法论内联（2026-09-12）：写手子代理无 SkillsMiddleware，此前每节都要自己
@@ -246,9 +244,12 @@ def test_rich_description_gets_path_anchor(env):
     out = build_enriched_description(rich, tid)
     assert out is not None
     assert out.startswith('写 3.1 项目理解\n推理撰写模式。')
-    assert out.endswith(f'\n〔系统附：路径锚点（程序自动生成，直接使用）：\n任务目录前缀：{artifact_store.work_dir(tid).parent}/\nDOCX工具path：body/3.1 项目理解与需求分析.docx；validate_body.section：body/3.1 项目理解与需求分析.docx；文件工具路径：{artifact_store.work_dir(tid).parent}/work/body/3.1 项目理解与需求分析.docx\n今天日期：{date.today().isoformat()}')
-    assert '承诺清单全部值' not in out
-    assert '要求清单' not in out
+    assert rich.strip() in out
+    assert 'DOCX工具path：body/3.1 项目理解与需求分析.docx' in out
+    assert '直接从建节开工' in out
+    assert f'今天日期：{date.today().isoformat()}' in out
+    assert '承诺清单全部值' in out
+    assert '要求清单' in out
     assert build_enriched_description(out, tid) is None
 
 def test_material_card_resolved_from_guide(env):
@@ -339,30 +340,30 @@ def test_multi_volume_path_and_format_note(env):
     assert '本节含格式件' in out
     assert 'TPL-' not in _data_part(out)
 
-def test_multi_volume_path_sanitizes_volume_name(env):
-    """册名含 : 等路径非法字符：输出路径与兄弟摘要目录都走 sanitize_name——与
-    实际落点（docx_assemble_volume/check_pipeline）同口径，原样拼接指错路径
-    （2026-09-10 review）。注：册名含 / 属「册名/标题」拆分协议的既有限制，不在此测。"""
+@pytest.mark.parametrize('volume', ['技术:第一册', '技术/第一册', '超长响应册' * 14])
+def test_multi_volume_path_sanitizes_volume_name(env, volume):
+    """真实派发路径、兄弟摘要与指引匹配共同保留特殊册名身份。"""
     content = _multi_volume_content()
-    content['response_documents'][0]['name'] = '技术:第一册'
+    content['response_documents'][0]['name'] = volume
     task = env[0]
     from app import publish
     publish.publish_artifact(_KEY, content, task_id=task['id'])
     wroot = artifact_store.work_dir(task['id'])
-    from app.tools.body_contract import sanitize_name
-    assert '技术:第一册' != sanitize_name('技术:第一册')
-    vol_dir = wroot / 'body' / sanitize_name('技术:第一册')
+    from app.tools.body_contract import volume_key
+    assert volume != volume_key(volume)
+    vol_dir = wroot / 'body' / volume_key(volume)
     vol_dir.mkdir(parents=True, exist_ok=True)
     from docx import Document as _D
     d = _D()
     d.add_paragraph('已写节的开头摘要文本。')
     d.save(str(vol_dir / '已写节.docx'))
-    (wroot / 'body/写作指引.md').write_text('| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 技术:第一册/投标函 | — | TPL-02 | — | 格式件：拷原件+填空 |\n', encoding='utf-8')
+    (wroot / 'body/写作指引.md').write_text(f'| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| {volume}/投标函 | — | TPL-02 | — | 格式件：拷原件+填空 |\n', encoding='utf-8')
     build_state.record_guide_write(task['id'], None, True)
     out = build_enriched_description('写投标函', task['id'])
     assert out is not None
-    assert f"DOCX工具path：body/{sanitize_name('技术:第一册')}/投标函.docx" in out
+    assert f"DOCX工具path：body/{volume_key(volume)}/投标函.docx" in out
     assert '已写节' in out
+    assert '本节含格式件' in out
 
 def _seed_outline(env, fname: str, nodes: list) -> None:
     """往 work/parse/<文件名>/ 落一份 outline.json（标题树形态同 parse_document）。"""

@@ -54,7 +54,7 @@ else test(name,{timeout:50000},async()=>{
   try{
    const request=await readJson(req);requests.push(request);
    const instruction=request.messages.findLast(message=>message.role==='user'&&String(message.content).includes('页面输入：'))?.content??'';
-   const cwd=instruction.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+   const cwd=instruction.match(/当前任务绝对路径：([^；\r\n]+)/)?.[1];
    const anchor=request.messages.findLastIndex(message=>message.role==='user'&&String(message.content).includes('页面输入：'));
    const alreadyWrote=anchor>=0&&request.messages.slice(anchor).some(message=>message.role==='assistant'&&message.tool_calls?.length);
    const calls=cwd&&!alreadyWrote?analysis.map(key=>({index:analysis.indexOf(key),id:'write-'+key,type:'function',function:{name:'write',arguments:JSON.stringify({file_path:join(cwd,'work/analysis',key+'.md'),content:'# 关闭失败隔离夹具 '+key+'\n合成内容：验证正常成果持久化与插件关闭后的保留。'})}})):[];

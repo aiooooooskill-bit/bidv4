@@ -1,18 +1,18 @@
 from typing import Literal
 import json
 from .. import runctx
-from ..services.outline_contract import PlanBatch, plan_batch, check, _load
+from ..services.outline_contract import PlanBatch, Exclusion, plan_batch, check, _load
 
 
 def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source', 'exclude', 'content_heading', 'complete'] = 'begin',
                  volume: str = '', root_titles: str = '', unit_id: str = '',
                  kind: Literal['', 'heading', 'detail', 'rubric', 'proof', 'procedure', 'out_of_scope'] = '',
                  reason: str = '', source_id: str = '', level1: str = '', level2: str = '', level3: str = '',
-                 body_path: str = '', block: int = 0) -> dict:
+                 body_path: str = '', block: int = 0, exclusions: list[Exclusion] | None = None) -> dict:
     """逐项记录真实目录的分类与来源，保全原结构，全部审查后冻结。
 
-    参数全部为直接标量，不传JSON字符串或嵌套数组。路径用level1/level2/level3各填本项目完整标题，不能跳级。
-    begin：已有目录不传其他参数即承接原骨架；新目录填volume和root_titles（一级标题按原顺序换行分隔），各册分别begin。
+    除exclude的exclusions为逐项对象数组外，其余参数直接填标量，不传JSON字符串或嵌套对象。路径用level1/level2/level3各填本项目完整标题，不能跳级。
+    begin：已有实际目录不传其他参数即承接原骨架；只有册名和scope、尚无目录树的册仍是新目录，逐册填volume和root_titles。root_titles为全部实际一级标题，按原顺序换行分隔，前两项依次为封面、目录，随后是正文及独立附件；不能只填正文标题。错误参数不保存，修正后直接重试，无需删除工作稿。
     有SCORE时单册/多册均须真实task子代理独立评分对齐后再decide；不能由主代理预判跳过。
     decide：unit_id填context必审片段编号，kind选heading/detail/rubric/proof/procedure/out_of_scope，reason至少12字，volume及三级标题字段给出真实承载路径。
     独立实质分类选heading；类别中有参数/字段/举例不改变其独立性。无评分、其他部分未读到或正文尚缺，不能省略格式条款及用户明确要求的适用方案类别。
@@ -21,9 +21,9 @@ def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source',
     bind：用source_id、volume和标题路径挂接普通来源。新增标题须先decide为heading，bindings不能暗中增加参数/证明标题。
     replace_source：回读registry证实旧ID错标后，填source_id及一个正确路径，清除其旧挂接并重建；原节点/说明保留，其余正确路径继续bind。
     回执source_changes_to_review列真实子稿移除的原来源；必须在complete前核对。旧错标纠正计划，旧有效来源重派恢复，不能将错标先冻结再补救。
-    exclude：仅对本项目明确不适用或程序性无需成章的完整来源，source_id及reason说明原因；该来源的out_of_scope决策才可不填目标。
+    exclude：exclusions填写1至8个{source_id,reason}条目，编号不得重复，每条保留自己的完整理由；不填外层source_id/reason。不能为合批概括不同条目的理由。仅排除本项目明确不适用或程序性无需成章的来源；整批原校验通过后保存，任一错误整批不保存。
     content_heading：根据context.body_inventory的既有正文，填volume、标题路径、body_path、block和reason；末级标题须与实际原文标题逐字一致。只归入同册原章，不把素材当招标强制事实。
-    每次最多同轮提交6个工具调用，读回执后再继续。pending_sources/pending_units都清零后complete冻结，check_outline回读真实标题并assemble_tender发布。
+    排除条目优先小批量提交，不逐条重复调用。回执只给remaining_source_count/remaining_decision_count和下一小批ID；数量都清零后complete冻结，check_outline回读真实标题并assemble_tender发布。
     冻结后不能改分类/标题/旧映射；仅bind向已批准路径追加经registry核实的合法来源，不能为消除报错增加不相关来源。
     """
     tid = runctx.current_run().task_id
@@ -32,6 +32,8 @@ def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source',
         if (level3 and not level2) or (level2 and not level1):
             raise ValueError('标题路径不能跳级')
         batch = {}
+        if exclusions is not None and operation != 'exclude':
+            raise ValueError('exclusions仅用于exclude')
         if operation not in ('begin', 'decide', 'bind', 'replace_source', 'exclude', 'content_heading', 'complete'):
             raise ValueError('未知目录审查操作')
         if root_titles:
@@ -48,7 +50,11 @@ def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source',
         if operation == 'replace_source':
             batch['replace_sources'] = [source_id]
         if operation == 'exclude':
-            batch.update(replace_sources=[source_id], exclusions=[{'source_id': source_id, 'reason': reason}])
+            items = [Exclusion.model_validate(e).model_dump() for e in (exclusions or [])]
+            ids = [e['source_id'] for e in items]
+            if source_id or reason or not items or len(items) > 8 or len(set(ids)) != len(ids):
+                raise ValueError('exclude须提供1至8个编号不重复的exclusions条目，每条有自己的source_id和reason，不填外层source_id/reason')
+            batch.update(replace_sources=ids, exclusions=items)
         if operation == 'decide':
             row = {'unit_id': unit_id, 'kind': kind, 'reason': reason,
                    'targets': [{'volume': volume, 'path': path}] if volume else []}
@@ -61,7 +67,10 @@ def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source',
             batch['decisions'] = [row]
         if operation == 'complete':
             batch['complete'] = True
-        return plan_batch(tid, PlanBatch.model_validate(batch))
+        result = plan_batch(tid, PlanBatch.model_validate(batch))
+        if operation == 'exclude':
+            result['accepted_source_ids'] = ids
+        return result
     except ValueError as e:
         value = _load(tid)
         done = {d['unit_id'] for d in (value.get('draft_plan') or {}).get('decisions', [])}

@@ -46,10 +46,15 @@ def file_hash(path: Path):
                 raise
 
 def analysis_source_version(tid):
+    return digest(source_basis(tid))
+
+def source_basis(tid):
+    """Only selected tender inputs define interpretation and downstream freshness."""
     selected = source_selection(tid)
     names = [selected['main'], *[s['file'] for s in selected['supplements']]]
-    return digest({'main': selected['main'], 'supplements': selected['supplements'],
-                   'sources': {n: file_hash(artifact_store.sources_dir(tid) / n) for n in names if n}})
+    return {'main': selected['main'], 'supplements': selected['supplements'],
+            'sources': {n: file_hash(artifact_store.sources_dir(tid) / n) if (artifact_store.sources_dir(tid) / n).is_file() else None
+                        for n in names if n}}
 
 def require_task(tid):
     task = db.get_task(tid)
@@ -64,7 +69,10 @@ def directory(tid):
     path = artifact_store.resolved_content_path(row['artifact_id'], row)
     if not path or not path.is_file():
         return None
-    return {'artifact_id': row['artifact_id'], 'content_seq': row['content_seq'], 'content': json.loads(path.read_text())}
+    from .directory_edits import user_save
+    saved = user_save(row)
+    return {'artifact_id': row['artifact_id'], 'content_seq': row['content_seq'], 'content': json.loads(path.read_text()),
+            **({'user_input_version': saved['input_version'], 'user_saved_at': saved['saved_at']} if saved else {})}
 
 def files(tid):
     root = artifact_store.work_dir(tid)
@@ -106,17 +114,18 @@ def set_sources(tid, main_file, supplements):
 def input_versions(tid):
     root = artifact_store.work_dir(tid)
     md = {p.relative_to(root).as_posix(): file_hash(p) for folder in ('analysis', 'body') for p in (root / folder).glob('*.md')}
-    source = {p.name: file_hash(p) for p in artifact_store.sources_dir(tid).glob('*') if p.is_file() and (not p.name.startswith('.'))}
     analysis = {k: v for k, v in md.items() if k.startswith('analysis/')}
-    source_input = {'sources': source, 'source_selection': source_selection(tid)}
+    source_input = source_basis(tid)
     current = directory(tid)
     content = current['content'] if current else None
     from .bidder import basis
     shared = {**source_input, 'analysis': analysis, 'directory': content, 'bidder':basis(tid)}
     from . import build_state
     from .asset_usage import basis as asset_basis
-    planning = {**shared, 'assets':asset_basis(tid,['guide']), 'directory': {k: v for k, v in content.items() if k != 'numbering'} if content else None}
-    body_input = {**shared, 'assets':asset_basis(tid,['guide','promises',*[s['path'] for s in build_state.sections(tid)]]), 'guide': md.get('body/写作指引.md'), 'promises': md.get('body/关键事实与承诺.md')}
+    from .source_usage import basis as reference_basis
+    paths = ['guide','promises',*[s['path'] for s in build_state.sections(tid)]]
+    planning = {**shared, 'assets':asset_basis(tid,['guide']), 'references':reference_basis(tid,['guide']), 'directory': {k: v for k, v in content.items() if k != 'numbering'} if content else None}
+    body_input = {**shared, 'assets':asset_basis(tid,paths), 'references':reference_basis(tid,paths), 'guide': md.get('body/写作指引.md'), 'promises': md.get('body/关键事实与承诺.md')}
     bodies = {p.relative_to(root).as_posix(): file_hash(p) for p in (root / 'body').rglob('*.docx')}
     from .review import basis
-    return {'review': basis(tid), 'analyse': digest(source_input), 'outline': digest({**source_input, 'analysis': analysis}), 'guide': digest(planning), 'promises': digest({**planning, 'assets':asset_basis(tid,['guide','promises']), 'guide': md.get('body/写作指引.md')}), 'body': digest(body_input), 'revise': digest({**body_input, 'body_files': bodies}), 'build': digest({**body_input, 'body_files': bodies})}
+    return {'review': basis(tid), 'analyse': digest(source_input), 'outline': digest({**source_input, 'analysis': analysis}), 'guide': digest(planning), 'promises': digest({**planning, 'assets':asset_basis(tid,['guide','promises']), 'references':reference_basis(tid,['guide','promises']), 'guide': md.get('body/写作指引.md')}), 'body': digest(body_input), 'revise': digest({**body_input, 'body_files': bodies}), 'build': digest({**body_input, 'body_files': bodies})}

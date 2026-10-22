@@ -4,9 +4,9 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.8**，对应的 **DeepSeek Harness 客户端版本为 0.2.1-rc.2**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.9**，对应的 **DeepSeek Harness 客户端版本为 0.2.1-rc.2**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
 
-0.1.8 通过 GitHub Release 交付完整安装包，由用户自行安装。本次发布不更新生产插件或主项目运行环境；目录入口、原生会话恢复及停止流程的验证均在独立 dsh Web 环境进行。
+0.1.9 通过 GitHub Release 交付完整安装包，由用户自行安装。本次发布不更新生产插件或主项目运行环境；目录入口、原生会话恢复及停止流程的验证均在独立 dsh Web 环境进行。
 
 ## 项目 Agent 对话
 
@@ -20,7 +20,7 @@
 
 本版本要求 DeepSeek Harness `0.2.1-rc.2`、Cordis `4.0.5`、loader `1.0.6`，不保留旧宿主兼容。官方宿主模块由客户端提供；插件安装包不再安装一套旧核心。开发与独立目录准备通过 devDependencies 提供相同版本的 SDK。浏览器 React 由宿主客户端模块提供，不作为桌面后端 Node 依赖检查。
 
-完整发行物包括 `ooo-bidpliot-0.1.8.tgz`、`ooo-bidpliot-0.1.8.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24+、Python 3.12+、uv 和可访问依赖仓库的网络。
+完整发行物包括 `ooo-bidpliot-0.1.9.tgz`、`ooo-bidpliot-0.1.9.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24+、Python 3.12+、uv 和可访问依赖仓库的网络。
 
 业务数据独立保存在 `ooo-bidpliot-data/`，与插件安装树位于同一上级目录。客户端包管理安装放在 profile 下，与 `node_modules/` 并列；固定目录安装则与插件文件夹直接并列。Mac 和 Windows 均按实际安装路径推导，不硬编码用户名或磁盘盘符。插件内 `data` 只是文件系统入口（Mac/Linux 符号链接、Windows junction），不存放数据实体；升级重新建立入口，数据库、原件和成果不随插件目录替换。
 
@@ -31,13 +31,13 @@
 官方 Web profile 的命令示例：
 
 ```sh
-PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.8/ooo-bidpliot-0.1.8.tgz"
+PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.9/ooo-bidpliot-0.1.9.tgz"
 ```
 
 已有桌面安装使用客户端自身的官方 CLI，指定原 `desktop` profile，同样传入上述变量。不要向正在运行的客户端安装或更新。完整 TGZ 地址为：
 
 ```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.8/ooo-bidpliot-0.1.8.tgz
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.9/ooo-bidpliot-0.1.9.tgz
 ```
 
 TGZ 用于宿主的 URL/压缩包安装；ZIP 用于解压到固定目录后准备环境和注册。安装包包含已构建的页面、业务工具、技能、角色和模板；Node/Python 依赖仍需下载。安装时插件的 `postinstall` 使用 uv 准备锁定的 Python 环境。宿主若提示批准构建脚本，按提示批准本版本 URL 对应的 `ooo-bidpliot` 精确规则后重试，并继续传入上述变量。安装完成后启用插件，检查侧边工作台和唯一的 `ooo-bidpliot` Agent 预设。
@@ -64,7 +64,7 @@ Windows PowerShell 的目录安装命令为 `dsh plugin --profile web add "link:
 
 也可以在 dsh 的「添加插件」中选择本地目录并填写准备完成的绝对路径。安装后启用 `ooo-bidpliot`，确认侧边页面入口和聊天 Agent 预设均存在。`doctor` 会检查完整资源、技能/角色/模板、Node/Python 依赖和 dsh 版本；缺环境明确失败，插件启用时不会隐式下载。
 
-页面入口为宿主侧边栏的「ooo-bidpliot」。开发环境可用 `npm start` 启动 `http://127.0.0.1:3080/`。所有生成、资料抽取、图片/扫描页OCR都使用dsh当前默认模型与已有凭证；主子Agent继承同一模型。没有单独的模型或Key设置。OCR要求该模型支持图片，并在已有dsh模型声明中包含 `input: [text, image]`。
+页面入口为宿主侧边栏的「ooo-bidpliot」。本地 Web 可用 `npm start` 启动 `http://127.0.0.1:3080/`。启动时通过 `cordis.web.patch.yml` 关闭宿主客户端热更新；更新插件后重新加载宿主和页面。HTTP/1.1 下每页常驻的热更新事件流会占用浏览器连接，多页面时可能让业务读取、提交和刷新一直排队，不能通过重新登录解决。直接使用 `dsh web` 时也需带上 `--patch /absolute/plugin/cordis.web.patch.yml`，或在该 Web profile 中禁用 `client-hmr`。所有生成、资料抽取、图片/扫描页OCR都使用dsh当前默认模型与已有凭证；主子Agent继承同一模型。没有单独的模型或Key设置。OCR要求该模型支持图片，并在已有dsh模型声明中包含 `input: [text, image]`。
 
 ## 原位更新与卸载重装
 
@@ -108,6 +108,8 @@ node scripts/delivery.mjs export /absolute/new-delivery
 
 解读、目录与规划直接展示原生文件，隐藏内部来源编号并保留关联。手动保存/取消、冲突和草稿保护沿用现有页面。错误集中到顶部操作提示；只有实际缺少具体值才出现页面选项，无结果确认门或聊天“回复继续”。
 
+人工目录保存立即生效，后续制作与智能调整通过 `read_artifact` 读取当前目录，不使用旧生成工作稿覆盖人工决定。编辑器改名时同步正文路径及制作记录，同册移动保留正文；实际正文文件名按大小写和 Unicode 等价检查冲突，拒绝覆盖；仅调整标题大小写可以正常保存。没有正文的同名分组父目录允许保存，持有正文的父节点仍须避免文件名冲突。目录变化后的规划、受影响正文和整册按实际状态提示核对或重新合册，已验收成功的历史动作不因此改报执行失败。
+
 公司资料、写作素材和上传的 Word 版式支持查看、下载、重命名、更换原件、重新解析和删除；原件更换沿用记录与归属，按版本检查并保留项目已引用内容。后台状态变化静默同步，未保存的表单和章节选择保持原样。公司资料的结构化字段按类别展示并可人工核对。
 
 资料库中的授权代表独立维护、全库共用，不归属于企业。项目确认制作信息时，选择本次投标主体、授权代表（或法定代表人）和签署日期，选择结果仅保存到该项目。
@@ -116,24 +118,35 @@ node scripts/delivery.mjs export /absolute/new-delivery
 
 ## 存储与运行
 
+以下 `data/` 均指实际插件安装目录下的数据根目录，由 Node 运行时传给 Python 的 `DATA_DIR`；不是宿主会话当前工作目录。源码 Web 与桌面安装各使用自身安装目录的数据，不能从一处的路径推断另一处的位置。
+
 ```text
 data/
   app.db                       # 任务、产物版本、资料和素材索引、Word版式默认项
+  .hosts/                      # 使用此安装目录的宿主进程标记
   conversations/<task_id>.json # 项目与唯一客户主会话的绑定
   workflows/<task_id>.json     # 自动流程阶段、暂停和继续状态
   actions/<task_id>/           # 页面动作回执、输入版本、执行session_id
   tool-receipts/<task_id>/      # 写入工具结果回执
+  outline-runs/<task_id>.*      # 目录阶段计划与核对依据
   locks/                       # 正在执行的项目
   knowledge-jobs/             # 资料处理进程回执，崩溃后显示重新解析
   file-locks/                  # 跨工具进程的文件写锁
   renders/                     # 临时插图回执
+  uploads/                     # 页面与聊天附件导入暂存
+  templates/                   # 用户上传的 Word 版式
   workspace/<task_id>/sources/  # 原件
   workspace/<task_id>/work/     # parse、analysis、outline、body、artifacts
+  workspace/<task_id>/_meta/    # 任务产物谱系与发布暂存
+  workspace/<task_id>/skills/   # 指向安装目录内业务技能的链接
   workspace/archive/           # 用户归档项目文件
   workspace/knowledge/         # 公司资料
   workspace/materials/         # 手工素材块
-  workspace/templates/         # Word版式
 ```
+
+内置 Word 版式位于安装目录的 `business/python/app/resources/tender_base_template.docx`，业务技能位于 `business/python/app/skills/`。宿主会话与附件使用宿主当前配置的存储位置，不属于上述插件业务目录；已有旧运行文件不代表当前仍在写入。
+
+Agent 的普通文件工具使用运行时提供的绝对路径；技能文档中的 `work/…`、`sources/…` 相对当前任务，`skills/…` 相对业务技能根目录。DOCX 工具的 `path/dest`、`validate_body.section` 和格式依据 `evidence_path` 使用相对任务 `work/` 的路径，例如 `body/实施方案.docx`、`parse/招标文件.pdf/招标文件.pdf.md`；图片工具的知识库图源 `knowledge/…` 相对全局 `workspace/`，任务图源 `sources/…` 相对当前任务。完整约定见 [Agent 文件路径约定](business/python/app/skills/_shared/path-conventions.md)。
 
 Python仅作为短生命周期的业务工具进程，既不提供HTTP服务，也不调用模型或编排Agent。旧独立引擎、3188代理及其设置、DeepAgents/LangGraph/FastAPI/uvicorn已删除。执行Agent按授权拥有完整文件访问权限；任务路径用于业务归属。
 
@@ -156,7 +169,7 @@ npm run verify:delivery
 
 原灵燕MIT版权保留于 [business/LICENSE](business/LICENSE)，源码与改动来源见 [UPSTREAM](docs/UPSTREAM.md)。
 
-## 独立数据目录（0.1.8）
+## 独立数据目录（自 0.1.8 起）
 
 Mac 客户端默认布局示例：
 

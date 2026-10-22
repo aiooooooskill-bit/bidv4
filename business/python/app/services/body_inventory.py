@@ -11,7 +11,7 @@ def snapshot(tid, content):
     root = artifact_store.work_dir(tid)
     result = []
     for vol, title, _ in body_contract.body_nodes_for_task(tid, content):
-        path = 'body/' + (body_contract.sanitize_name(vol) + '/' if body_contract.multi_volume(content) else '') + body_contract.sanitize_name(title) + '.docx'
+        path = 'body/' + (body_contract.volume_key(vol) + '/' if body_contract.multi_volume(content) else '') + body_contract.sanitize_name(title) + '.docx'
         file = root / path
         if not file.is_file():
             continue

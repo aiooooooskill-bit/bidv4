@@ -19,10 +19,12 @@ const {runProfile}=await installed('@deepseek-ai/dsh/profile-boot');
 const {createUserMessage}=await installed('@deepseek-ai/dsh-llm');
 const {chatToolNames}=await import(pathToFileURL(join(installation,'server/agent.mjs')).href);
 const analysis=['structure','requirements-submission','requirements-business','requirements-qualification','evaluation','requirements-format','disqualification','clarifications'];
-const directory={response_documents:[{name:'本地目录验收册',directory:[{目录名称:'交付验收章节',level:1,children:[]}]}]};
+const directory={response_documents:[{name:'本地目录验收册',directory:['封面','目录','交付验收章节'].map(目录名称=>({目录名称,level:1,children:[]}))}]};
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const sessionEvidence=events=>({eventCount:events.length,eventHashes:events.map(e=>sha(JSON.stringify(e))),lastTurn:events.findLast(e=>e.type==='turn/end')?.data.reason.kind});
 const call=(name,args)=>({name,args});
+const cover=()=>call('docx_section_create',{path:'body/封面.docx',title:'封面',paragraphs:'本文件为本机软件验收的合成投标封面，项目名称为本地目录安装与数据保留验收；投标主体、签字代表和日期采用本项目已经确认的信息，不代表实际采购或履约承诺。'});
+const validateCover=()=>call('validate_body',{section:'body/封面.docx'});
 const requests=[],fixtureErrors=[];const reviewCalls=reviewSequence(installation);
 let blocking=false,hostContext,analysisGate,analysisTask,reviewEarlyEnd='normal';
 const pausedReviews=new Set();
@@ -39,11 +41,13 @@ const endpoint=createServer(async(req,res)=>{
   const stageAnchor=request.messages.findLastIndex(m=>instructionOf(m).includes('页面输入：'));
   const stageText=stageAnchor>=0?instructionOf(request.messages[stageAnchor]):'';
   const payload=stageText.match(/页面输入：(\{[^\n]+\})/),kind=payload&&!latestText.includes('查询项目进度')?JSON.parse(payload[1]).kind:null;
-  const recordedCwd=stageText.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+  const recordedCwd=stageText.match(/当前任务绝对路径：([^；\r\n]+)/)?.[1];
   // A restored fixture keeps its original event bytes. Follow the current
   // bid-project context's root when its historical prompt came from another installation.
   const cwd=recordedCwd?join(installation,'data/workspace',basename(recordedCwd)):undefined;
   const stageMessages=kind?request.messages.slice(stageAnchor):request.messages;
+  const nativeReplyCount=stageMessages.filter(message=>message.role==='user'&&String(typeof message.content==='string'?message.content:JSON.stringify(message.content)).includes('answer_to_pending_question')).length;
+  const questionAnswered=nativeReplyCount>0||stageMessages.some(message=>{try{const value=JSON.parse(String(message.content));return message.role==='user'&&value.kind==='answer_to_pending_question'||message.role==='tool'&&Array.isArray(value.answers)}catch{return false}});
   const step=stageMessages.filter(m=>m.role==='assistant'&&m.tool_calls?.length).length;
   const write=(path,content)=>call('write',{file_path:join(cwd,'work',path),content});
   res.writeHead(200,{'Content-Type':'text/event-stream'});
@@ -94,11 +98,11 @@ const endpoint=createServer(async(req,res)=>{
    if(step===0)calls=[call('read_image',{file_path:text.match(/调用read_image读取图片：(.+?)。/)?.[1]})];
    else content='# 招标资料转写\n项目名称：本地目录安装与数据保留验收\n维护期：三年。\n采购内容为信息系统建设、上线培训及后续维护。投标人应提供清晰的项目实施安排、人员职责、交付文件和验收方法。投标文件须包含响应目录、实施方案、技术措施、质量管理和服务保障。所有原始附件应完整保存，生成的正文与整册文件应可查询、预览及下载。本文是确定性本机验收夹具的模拟招标材料，不代表实际采购项目。';
   }else if(text.includes('delivery-resume-body-child')){
-   if(step===0)calls=[call('validate_body',{section:'body/交付验收章节.docx'})];
+   if(step===0)calls=[validateCover(),call('validate_body',{section:'body/交付验收章节.docx'})];
   }else if(text.includes('delivery-body-child')){
    if(crashAfterBody&&step===1){res.write(': checkpoint after durable body write\n\n');crashBlocked.resolve();return;}
-   if(step===0)calls=[call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})];
-   if(step===1)calls=[call('validate_body',{section:'body/交付验收章节.docx'})];
+   if(step===0)calls=[cover(),call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})];
+   if(step===1)calls=[validateCover(),call('validate_body',{section:'body/交付验收章节.docx'})];
   }else if(kind==='review'){
    let last;try{last=JSON.parse(stageMessages.findLast(m=>m.role==='tool')?.content)}catch{}
    if(reviewEarlyEnd==='error'&&last?.saved&&!pausedReviews.has(cwd)){pausedReviews.add(cwd);res.end('data: {invalid-json}\n\n');return}
@@ -109,19 +113,25 @@ const endpoint=createServer(async(req,res)=>{
    if(kind==='analyse'&&step===1)calls=analysis.map(n=>write('analysis/'+n+'.md','# 本地目录验收 '+n+'\n固定目录安装、更新、重装使用的真实业务成果。'));
    if(kind==='outline'){
     const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
-    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n';
+    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n- 目录 :: 交付形态=模板或附件填充 | 归位理由=合册机械生成目录页 | 理由来源= | 概述=由Word目录域生成本册章节清单。\n';
     const sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
     calls=sequence[step]??[];
    }
-   if(kind==='guide'&&step===0)calls=[write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |')];
+   if(kind==='guide'&&step===0)calls=[call('read_artifact',{contract:'tender.directory/tender-response-docs@1',view:'full'})];
+   if(kind==='guide'&&step===1){
+    const current=JSON.parse(stageMessages.findLast(m=>m.role==='tool').content),multi=current.response_documents.filter(d=>d.directory?.length).length>1;
+    const sections=(await api('/page-flow/'+basename(cwd))).body_sections;
+    const targets=(nodes,volume)=>nodes.flatMap(n=>[...(!n.children?.length||sections.some(s=>s.volume===volume&&s.title===n.目录名称)?[n]:[]),...targets(n.children??[],volume)]);
+    const rows=current.response_documents.flatMap(d=>targets(d.directory??[],d.name).map(n=>'| '+(multi?d.name+'/':'')+n.目录名称+' | '+(['目录容器','模板或附件填充'].includes(n.交付形态)?'—':'推理撰写')+' | — | — | 无 |'));
+    calls=[write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n'+rows.join('\n'))];
+   }
    if(kind==='promises'&&step===0)calls=[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |')];
-   if(kind==='body'){if(blocking&&step===0){res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());blocked.resolve();return;}calls=step===0?[call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})]:step===1?[call('validate_body',{section:'body/交付验收章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}
-   if(kind==='revise')calls=step===0?[call('docx_section_revise',{path:'body/交付验收章节.docx',edits:JSON.stringify([{para:2,action:'replace',find:'本地目录交付原段落',text:'本地目录交付修订段落'}])})]:step===1?[call('validate_body',{section:'body/交付验收章节.docx'})]:[];
+   if(kind==='body'){if(blocking&&step===0){res.write(': waiting for cancellation\n\n');res.once('close',()=>cancelled.resolve());blocked.resolve();return;}calls=step===0?[cover(),call('docx_section_create',{path:'body/交付验收章节.docx',title:'交付验收章节',paragraphs:'本地目录交付原段落。'+('本文件为本机工程验收的合成投标正文，演示项目实施安排、职责、交付、验收及维护支持；具体履约指标须由真实材料和用户确认后补充。'.repeat(3))})]:step===1?[validateCover(),call('validate_body',{section:'body/交付验收章节.docx'})]:step===2?[call('check_pipeline_state',{}),call('validate_body',{section:'body'})]:[];}
+   if(kind==='revise')calls=step===0?[call('docx_section_revise',{path:'body/交付验收章节.docx',edits:[{para:2,action:'replace',find:'本地目录交付原段落',text:'本地目录交付修订段落'}]})]:step===1?[call('validate_body',{section:'body/交付验收章节.docx'})]:[];
    if(kind==='build'&&reuseBuild){
-    const sequence=[[call('build_preparation',{})],[call('task',{subagent_type:'tender-body-writer',description:'delivery-resume-body-child'})],[call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})]];calls=sequence[step]??[];
+    const sequence=[[call('build_preparation',{})],[call('task',{subagent_type:'tender-body-writer',description:'封面、交付验收章节\ndelivery-resume-body-child'})],[call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})]];calls=sequence[step]??[];
    }else if(kind==='build'){
-    const replied=text.includes('answer_to_pending_question');
-    const replyCount=stageMessages.filter(message=>message.role==='user'&&String(typeof message.content==='string'?message.content:JSON.stringify(message.content)).includes('answer_to_pending_question')).length;
+    const replied=questionAnswered,replyCount=nativeReplyCount;
     const tools=stageMessages.filter(m=>m.role==='tool');
     const answered=tools.some(m=>String(m.content).includes('答复已保存'));
     const adjustedStep=step-(answered?1:0);
@@ -129,14 +139,14 @@ const endpoint=createServer(async(req,res)=>{
     else {
     const sequence=[
      [call('build_preparation',{})],
-     [write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 交付验收章节 | 推理撰写 | — | — | 无 |')],
+     [write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 封面 | 推理撰写 | — | — | 无 |\n| 目录 | — | — | — | 合册时自动生成 |\n| 交付验收章节 | 推理撰写 | — | — | 无 |')],
      [call('validate_body',{section:'body/写作指引.md'})],
      [call('build_preparation',{stage:'guide'})],
      [call('ask_user_question',{questions:[{id:'term',question:'维护期是多少？',options:[{label:'三年'},{label:'五年'}]}]})],
      ...(repeatBuildQuestion?[replied?[call('ask_user_question',{questions:[{id:'delivery',question:'交付期限是多少？',options:[{label:'两个月'},{label:'三个月'}]}]})]:[]]:[]),
      replied&&(!repeatBuildQuestion||replyCount>=2)?[write('body/关键事实与承诺.md','# 关键事实与承诺\n\n| 事项 | 值 |\n|---|---|\n| 维护期 | 三年 |'+(repeatBuildQuestion?'\n| 交付期限 | 两个月 |':''))]:[],
      [call('build_preparation',{stage:'promises'})],
-     [call('task',{subagent_type:'tender-body-writer',description:'delivery-body-child'})],
+     [call('task',{subagent_type:'tender-body-writer',description:'封面、交付验收章节\ndelivery-body-child'})],
      [call('check_pipeline_state',{}),call('validate_body',{section:'body'}),call('docx_assemble_volume',{})],
     ];calls=sequence[adjustedStep]??[];
     }
@@ -151,7 +161,7 @@ const endpoint=createServer(async(req,res)=>{
    chunk('八份解读文件。');
    res.write('data: '+JSON.stringify({id:'analysis-stream-fixture',object:'chat.completion.chunk',created:1,model:'fixture',choices:[{index:0,delta:{},finish_reason:'stop'}]})+'\n\n');res.end('data: [DONE]\n\n');return;
   }
-  if(kind&&!calls.length&&!(kind==='build'&&!text.includes('answer_to_pending_question'))){
+  if(kind&&!calls.length&&!(kind==='build'&&!questionAnswered)){
    const tid=basename(cwd);
 
    if(kind==='analyse')content='# 招标文件解读完成\n\n'+await readFile(join(cwd,'work/analysis/structure.md'),'utf8')+'\n\n[解读下载]('+base+'/api/bidv4/workbench/raw?'+new URLSearchParams({task_id:tid,path:'analysis/structure.md'})+')';
@@ -242,7 +252,7 @@ async function businessScenario(){
  const upload=new FormData();upload.set('file',new Blob([png],{type:'image/png'}),'交付验收原件.png');await api('/files?task_id='+taskId,upload);
  const sessions=[];
  for(const kind of ['analyse','outline','guide','promises','body','revise']){
-  const state=await api('/page-flow/'+taskId),payload={kind,request_id:randomUUID(),input_version:state.input_versions[kind],...(kind==='outline'?{page_target:120,numbering:'decimal'}:{}),...(kind==='analyse'?{main_file:'交付验收原件.png',supplements:[]}:{}),...(['body','revise'].includes(kind)?{sections:state.body_sections}:{}),...(kind==='revise'?{instruction:'替换交付验收段落'}:{})};
+  const state=await api('/page-flow/'+taskId),payload={kind,request_id:randomUUID(),input_version:state.input_versions[kind],...(kind==='outline'?{page_target:120,numbering:'decimal'}:{}),...(kind==='analyse'?{main_file:'交付验收原件.png',supplements:[]}:{}),...(['body','revise'].includes(kind)?{sections:kind==='revise'?state.body_sections.filter(s=>s.title==='交付验收章节'):state.body_sections}:{}),...(kind==='revise'?{instruction:'替换交付验收段落'}:{})};
   const admitted=await api('/page-flow/'+taskId+'/action',payload);sessions.push(admitted.session_id);
   await timeout(runtime.handles.get(admitted.session_id).agent.whenIdle(),kind);await runtime.settling.get(taskId);
   const result=await api('/page-flow/'+taskId);assert.equal(result.execution.state,'completed',JSON.stringify(result.execution));
@@ -339,7 +349,7 @@ async function fullQuestionFlushRace(rounds=1){
  try{
   taskId=await startFullWorkflow();
   for(const [index,gate]of gates.entries()){
-   const held=await timeout(gate.entered.promise,'full build question '+(index+1)+' final flush');agent=held.agent;
+   const held=await timeout(gate.entered.promise,'full build question '+(index+1)+' final flush').catch(async error=>{error.message+='\n'+JSON.stringify({state:await api('/page-flow/'+taskId),fixtureErrors});throw error});agent=held.agent;
    if(index===0){originalHashes=await hashes();upstream=(await actionRecords()).filter(record=>record.kind!=='build');prefix=held.events}
    const oldSettlement=runtime.settling.get(taskId);let oldSettled=false;void oldSettlement.then(()=>{oldSettled=true});settlements.push(oldSettlement);
    assert.ok(oldSettlement);assert.equal(agent.status,'idle');assert.equal(held.record.outcome,index===0?undefined:null);assert.equal(held.record.end_seq,index===0?undefined:null);

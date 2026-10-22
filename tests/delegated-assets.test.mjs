@@ -74,7 +74,7 @@ print(json.dumps({'tid':tid,'a':ids[0],'b':ids[1]}))`);
   scope=await createBusinessScope(host,join(dataRoot,'runtime'));runtime=new BusinessRuntime(scope.ctx);await runtime.init();scope.ctx.reflect.provide('bidBusiness',runtime);scope.ctx.reflect.provide('webServer',{port:0});
   const cwd=join(dataRoot,'workspace',tid);await runtime.skillsLink(cwd);
   handle=await scope.ctx.agents.create({sessionId:parentId,meta:{cwd,agentPreset:'ooo-bidpliot'},agentOptions:{provider:'fixture',model:'fixture'},setup:async c=>{await scope.ctx.agentPresets.mount(c,'ooo-bidpliot')}});
-  await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify({kind:'body',session_id:parentId,section_paths:['body/实施方案.docx','body/服务保障.docx']}));
+  await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify({action_id:'delegation-fixture-action',kind:'body',session_id:parentId,section_paths:['body/实施方案.docx','body/服务保障.docx']}));
   handle.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'执行资料派发回归'}]}));await handle.agent.whenIdle();
   const reason=handle.agent.session.snapshotEvents().findLast(e=>e.type==='turn/end').data.reason;
   assert.equal(reason.kind,'completed',JSON.stringify(reason));assert.ok(seedChecked);

@@ -15,8 +15,8 @@ const candidate=process.env.BIDV4_PREPARATION_FIXTURE==='1'?'auto':process.env.P
 const reportPath=process.env.PREPARATION_REPORT??join(dataRoot,'preparation-report.json');
 if(!candidate)throw new Error('Use scripts/verify-preparation-flow.mjs; never run against project data');
 const real=candidate==='real';
-const directory={response_documents:[{name:'工程验证册',directory:['工程验证章节','保留章节'].map(title=>({目录名称:title,level:1,children:[]}))}]};
-const guide='# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 工程验证章节 | 推理撰写 | — | — | 维护期由用户确定 |\n| 保留章节 | 推理撰写 | — | — | 保留已有内容 |';
+const directory={response_documents:[{name:'工程验证册',directory:['封面','目录','工程验证章节','保留章节'].map(title=>({目录名称:title,level:1,children:[]}))}]};
+const guide='# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 封面 | 推理撰写 | — | — | 无 |\n| 目录 | — | — | — | 合册时自动生成 |\n| 工程验证章节 | 推理撰写 | — | — | 维护期由用户确定 |\n| 保留章节 | 推理撰写 | — | — | 保留已有内容 |';
 const promises=value=>'# 关键事实与承诺\n\n| 事项 | 值 | 说明 |\n|---|---|---|\n| 维护期 | '+value+' | 用户确定 |';
 const servicePromises=value=>'| 事项 | 值 | 说明 |\n|---|---|---|\n| 服务时间 | 电话支持\\|'+value+'小时 | 用户确认 |';
 const analysis=['structure','requirements-submission','requirements-business','requirements-qualification','evaluation','requirements-format','disqualification','clarifications'];
@@ -24,7 +24,7 @@ const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const realLimitMs=1800000;
 const sourceName=real?'工程源.docx':'工程源.txt';
 
-test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+90000:120000},async()=>{
+test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+90000:180000},async()=>{
  let ctx,mode='normal',stopEntered,requestCount=0,realCount=0,realStarted=0,realTask,realRun;
  const traces=[],results=[],modelRequests=[];
  const call=(name,args)=>({name,args});
@@ -35,7 +35,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    const anchor=request.messages.findLastIndex(m=>m.role==='user'&&String(m.content).includes('页面输入：'));
    const currentText=request.messages[anchor]?.content??'';
    const payloadText=currentText.match(/页面输入：(\{[^\n]+\})/)?.[1],payload=payloadText?JSON.parse(payloadText):null,kind=payload?.kind;
-   const cwd=currentText.match(/当前任务绝对路径：([^；]+)；/)?.[1];
+   const cwd=currentText.match(/^当前任务绝对路径：([^\r\n]+)$/m)?.[1];
    if(mode==='real'&&(!payload||kind==='body')){
     if(++realCount>100)throw new Error('Real-model verification exceeded 100 requests');
     const timing={request:realCount,startedAt:new Date().toISOString()};modelRequests.push(timing);
@@ -58,7 +58,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    if(kind==='analyse')sequence=[analysis.map(n=>write('analysis/'+n+'.md','# 工程夹具 '+n+'\n本项目需要实施方案，维护期由用户确定。'))];
    if(kind==='outline'){
     const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
-    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n';
+    const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n- 目录 :: 交付形态=模板或附件填充 | 归位理由=合册机械生成目录页 | 理由来源= | 概述=由Word目录域生成本册章节清单。\n';
     sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
    }
    if(kind==='guide')sequence=[[write('body/写作指引.md',guide)],[call('validate_body',{section:'body/写作指引.md'})]];
@@ -127,7 +127,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    await business(runtime.ctx,'tool',{name:'docx_section_create',parameters:{path:'body/保留章节.docx',title:'保留章节',paragraphs:'人工保留内容，不允许改单章以外文件。'}},{taskId:task.id});await business(runtime.ctx,'tool',{name:'validate_body',parameters:{section:'body/保留章节.docx'}},{taskId:task.id});return task.id;
   }
   const tid=await seed(),other=join(dataRoot,'workspace',tid,'work/body/保留章节.docx'),before=sha(await readFile(other));
-  let s=await state(tid);assert.deepEqual(s.build_preparation,{guide:'missing',promises:'missing'});assert.equal(s.body_sections.length,2);
+  let s=await state(tid);assert.deepEqual(s.build_preparation,{guide:'missing',promises:'missing'});assert.equal(s.body_sections.length,3);
   {
    mode=real?'real':'normal';const started=Date.now();realStarted=started;realTask=tid;
    const run=await start(tid,'body',{instruction:'只写工程验证章节，正文约150字；保留章节不能更改。维护期需要由用户决定，目前未提供。共享准备齐全后只写所选章，不合册。'});
@@ -137,15 +137,15 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
     const h=runtime.handles.get(run.session_id),tools=()=>{const events=h.agent.session.snapshotEvents(),names=new Map(events.filter(e=>e.type==='tool/call').map(e=>[e.data.callId,e.data.name]));return events.filter(e=>e.type==='tool/result').map(e=>({name:names.get(e.data.message.toolCallId),result:e.data.message.content.filter(b=>b.type==='text').map(b=>b.text).join('')}))};
     record('real-model-first-turn',{execution:s.execution,preparation:s.build_preparation,tools:tools()});
     assert.equal(s.execution.state,'needs_input',JSON.stringify(s.execution));
-    assert.equal(s.body_sections[0].status,'missing');s=await answer(tid,s);
-    record('real-model-final',{state:s.execution.state,error:s.execution.error,preparation:s.build_preparation,selectedChapter:s.body_sections[0].status,otherUnchanged:sha(await readFile(other))===before,requests:realCount,elapsedMs:Date.now()-started,tools:tools()});
-    assert.equal(s.execution.state,'completed',s.execution.error);assert.deepEqual(s.build_preparation,{guide:'ready',promises:'ready'});assert.equal(s.body_sections[0].status,'ready');assert.equal(sha(await readFile(other)),before);
+    assert.equal(s.body_sections.find(s=>s.title==='工程验证章节').status,'missing');s=await answer(tid,s);
+    record('real-model-final',{state:s.execution.state,error:s.execution.error,preparation:s.build_preparation,selectedChapter:s.body_sections.find(s=>s.title==='工程验证章节').status,otherUnchanged:sha(await readFile(other))===before,requests:realCount,elapsedMs:Date.now()-started,tools:tools()});
+    assert.equal(s.execution.state,'completed',s.execution.error);assert.deepEqual(s.build_preparation,{guide:'ready',promises:'ready'});assert.equal(s.body_sections.find(s=>s.title==='工程验证章节').status,'ready');assert.equal(sha(await readFile(other)),before);
     assert.equal(s.execution.session_id,run.session_id);assert.match(await readFile(join(dataRoot,'workspace',tid,'work/body/关键事实与承诺.md'),'utf8'),/三\s*年|3\s*年/);
     record('real-model-assertions',{pass:true,sameSession:true,preparationReady:true,selectedDocxValidated:true,otherDocxBytesUnchanged:true,userValueRecorded:true});
    }else{
-    assert.equal(s.execution.state,'needs_input');assert.equal(s.execution.session_id,run.session_id);assert.deepEqual(s.build_preparation,{guide:'ready',promises:'missing'},JSON.stringify({traces,questions:s.execution.questions}));assert.equal(s.body_sections[0].status,'missing');
-    s=await answer(tid,s);assert.equal(s.execution.state,'completed',s.execution.error);assert.equal(s.execution.session_id,run.session_id);assert.equal(s.body_sections[0].status,'ready');assert.equal(sha(await readFile(other)),before);
-    record('auto-preparation-and-question',{pass:true,actionSubmissions:1,questionSubmissions:1,sameSession:true,otherUnchanged:true,nonselectedStatus:s.body_sections[1].status});
+    assert.equal(s.execution.state,'needs_input');assert.equal(s.execution.session_id,run.session_id);assert.deepEqual(s.build_preparation,{guide:'ready',promises:'missing'},JSON.stringify({traces,questions:s.execution.questions}));assert.equal(s.body_sections.find(s=>s.title==='工程验证章节').status,'missing');
+    s=await answer(tid,s);assert.equal(s.execution.state,'completed',s.execution.error);assert.equal(s.execution.session_id,run.session_id);assert.equal(s.body_sections.find(s=>s.title==='工程验证章节').status,'ready');assert.equal(sha(await readFile(other)),before);
+    record('auto-preparation-and-question',{pass:true,actionSubmissions:1,questionSubmissions:1,sameSession:true,otherUnchanged:true,nonselectedStatus:s.body_sections.find(s=>s.title==='保留章节').status});
     const planning=['写作指引.md','关键事实与承诺.md'],hashes=await Promise.all(planning.map(n=>readFile(join(dataRoot,'workspace',tid,'work/body',n)).then(sha))),traceStart=traces.length;
     await settle(tid,await start(tid,'body'));assert.deepEqual(await Promise.all(planning.map(n=>readFile(join(dataRoot,'workspace',tid,'work/body',n)).then(sha))),hashes);
     assert.ok(!traces.slice(traceStart).some(t=>t.writes.length));record('ready-planning-reuse',{pass:true,planningWrites:0});

@@ -5,7 +5,8 @@
 拷整章后必须调用。"""
 from __future__ import annotations
 from pathlib import Path
-from .. import db
+import re
+from .. import db, runctx
 from ..knowledge.roles import item_meta
 
 def scan_residue(lines: list[str], names: list[str], labels: list[str] | None=None) -> list[str]:
@@ -63,6 +64,33 @@ def check_name_residue(text: str, source_item_id: str | None=None, old_names: li
                     file_name = mt_file['file_name']
             if file_name:
                 soft += [p for p in _split_stem(file_name) if len(p) >= 4]
+
+        # 当前已确认主体不能被模型误传的old_names升级为“必须全部替换”。
+        # 只排除精确相同的当前名称，过期快照及包含当前名的其他旧名称仍扫描。
+        current = runctx.current_run()
+        protected = set()
+        if current and current.task_id:
+            from ..services import bidder
+            state = bidder.status(current.task_id)
+            if state.get('confirmed') and not state.get('stale'):
+                snapshot = state.get('snapshot') or {}
+                protected = {value['name'] for key in ('company', 'signer')
+                             if (value := snapshot.get(key) or {}).get('name')}
+            from ..artifact_store import work_dir
+            from ..services import build_state
+            from ..promises import promise_rows, unconfirmed
+            from .body_contract import PROMISE_NAME
+            promise_path = work_dir(current.task_id) / 'body' / PROMISE_NAME
+            prepared = build_state.read(current.task_id).get('promises')
+            if (promise_path.is_file() and prepared
+                    and prepared == build_state.preparation_stamp(current.task_id, 'promises')):
+                protected.update(row.value for row in promise_rows(promise_path.read_text(encoding='utf-8'))[0]
+                                 if row.item in ('采购人', '项目名称', '招标编号', '项目编号') and not unconfirmed(row.value))
+            # 仅去法定组织后缀得到精确简称；不屏蔽包含简称的旧项目名。
+            protected.update(short for name in tuple(protected)
+                             if len(short := re.sub(r'(?:股份有限公司|有限责任公司|有限公司)$', '', name)) >= 4)
+        hard = [name for name in hard if name not in protected]
+        soft = [name for name in soft if name not in protected]
 
         def _uniq(names: list[str]) -> list[str]:
             seen: set[str] = set()

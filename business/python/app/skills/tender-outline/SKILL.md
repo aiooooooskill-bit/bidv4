@@ -12,6 +12,8 @@ Markdown 产物使用标准标题、列表和表格：表头与分隔行列数�
 
 ## 概述
 
+先读 `skills/_shared/path-conventions.md`，按其中的普通文件绝对路径与业务工具参数约定操作。
+
 先读 `skills/_shared/response-guidelines.md`（用户回复规范）。缺节/新文件的降级影响、
 三道清理的跳过原因必须向用户声明。向用户转述流程时用实际名称与
 顺序（响应文件分解、目录初稿、查漏补缺、评分对齐、走查定稿、组装发布），
@@ -21,9 +23,8 @@ Markdown 产物使用标准标题、列表和表格：表头与分隔行列数�
 （目录中间态；多册并发时各册先落 `work/outline/fragments/<册名>.md` 再合并），经
 `assemble_tender` 组装发布为 `tender.directory` 成果（任务内唯一当前版本）。
 
-**路径约定（任务分组目录）**：本技能所有 `work/…` 路径都在**当前任务目录**下——任务目录
-前缀（形如 `t_ab12…/`）见任务上下文的「任务工作目录」行，读写文件的路径必须带该前缀
-（如 `<任务目录>/work/analysis/structure.md`）。
+**路径约定**：本技能所有 `work/…` 路径都相对运行时提供的「当前任务绝对路径」。
+普通文件工具使用完整绝对路径，如 `<当前任务绝对路径>/work/analysis/structure.md`。
 
 流程：R1 响应文件分解（有确认点）→ R2 目录初稿 + 三道清理（查漏→评分对齐→走查；
 单册由主线程就地做，多册并发派发 `tender-outline-writer` 子代理每册一个）→
@@ -65,10 +66,13 @@ Markdown 产物使用标准标题、列表和表格：表头与分隔行列数�
 
 ### 第 2 步：R2 目录初稿（references/generate.md + references/annotation.md）
 
-**派发依据与原结构约束**：先 read 页面指令给出的 `context_path` 和 `facts_path`，
+**派发依据与原结构约束**：先 read 页面指令给出的 `context_path` 和 `facts_path`；其中baseline已含当前保存目录，不再额外调用read_artifact整读相同目录。已有当前版本所需区段仍在上下文时直接复用，版本变化或内容移出后才回读。
 实际回读本项目registry、评分原文和baseline，不能只依据格式大纲或待澄清项派发。
-先用 `outline_plan(operation="begin")` 承接分册骨架：已有目录不传参数 即自动保留原一级、
-顺序与来源；新目录逐册填volume及root_titles（一级标题换行分隔）。此时暂不complete，不预先根据旧综合章
+先用 `outline_plan(operation="begin")` 承接分册骨架：已有实际目录树不传参数，即自动保留原一级、
+顺序与来源；只有册名和scope、尚无目录树的工作稿仍按新目录处理，逐册填volume及root_titles。
+root_titles必须列出**全部实际一级标题**：前两项依次为封面、目录，随后按本项目要求列正文及独立附件，
+用实际换行分隔，不能只填正文标题。工具拒绝的参数不会保存，按报错修正本册begin后继续，
+不删除工作稿、不改写已有目录来消除错误。此时暂不complete，不预先根据旧综合章
 概述把独立评分子维度判成参数。多册随即按下文派发，task填写response_file为本项目完整册名；
 单册先按原文写实际目录并完成三道清理。有SCORE评分时，单册也追加task派发同一个
 tender-outline-writer对该册独立评分对齐，写指定fragment，再由主线程原样回收；有评分的
@@ -89,7 +93,7 @@ block和归属理由；程序验证原文哈希和原章归属。素材内容不
 展开；独立附件不能因主题相近降挂到新建“人员/方案”等容器。
 子代理完成后主线程再基于真实标题逐项审查分类，不能用自己的预判代替子代理评分对齐。
 保留原来源前须逐章核对其在当前registry中的真实条文与章节范围；REQ/MAND/TPL与SCORE同查。
-编号存在或此前已挂接不代表语义正确，不能只补pending_sources而跳过旧引用；错标在冻结前纠正，原章节内容保留。
+编号存在或此前已挂接不代表语义正确，不能只补未归位来源而跳过旧引用；错标在冻结前纠正，原章节内容保留。
 
 按第 1 步骨架的响应文件数量走两条路径之一。两条路径共用同一条铁律：来源 ID 只引用
 analysis 产物里已有的 MAND/TPL/REQ/SCORE 编号，**不要自己发明编号**。每册目录树
@@ -106,13 +110,14 @@ analysis 产物里已有的 MAND/TPL/REQ/SCORE 编号，**不要自己发明编�
 `tender-outline-writer`，多个调用必须写在同一条 assistant 消息里并行执行，
 不要派一个等一个）。每个 description
 第一行只写该册短名（≤16 字，如「XX 册目录编写」——过程区并发卡片靠它
-区分，不要角色自述开头），第二行起必须**自带全部路径与上下文**（子代理看不到任务上下文，也不会自动加载本技能）：
+区分，不要角色自述开头），第二行起提供本册范围与来源上下文（子代理不自动加载本技能；
+当前任务绝对路径、业务技能绝对路径和目录派发契约由程序注入）：
 
-- 任务目录前缀（形如 `t_ab12…/`，读写路径都要带）；
 - 响应文件名 + 该册 scope 全文（从骨架原样复制，边界必须写清楚——子代理之间
   互不知晓，跨册协调全靠 scope 划分）；
-- fragment 输出路径：`<任务目录>/work/outline/fragments/<册名>.md`（文件名由你派发时
-  指定并保持稳定，是本技能的多册中间态）；
+- fragment 输出路径由 `task` 派发时程序注入 `fragment_path`，无需自行提供或从册名拼接。
+  完成后 `task` 返回 JSON 文本：`response_file` 为原册名，`fragment_path` 为同一文件的绝对路径，
+  `summary` 为子代理摘要；主线程保存每册回执，后续读取与合并均沿用该路径；
 - work/analysis 输入文件清单（含 requirements-format / requirements-business /
   evaluation 的完整路径），并注明清理适用性：无 REQ 条目 → 该册跳过查漏补缺；
   无 SCORE 条目 → 该册跳过评分对齐；
@@ -170,6 +175,7 @@ analysis 产物里已有的 MAND/TPL/REQ/SCORE 编号，**不要自己发明编�
 完成审查后complete冻结，再只重派受影响册落实。普通来源如需新增标题，使用context的可选
 heading unit作有依据的决策；bindings不能隐式新增标题。回读registry发现旧错标，须用
 operation="replace_source"清除该source_id的旧错误挂接并重给正确标题路径，原有效内容仍保留。
+不适用来源用 `outline_plan(operation="exclude", exclusions=[{source_id:"REQ-01",reason:"该条的完整排除理由"},...])` 每批1至8条，每条保留自己的原文依据和理由，不逐项重复调用、不概括不同条目的理由；外层source_id/reason留空。回执remaining_source_count/remaining_decision_count是剩余数量，next_source_ids/next_decision_unit_ids只列下一小批，不代表全部核查范围。
 全部必审片段与来源归位后最后提交 `operation="complete"`，此后不能因检查失败
 下调分类要求。冻结后如回读registry核实新增来源与已批准标题语义一致，可用outline_plan
 用operation="bind"仅追加该册已核实来源与标题路径，保留合法细化关联；不能删/移既有来源、改分类或借此加未审标题，不能
@@ -181,7 +187,8 @@ operation="replace_source"清除该source_id的旧错误挂接并重给正确标
 改写分册；修正后再次检查。单册在三道清理后同样检查。全部通过才能合并和组装；
 组装仍会重新检查实际内容，不能用旧检查结果或旧发布目录代替本轮成功。
 
-1. 逐个 read 各 fragment，按第 1 步骨架的册序拼接——顶部 `## 项目信息`（如有）
+1. 以 `task` 回执的 `response_file` 对应第 1 步骨架册序，逐个 read 回执中的 `fragment_path` 绝对路径；
+   不按完成先后排序，不从册名推测文件名，不从子代理摘要提取路径。拼接顶部 `## 项目信息`（如有）
    + 各册整段——**覆盖写** `work/outline/tender-response-docs.md`；
 2. 跨册去重互查（generate.md 规则 8 的合并版）：同一实质内容只保留一个目录节点；
    确属多册必须同时出现的（如资格册与技术册都要交的身份证明类材料），在各自 scope

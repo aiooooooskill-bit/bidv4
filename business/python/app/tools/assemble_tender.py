@@ -20,7 +20,6 @@ import re
 from pydantic import ValidationError
 from .. import publish, runctx
 from ..artifact_store import work_dir
-from ..config import workspace_dir
 from . import body_contract
 from ..markdown import headings, sections, iter_tables, list_items
 from .validate_analysis import _expand_citation_cell
@@ -365,7 +364,7 @@ def assemble_tender() -> str:
             parts.append(f'已按最深承载折叠 {fold_count} 处父子重复血缘（父级无需重复标注子级已答要求）')
         parts.extend((f'⚠️ {w}' for w in warnings))
         tail = '目录内容与当前发布版本一致，未重复发布（任务内唯一，后续阶段经 read_artifact 消费）。' if unchanged else '已发布为投标目录成果（任务内唯一，后续阶段经 read_artifact 消费）。'
-        parts.extend([f'JSON 副本：{out_root.relative_to(workspace_dir())}/outline/tender-response-docs.json', tail])
+        parts.extend([f'JSON 副本：{json_path}', tail])
         if dangling_ids:
             parts.append(f'⚠️ 悬空来源ID（被引用但登记表不存在，多为清单行序漂移或编号拼写错误）：{dangling_ids}；建议修正后重新组装发布')
         if unused_ids:

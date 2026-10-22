@@ -132,7 +132,7 @@ def test_confirmed_identity_fills_actual_tender_letter_docx(tmp_path,monkeypatch
     target='body/投标函.docx';assert docx_section_create(path=target,title='投标函').startswith('[已创建]')
     assert docx_source_inject(source=source.name,dest=target).startswith('[已注入]')
     edits=[{'table':1,'row':n,'col':2,'action':'fill','text':value} for n,value in enumerate(identity.values(),2)]
-    result=docx_section_revise(path=target,edits=json.dumps(edits,ensure_ascii=False));assert result.startswith('[已修订]'),result
+    result=docx_section_revise(path=target,edits=edits);assert result.startswith('[已修订]'),result
     generated=Document(artifact_store.work_dir(tid)/target)
     accepted=docx_section_read(path=target)
     assert all(value in accepted for value in identity.values())

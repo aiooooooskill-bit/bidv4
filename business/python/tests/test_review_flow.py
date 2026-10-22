@@ -472,7 +472,8 @@ def test_catalog_ignores_line_like_tokens_inside_real_filenames(setup, name):
 def test_terminal_findings_are_visible_decidable_and_validated(setup):
     tid, _, _, _ = setup
     source = artifact_store.sources_dir(tid) / '投标.docx'
-    d = Document(source); d.add_paragraph('授权代表联系方式：【待补】'); d.save(source)
+    d = Document(source); p = d.add_paragraph('授权代表联系方式：【待补】')
+    d.add_comment(p.runs, text='工程验收：签章附件待核验', author='fixture'); d.save(source)
     review.prepare(tid)
     setup[3]['input_version'] = review.basis(tid); setup[2].write_text(json.dumps(setup[3]))
     finish(setup)
@@ -482,7 +483,8 @@ def test_terminal_findings_are_visible_decidable_and_validated(setup):
     assert issue['risk_type'] == 'suggestion'
     review.decide(tid, 'review-test', issue['id'], 'pending', '终稿需要补齐')
     assert review.snapshot(tid)['report']['decisions'][issue['id']]['note'] == '终稿需要补齐'
-    assert any('未传 block_ids' in n for c in report['check_notes'] for n in c['notes'])
+    assert any('工程验收：签章附件待核验' in n for c in report['check_notes'] for n in c['notes'])
+    assert not any('未传 block_ids' in n for c in report['check_notes'] for n in c['notes'])  # 实际素材记录已校验，不能再保留旧的跳过提示
     report['document_issues'] = []
     with pytest.raises(ValueError, match='不一致'): review.validate_saved_report(tid, report)
 

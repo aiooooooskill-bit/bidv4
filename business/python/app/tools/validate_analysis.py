@@ -37,6 +37,17 @@ _COVERAGE_RE = re.compile('^(?:[一二三四五]+、\\s*)?coverage\\s*声明\\s*
 _FILENAME_LIKE = re.compile(r'^(?P<fn>.+?\.(?:docx|pdf|txt|md|png|jpe?g|gif|webp))(?=[\s（(]|$)', re.IGNORECASE)
 _L_RANGE = re.compile(r'L(\d+)(?:\s*[-–]\s*L?(\d+))?')
 
+
+def score_value_issue(value: str) -> str | None:
+    """仅拒绝登记表自身明确的非评分口径，不推断原文有没有分值。"""
+    points = bool(re.match(r'\s*[+-]?\d', value) or re.search(r'(?:得|计|扣|加)[^，。；]*分|基础分|满分', value))
+    if (value.strip() in ('', '—', '-', '无', '不适用', '无得分') or
+            not points and re.search(r'(?:无|未设|未给出|不设|不涉及)[^，。；]{0,6}(?:分值|评分)', value)):
+        return '明确无评分/分值的评审方法不能登记为SCORE；移入评标办法概述，保留报价及否决规则的原始出处和其他类别条目'
+    if '通过制' in value and not points:
+        return '资格/有效性审查通过不等于通过制计分；只有原文明示得分才登记SCORE，其余保留在评标办法概述及对应要求/废标条款'
+    return None
+
 def _excerpt(cell: str, limit: int=40) -> str:
     return cell if len(cell) <= limit else cell[:limit - 1] + '…'
 
@@ -274,6 +285,12 @@ def validate_analysis_files(adir: Path, known: list[str], src_lines: dict[str, i
         for required in _REQUIRED_HEADERS.get(stem, []):
             if not any(tuple(header) == required for _, header, _ in tables):
                 issues.append(f'{rel} 缺少合法的必需表格「{" | ".join(required)}」——表头须按模板列序且列不增不减，分隔行列数须一致；无条目也保留空表，不得用段落或代码块替代')
+        if stem == 'evaluation':
+            for _, header, rows in tables:
+                if tuple(header) == _REQUIRED_HEADERS['evaluation'][0]:
+                    for line, cells in rows:
+                        if any(c.strip(' —-') for c in cells) and (message := score_value_issue(cells[1])):
+                            issues.append(f'{rel}:{line} {message}')
         if stem in _NEED_COVERAGE:
             cover = next((body for heading, body in sections(content, 2)
                           if _COVERAGE_RE.fullmatch(heading.title)), None)

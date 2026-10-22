@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .. import artifact_store
 from ..config import data_dir
 from .outline_units import decision_units
+from ..file_lock import file_lock
 
 
 class Binding(BaseModel):
@@ -66,7 +67,7 @@ class UnitDecision(BaseModel):
 class VolumePatch(BaseModel):
     model_config = ConfigDict(extra='forbid')
     name: str = Field(min_length=1)
-    root_titles: list[str] = Field(default_factory=list, description='新目录首次给出一级标题；已有目录由程序保留原一级，后续批次可留空')
+    root_titles: list[str] = Field(default_factory=list, description='尚无目录树的册首次给出全部实际一级标题，前两项为封面、目录；已有目录由程序保留原一级，后续批次可留空')
     bindings: list[Binding] = Field(default_factory=list, max_length=8)
     content_headings: list[ContentHeading] = Field(default_factory=list, max_length=8)
 
@@ -85,10 +86,8 @@ def path(tid):
 
 
 def fragment_path(tid, name):
-    from ..tools.body_contract import sanitize_name
-    safe = sanitize_name(name)
-    suffix = '-' + hashlib.sha256(name.encode()).hexdigest()[:8] if safe != name else ''
-    return artifact_store.work_dir(tid) / 'outline/fragments' / (safe + suffix + '.md')
+    from ..tools.body_contract import volume_key
+    return artifact_store.work_dir(tid) / 'outline/fragments' / (volume_key(name) + '.md')
 
 
 def context_path(tid):
@@ -206,7 +205,7 @@ def begin(tid, action_id):
     context = dict(action_id=action_id, registry={rid: {k: v for k, v in entry.items() if k not in ('评分要点', '原文依据')} for rid, entry in registry.items()}, units={u: v for u, v in units.items() if v['review_required']}, optional_heading_unit_ids=[u for u, v in units.items() if not v['review_required']], baseline=baseline, baseline_source='页面当前已保存目录' if current else '首次生成的工作稿', body_inventory=body_inventory, facts_path=str(facts_path))
     artifact_store._atomic_write(context_path(tid), json.dumps(context, ensure_ascii=False, indent=2))
     return {'context_path': str(context_path(tid)), 'facts_path': str(facts_path), 'baseline_volumes': [d['name'] for d in baseline],
-            'instruction': '先read完整context_path和facts_path。先outline_plan(operation="begin")承接本项目分册骨架（已有目录无需其他参数），暂不complete。有SCORE评分时，单册和多册都必须先task派发本项目对应册的tender-outline-writer独立评分对齐；未完成真实子代理检查，程序拒绝提交decisions或complete。多册，不能先以旧综合章概述把分类判作参数。已有多册汇总恢复时，含方案/能力类评分且仍未展开的册须先重派清理，其余册不动。单册先按原文完成实际目录后也须子代理独立对齐。随后主线程回读真实目录，对context.units必审片段逐项用operation="decide"审查，每项填写unit_id/kind/reason/volume及level1/2/3；各字段直接填标量，不传嵌套JSON。每轮最多6次调用并读回执。不仅评分，格式/文件组成明确命名的方案类别也须逐类核对用户要求及已有正文，补齐适用类别；不能因无评分或正文尚缺而省略已知类别。独立评分/实质类别须真实二三级标题；有明确取值、阈值、时长、频率或字段的才是具体参数，类别内含参数或举例不改变其独立评分性质。全部审查后operation="complete"冻结，check_outline并组装发布；未冻结不能发布。原节点/顺序/scope/概述/归位理由必须保留；独立附件不得降挂。'}
+            'instruction': '先read完整context_path和facts_path。先outline_plan(operation="begin")承接本项目分册骨架（已有实际目录树无需其他参数；只有册名和scope的空草稿仍逐册填volume和root_titles，全部一级标题从封面、目录开始，不能只填正文），暂不complete。有SCORE评分时，单册和多册都必须先task派发本项目对应册的tender-outline-writer独立评分对齐；未完成真实子代理检查，程序拒绝提交decisions或complete。多册，不能先以旧综合章概述把分类判作参数。已有多册汇总恢复时，含方案/能力类评分且仍未展开的册须先重派清理，其余册不动。单册先按原文完成实际目录后也须子代理独立对齐。随后主线程回读真实目录，对context.units必审片段逐项用operation="decide"审查，每项填写unit_id/kind/reason/volume及level1/2/3；各字段直接填标量，不传嵌套JSON。每轮最多6次调用并读回执。不仅评分，格式/文件组成明确命名的方案类别也须逐类核对用户要求及已有正文，补齐适用类别；不能因无评分或正文尚缺而省略已知类别。独立评分/实质类别须真实二三级标题；有明确取值、阈值、时长、频率或字段的才是具体参数，类别内含参数或举例不改变其独立评分性质。全部审查后operation="complete"冻结，check_outline并组装发布；未冻结不能发布。原节点/顺序/scope/概述/归位理由必须保留；独立附件不得降挂。'}
 
 
 def _needs_alignment(value):
@@ -257,7 +256,7 @@ def freeze_plan(tid, volumes: list[VolumePlan], exclusions: list[Exclusion], dec
     old_plan = value['plan']
     if old_plan is not None:
         if old_plan == plan:
-            return {'ok': True, 'frozen': True, 'plan': old_plan}
+            return {'ok': True, 'frozen': True}
         same_structure = (old_plan['exclusions'] == plan['exclusions'] and old_plan['decisions'] == plan['decisions'] and len(old_plan['volumes']) == len(plan['volumes']))
         for before, after in zip(old_plan['volumes'], plan['volumes']):
             same_structure = same_structure and {k:v for k,v in before.items() if k!='bindings'} == {k:v for k,v in after.items() if k!='bindings'}
@@ -270,15 +269,19 @@ def freeze_plan(tid, volumes: list[VolumePlan], exclusions: list[Exclusion], dec
     if len(set(names)) != len(names):
         raise ValueError('响应文件名称重复')
     old_docs = value['baseline']
-    if old_docs and names != [d['name'] for d in old_docs]:
-        raise ValueError('原有分册及顺序必须完整保留')
+    if old_docs:
+        original_names = [d['name'] for d in old_docs]
+        if names != [n for n in original_names if n in names] or (complete and names != original_names):
+            raise ValueError('原有分册及顺序必须完整保留')
     registry = value['registry']
     required_units = {u for u, v in value['units'].items() if v['review_required']}
     accounted = set()
     for vol in volumes:
         old = next((d for d in old_docs if d['name'] == vol.name), None)
-        if old and vol.root_titles != [n['目录名称'] for n in old['directory']]:
+        if old and old['directory'] and vol.root_titles != [n['目录名称'] for n in old['directory']]:
             raise ValueError(f'{vol.name}：原一级标题和顺序必须逐字保留')
+        if (not old or not old['directory']) and vol.root_titles[:2] != ['封面', '目录']:
+            raise ValueError(f'{vol.name}：root_titles须包含全部实际一级标题，前两项依次为封面、目录，再列正文及独立附件；请修正本册begin参数后重试，错误计划未保存')
         if len(set(vol.root_titles)) != len(vol.root_titles):
             raise ValueError(f'{vol.name}：一级标题重复')
         seen = {}
@@ -346,15 +349,23 @@ def freeze_plan(tid, volumes: list[VolumePlan], exclusions: list[Exclusion], dec
         value.setdefault('binding_additions_audit',[]).extend(additions)
     value['plan' if complete else 'draft_plan'] = plan
     _save(tid, value)
-    return {'ok': True, 'frozen': complete, 'context_path': str(context_path(tid)), 'volumes': names,
-            'pending_sources': sorted(set(registry) - accounted),
-            'pending_units': sorted(required_units - {d.unit_id for d in decisions}),
-            'next_decision_unit_ids': [] if _needs_alignment(value) else sorted(required_units - {d.unit_id for d in decisions})[:6],
+    pending_sources = sorted(set(registry) - accounted)
+    pending_units = sorted(required_units - {d.unit_id for d in decisions})
+    return {'ok': True, 'frozen': complete,
+            'remaining_source_count': len(pending_sources), 'next_source_ids': pending_sources[:8],
+            'remaining_decision_count': len(pending_units),
+            'next_decision_unit_ids': [] if _needs_alignment(value) else pending_units[:6],
             'source_changes_to_review': source_review,
             'next_action': 'task独立评分对齐' if _needs_alignment(value) else '依据实际目录继续逐项审查'}
 
 
 def plan_batch(tid, batch: PlanBatch):
+    # Parallel native tool calls must not overwrite another accepted batch.
+    with file_lock(path(tid)):
+        return _plan_batch(tid, batch)
+
+
+def _plan_batch(tid, batch: PlanBatch):
     value = _load(tid)
     if (batch.decisions or batch.complete) and _needs_alignment(value):
         raise ValueError('执行顺序错误：本轮尚未完成真实子代理评分对齐。先outline_plan(operation="begin")承接原骨架（新目录逐册填volume及换行分隔的root_titles），再task填写response_file派发对应册；单册也须独立评分对齐。暂不要提交decisions或complete。')
@@ -363,7 +374,7 @@ def plan_batch(tid, batch: PlanBatch):
         return {'ok':True,'frozen':True}
     if extending and any([batch.exclusions,batch.decisions,batch.replace_sources]):
         raise ValueError('计划已冻结，只能追加核实过的来源bindings；不能减少或修改原分类/节点/既有映射')
-    draft = deepcopy(value['plan']) if extending else value.get('draft_plan') or {'volumes': [dict(name=d['name'],root_titles=[n['目录名称'] for n in d['directory']],headings=[],bindings=[dict(source_id=rid,path=list(p)) for p,n in _nodes(d['directory']) for rid in sorted(set([*n.get('来源位置', []),*n.get('理由来源', [])]) & set(value['registry']))]) for d in value['baseline']], 'exclusions': [], 'decisions': []}
+    draft = deepcopy(value['plan'] if extending else value.get('draft_plan')) or {'volumes': [dict(name=d['name'],root_titles=[n['目录名称'] for n in d['directory']],headings=[],bindings=[dict(source_id=rid,path=list(p)) for p,n in _nodes(d['directory']) for rid in sorted(set([*n.get('来源位置', []),*n.get('理由来源', [])]) & set(value['registry']))]) for d in value['baseline'] if d['directory']], 'exclusions': [], 'decisions': []}
     if not set(batch.replace_sources).issubset(value['registry']):
         raise ValueError('待纠正来源不在本项目registry中')
     for vol in draft['volumes']:
@@ -383,6 +394,9 @@ def plan_batch(tid, batch: PlanBatch):
                 row=item.model_dump()
                 if row not in vol[key]:
                     vol[key].append(row)
+    if value['baseline']:
+        original_names = [d['name'] for d in value['baseline']]
+        draft['volumes'].sort(key=lambda v: original_names.index(v['name']) if v['name'] in original_names else len(original_names))
     for item in batch.exclusions:
         row=item.model_dump()
         if row not in draft['exclusions']:

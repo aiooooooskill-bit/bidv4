@@ -42,7 +42,7 @@ async function settlementScenario(mode){
    const step=request.messages.slice(anchor).filter(message=>message.role==='assistant'&&message.tool_calls?.length).length;
    const work=join(dataRoot,'workspace',taskId,'work');
    const write=(id,path,content)=>call(id,'write',{file_path:join(work,path),content});
-   const outline='# 响应文件：交接验收册\n\nscope：本机工程验收\n\n## 目录\n- 验收章节\n\n## 来源标注\n\n## 目录说明\n';
+   const outline='# 响应文件：交接验收册\n\nscope：本机工程验收\n\n## 目录\n- 封面\n- 目录\n- 验收章节\n\n## 来源标注\n\n## 目录说明\n';
    const first=[
     [call('first-analysis','ooo_bidpliot_run',{task_id:taskId,kind:'analyse',main_file:'隔离原件.png',supplements:[]})],
     analysis.map(key=>write('analysis-'+key,'analysis/'+key+'.md','# 交接隔离验收 '+key+'\n本机确定性夹具的合成资料，无评分或业务约束。')),
@@ -50,7 +50,7 @@ async function settlementScenario(mode){
    ];
    const next=[
     [call('next-outline','ooo_bidpliot_run',{task_id:taskId,kind:'outline',page_target:null,numbering:'decimal'})],
-    [call('outline-contract','outline_plan',{operation:'complete',volume:'交接验收册',root_titles:'验收章节'})],
+    [call('outline-contract','outline_plan',{operation:'complete',volume:'交接验收册',root_titles:'封面\n目录\n验收章节'})],
     [write('outline-write','outline/tender-response-docs.md',outline)],
     [call('outline-check','check_outline',{})],
     [call('outline-publish','assemble_tender',{})],

@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {join} from 'node:path';
+import {mkdir,readFile} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {ToolResultPruner,resolveConfig} from '@deepseek-ai/dsh-compaction-tool-result-pruner';
+import {dataRoot,root} from '../server/native/business.mjs';
+import {pythonExecutable} from '../server/platform.mjs';
+import {runIsolatedTest} from './helpers/isolated-app.mjs';
+const title='官方历史裁剪后仍可按真实P段号回读中段原文且不改文件';
+if(process.env.BIDV4_PARAGRAPH_READ_FIXTURE!=='1')test(title,()=>runIsolatedTest('paragraph-recovery-read.test.mjs','BIDV4_PARAGRAPH_READ_FIXTURE',new RegExp(title)));
+else test(title,async()=>{
+ const tid='point-paragraph',folder=join(dataRoot,'workspace',tid,'work/body');await mkdir(folder,{recursive:true});const path=join(folder,'真实长稿.docx'),python=pythonExecutable(root);
+ const made=spawnSync(python,['-c',"from docx import Document;import sys;d=Document();[d.add_paragraph('实际原稿第'+str(i)+'段：'+'方法技术完整保留。'*12) for i in range(1,522)];d.paragraphs[217].text='唯一中段原文：通过技术秘密保护，未申请专利注册。';d.save(sys.argv[1])",path],{encoding:'utf8'});assert.equal(made.status,0,made.stderr);
+ const call=parameters=>{const x=spawnSync(python,[join(root,'business/python/runner.py')],{input:JSON.stringify({operation:'tool',data_root:dataRoot,task_id:tid,session_id:'read-only',args:{name:'docx_section_read',parameters}}),encoding:'utf8'});assert.equal(x.status,0,x.stdout);return JSON.parse(x.stdout).result};
+ const hash=async()=>createHash('sha256').update(await readFile(path)).digest('hex');const before=await hash();
+ const pruner=Object.create(ToolResultPruner.prototype);pruner.config=resolveConfig();
+ const whole=call({path:'body/真实长稿.docx'});assert.match(whole,/\[P218\]/);const pruned=pruner.pruneContent([{type:'text',text:whole}]);assert.ok(pruned);assert.doesNotMatch(pruned.map(x=>x.text??'').join(''),/唯一中段原文/);
+ const point=call({path:'body/真实长稿.docx',para:218});assert.match(point,/\[P218 完整段落\]/);assert.match(point,/唯一中段原文：通过技术秘密保护，未申请专利注册。/);assert.equal(pruner.pruneContent([{type:'text',text:point}]),null);assert.equal(await hash(),before);
+});

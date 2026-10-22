@@ -4,6 +4,8 @@ description: 解析页面选定的DOCX、PDF、PNG、JPG、JPEG、GIF、WebP来�
 ---
 # 文档解析
 
+先读 `skills/_shared/path-conventions.md`，按其中的普通文件绝对路径与业务工具参数约定操作。
+
 先读 `skills/_shared/response-guidelines.md`。页面输入决定来源集合，不另设主文件或解析结果确认门。
 
 1. 调用 `check_pipeline_state`，读取 `work/parse/sources.json`。页面已经写入 main、supplements 与 excluded；不将未选文件并入本次解读。

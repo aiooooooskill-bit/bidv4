@@ -2,20 +2,21 @@ import {mkdir,readFile,writeFile,rename,unlink,readdir,symlink,readlink,lstat} f
 import {resolve,join} from 'node:path';
 import {randomUUID,createHash} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
-import {business,dataRoot,root,BusinessError} from './business.mjs';
+import {business,dataRoot,root,BusinessError,taskPathContext} from './business.mjs';
 import {transcribe,subagentFailure,startSubtask} from './tools.mjs';
 import {analysisProgress} from '../../shared/analysis-progress.js';
-import {actionSatisfied} from '../../shared/delivery-status.js';
+import {actionSatisfied,manualDirectoryCurrent} from '../../shared/delivery-status.js';
 import {installExecutionGuard} from './execution-guard.mjs';
 import {jsonResponse} from './markdown.mjs';
 import {Workflows} from './workflow.mjs';
 import {chatToolNames} from '../agent.mjs';
-import {presetDefinition,subtaskProviderNames} from './preset.mjs';
+import {presetDefinition,subtaskProviderNames,writingReadTools} from './preset.mjs';
 import {apply as applySpawnProvider} from '@deepseek-ai/dsh-subagent-spawn-in-process';
 import {conversationTasks,taskForAgent} from './conversations.mjs';
 const actions=join(dataRoot,'actions'),locks=join(dataRoot,'locks'),knowledgeJobs=join(dataRoot,'knowledge-jobs');
 const requiredAnalysis=['structure.md','requirements-submission.md','requirements-business.md','requirements-qualification.md','evaluation.md','requirements-format.md','disqualification.md','clarifications.md'];
-const instructions={review:'保存时逐项提供完整招标引用、实际投标事实bid_facts及applicability，程序保留原文限定qualifications；新证据通过本轮evidence_index_path回查，review_batch(batch_id)回读并更正受影响的早期批次，不读取其他轮判断。条件成立与适用范围未明确时必须uncertain且仅列需确认。按tender-review技能复用文档解析、七类要点和共享证据规则，结合review_basis返回的前序有效成果。比较前先区分条款的参数量纲、完成窗口、排期与最低投入量：时间窗口不能换算为最低授课或工作时长，数量不足必须有原文明示的最低数量依据。合同、报价总费用、后文方案和附件对同一义务的回应要合并取证；专项章节未重复条件不等于全文缺失，笼统承诺也不能掩盖具体相反承诺。存在有条件条款或适用范围歧义时先并列完整依据，适用性尚未明确的列为需确认，不自行判定优先级或直接判冲突。金额、人数、期限等数字须逐字回查当前引用，禁止凭模板或记忆填写。更正一个结论时，在本轮内同步核对引用相同义务的其他类别、废标后果与评分项，避免残留相反结论；图片证明无法核验时不得确定承诺得分。已有八份有效要点时直接validate复用。调用review_batch逐批取证，最多8项。每个slot的判断、tender/bid引用和problems写在同一对象内，tender保留原要点依据并收录回读到的相关完整条款、限定或冲突区段，不自选requirement_id，不手写行号。仅有本轮一次审核；save_review_batch执行条目、关联、原文范围和版本的程序校验后保存，不再调用其他模型复审。程序错误按提示修复，禁止删项或无依据改uncertain。继续所有批次直至complete，再finish_review_report汇总。不要读取此前失败的对照草稿，不重复传整份清单。后文新证据导致先前判断变化时，同一个Agent在本轮结束前更正该已保存批次，不额外复审。原解读和投标正文不修改。',analyse:'按document-parse和tender-analysis技能解析页面指定的全部来源，完成八份解读文件。结束后停轮。',outline:'按tender-outline技能生成并发布单册或多册目录，结束后停轮。',guide:'按tender-body技能仅生成body/写作指引.md，结束后停轮。',promises:'按tender-body技能仅生成body/关键事实与承诺.md，未提供的具体承诺值向页面提问，结束后停轮。',body:'按tender-body技能生成页面所选章节。先读取build_preparation，复用ready规划，只补齐缺失准备；生成指引后校验并记录guide，整理承诺后记录promises。具体缺值集中ask_user_question，页面答复后同会话继续。已有承诺值保持原样，变更须由用户在页面编辑保存。两份准备ready后只写sections指定章节并逐章校验，不扩展范围，不合册。',revise:'按tender-body技能修订页面所选章节，保留其他章节。',build:'按tender-body技能执行完整制作：用build_preparation读取当前规划状态，生成缺失的写作指引并校验，用build_preparation(stage=guide)记录；整理承诺清单并用build_preparation(stage=promises)记录。具体承诺值缺失时一次提问并停轮，页面作答后在同一会话继续。两份规划就绪后补写尚无正文的章节，并完成build_preparation中标为draft的未完成章节（先核对当前文件，不盲目覆盖）；不覆盖已有章节，不因当前选中章节缩小整本范围。逐节校验、全局检查，全部所需章节存在后合册。已存在但依据变化的正文保留并点名待核对，不擅自改写。'};
+const readOnlyInstruction='本轮为明确只读任务。按原始要求派发所选现稿的读取、核验及逐节validate_body；主线程和写手均不修改任何正文、共享准备或目录。不因现有规划、主体快照或待办默认转为业务实质审查或追加取证；原始要求未点名的业务问题仅记录。回收所有任务后按工具真实结果汇报并结束，不重启阶段、不合册。';
+const instructions={review:'保存时逐项提供完整招标引用、实际投标事实bid_facts及applicability，程序保留原文限定qualifications；新证据通过本轮evidence_index_path回查，review_batch(batch_id)回读并更正受影响的早期批次，不读取其他轮判断。条件成立与适用范围未明确时必须uncertain且仅列需确认。按tender-review技能复用文档解析、七类要点和共享证据规则，结合review_basis返回的前序有效成果。比较前先区分条款的参数量纲、完成窗口、排期与最低投入量：时间窗口不能换算为最低授课或工作时长，数量不足必须有原文明示的最低数量依据。合同、报价总费用、后文方案和附件对同一义务的回应要合并取证；专项章节未重复条件不等于全文缺失，笼统承诺也不能掩盖具体相反承诺。存在有条件条款或适用范围歧义时先并列完整依据，适用性尚未明确的列为需确认，不自行判定优先级或直接判冲突。金额、人数、期限等数字须逐字回查当前引用，禁止凭模板或记忆填写。更正一个结论时，在本轮内同步核对引用相同义务的其他类别、废标后果与评分项，避免残留相反结论；图片证明无法核验时不得确定承诺得分。已有八份有效要点时直接validate复用。首次或恢复时调用review_batch取当前批次，最多8项；save_review_batch成功回执的next已包含下一批完整要求，直接使用，不再调用review_batch重复读取。需要更正时才传已保存batch_id回读。每个slot的判断、tender/bid引用和problems写在同一对象内，tender保留原要点依据并收录回读到的相关完整条款、限定或冲突区段，不自选requirement_id，不手写行号。仅有本轮一次审核；save_review_batch执行条目、关联、原文范围和版本的程序校验后保存，不再调用其他模型复审。程序错误按提示修复，禁止删项或无依据改uncertain。继续所有批次直至complete，再finish_review_report汇总。不要读取此前失败的对照草稿，不重复传整份清单。后文新证据导致先前判断变化时，同一个Agent在本轮结束前更正该已保存批次，不额外复审。原解读和投标正文不修改。',analyse:'按document-parse和tender-analysis技能解析页面指定的全部来源，完成八份解读文件。结束后停轮。',outline:'按tender-outline技能生成并发布单册或多册目录，结束后停轮。',guide:'按tender-body技能仅生成body/写作指引.md，结束后停轮。',promises:'按tender-body技能仅生成body/关键事实与承诺.md，未提供的具体承诺值向页面提问，结束后停轮。',body:'按tender-body技能生成页面所选章节。先读取build_preparation，复用ready规划，只补齐缺失准备；生成指引后校验并记录guide，整理承诺后记录promises。具体缺值集中ask_user_question，页面答复后同会话继续。已有承诺值保持原样，变更须由用户在页面编辑保存。两份准备ready后只写sections指定章节并逐章校验，不扩展范围，不合册。',revise:'按tender-body技能仅处理页面instruction明确要求的所选现稿片段。先读取真实原稿及定位，定向修改后逐节validate_body；不执行生成步骤，不因规划、缺口或已有主体快照而自行补写、插图或加批注；未被点名内容及其他章节全部保留。',build:'按tender-body技能执行完整制作：用build_preparation读取当前规划状态，生成缺失的写作指引并校验，用build_preparation(stage=guide)记录；整理承诺清单并用build_preparation(stage=promises)记录。具体承诺值缺失时一次提问并停轮，页面作答后在同一会话继续。两份规划就绪后补写尚无正文的章节，并完成build_preparation中标为draft的未完成章节（先核对当前文件，不盲目覆盖）；不覆盖已有章节，不因当前选中章节缩小整本范围。逐节校验、全局检查，全部所需章节存在后合册。已存在但依据变化的正文保留并点名待核对，不擅自改写。'};
 async function jsonFile(p){try{return JSON.parse(await readFile(p,'utf8'))}catch(e){if(e.code==='ENOENT')return null;throw e}}
 async function atomic(p,data){await mkdir(resolve(p,'..'),{recursive:true});await writeFile(p+'.tmp',JSON.stringify(data));await rename(p+'.tmp',p)}
 function eventsView(events,questions,live){
@@ -42,14 +43,14 @@ export class BusinessRuntime{
   this.presetDisposers.push(await this.ctx.agentPresets.register(presetDefinition));
   await mkdir(join(dataRoot,'conversations'),{recursive:true});
   for(const name of await readdir(join(dataRoot,'conversations'))){const value=await jsonFile(join(dataRoot,'conversations',name));conversationTasks.set(value.session_id,value.task_id)}
-  this.continuationOff=this.ctx.on('agent/pre-step',async({agent,messages},next)=>{
+  this.continuationOff=this.ctx.on('agent/pre-step',async({agent,messages,signal},next)=>{
    const tid=taskForAgent(agent);
    if(tid){
     const owner=this.executionOwners.get(tid);
     if(owner?.agent===agent&&!owner.waitingForIdle)await this.settling.get(tid);
     const record=await jsonFile(join(actions,tid,'latest.json'));
     if(record?.session_id===agent.id){
-     await this.applyStageTools(agent,record.kind);
+     await this.applyStageTools(agent,record.kind,record.read_only);await this.enterStage(agent,record,signal);
      const previous=record.outcome??this.executionView(record,agent);
      if(previous.state==='needs_input'){
       const calls=new Set(previous.questions.map(q=>q.callId));
@@ -70,10 +71,16 @@ export class BusinessRuntime{
   this.guardOff=installExecutionGuard(this.ctx,(tid,sessionId,message)=>this.preparationProblem(tid,sessionId,message));
 
  }
- async applyStageTools(agent,kind){
-  const mode=kind==='review'?'review':kind==='outline'?'outline':'default',current=this.stageTools.get(agent.id);if(current?.mode===mode&&current.agent===agent)return current.ready;
+ async enterStage(agent,record,signal){
+  if(record.history_before_seq==null||record.stage_context||record.end_seq!=null||record.stopped_at)return;
+  const engine=this.ctx.agentPresets.serviceFor(agent,'compaction');
+  const context=await engine.enterStage(agent,{beforeSeq:record.history_before_seq,directory:join(dataRoot,'workspace',record.task_id,'work/context',record.action_id),signal});
+  await this.updateRecord(record,{stage_context:context});
+ }
+ async applyStageTools(agent,kind,readOnly=false){
+  const mode=readOnly?'writing-readonly':kind==='review'?'review':kind==='outline'?'outline':'default',current=this.stageTools.get(agent.id);if(current?.mode===mode&&current.agent===agent)return current.ready;
   if(current?.fiber){await current.fiber.dispose();while(current.fiber.inertia)await current.fiber.inertia}
-  const allow=mode==='review'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','prepare_review_documents','review_basis','review_batch','save_review_batch','finish_review_report']:mode==='outline'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','task','check_pipeline_state','outline_plan','check_outline','assemble_tender','read_artifact','update_task_progress']:null;
+  const allow=mode==='writing-readonly'?['ooo_bidpliot_status','ooo_bidpliot_read','ooo_bidpliot_run','task',...writingReadTools]:mode==='review'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','prepare_review_documents','review_basis','review_batch','save_review_batch','finish_review_report']:mode==='outline'?[...chatToolNames,'read','read_image','write','edit','glob','grep','skill','ask_user_question','task','check_pipeline_state','outline_plan','check_outline','assemble_tender','read_artifact','update_task_progress']:null;
   const ready=Promise.withResolvers();
   const fiber=allow?agent.ctx.inject(['tools'],ctx=>{try{ctx.tools.restrict({allow});ready.resolve()}catch(error){ready.reject(error);throw error}}):null;
   if(!allow)ready.resolve();
@@ -136,15 +143,23 @@ export class BusinessRuntime{
  async projection(record,state){
   state??=await business(this.ctx,'state',{task_id:record.task_id});
   const handle=await this.handle(record),agent=handle.agent;
-  const view={session_id:record.session_id,action_id:record.action_id,created_at:record.created_at,kind:record.kind,model:record.model,sections:record.sections??[],...(record.outcome??this.executionView(record,agent))};
+  const view={session_id:record.session_id,action_id:record.action_id,created_at:record.created_at,kind:record.kind,read_only:record.read_only===true,model:record.model,sections:record.sections??[],...(record.outcome??this.executionView(record,agent))};
   if(record.stopped_at){view.state='stopped';view.questions=[];delete view.error}
   if(record.preparation_error&&!record.stopped_at&&view.state!=='running'){view.state='failed';view.questions=[];view.error=record.preparation_error}
   if(record.kind==='review'&&record.finished_state==='failed'){view.state='failed';if(record.review_error)view.error=record.review_error}
   if(view.state==='completed'&&record.kind==='review'&&state.review.report?.session_id!==record.session_id){view.state='failed';view.error=record.review_error??'本轮未生成有效审查报告'}
-  if(view.state==='completed'){
+  const savedAfterCompletion=record.verified_completed_at&&['outline','guide','promises','body','revise','build'].includes(record.kind)&&manualDirectoryCurrent(state,{created_at:record.verified_completed_at});
+  let validationMissing=false;
+  if(view.state==='completed'&&!savedAfterCompletion){
    const names=new Set(state.files.map(f=>f.path));
    const missing=record.kind==='analyse'?requiredAnalysis.map(n=>'analysis/'+n).filter(n=>!names.has(n)):record.kind==='outline'?!state.directory?['投标目录']:[]:record.kind==='guide'?!names.has('body/写作指引.md')?['写作指引']:[]:record.kind==='promises'?!names.has('body/关键事实与承诺.md')?['关键事实与承诺']:[]:['build','body','revise'].includes(record.kind)?(record.sections?.length?record.sections.filter(s=>{const item=state.body_sections.find(b=>b.volume===s.volume&&b.title===s.title);return !item||!state.body_files.includes(item.path)||item.status!=='ready'}).map(s=>s.title):state.body_sections.filter(s=>!state.body_files.includes(s.path)||s.status!=='ready').map(s=>s.title)):[];
-   if(record.kind==='outline'){const verification=await business(this.ctx,'outline_status',{task_id:record.task_id,action_id:record.action_id});if(!verification.ok)missing.push(verification.error)}
+   if(['build','body','revise'].includes(record.kind)){
+    const selected=record.section_paths?.length?state.body_sections.filter(s=>record.section_paths.includes(s.path)):state.body_sections;
+    const unverified=selected.filter(s=>s.status==='ready'&&!s.validated_action_ids?.includes(record.action_id));
+    validationMissing=unverified.length>0;
+    missing.push(...unverified.map(s=>s.title+'未通过本轮校验'));
+   }
+   if(record.kind==='outline'&&!manualDirectoryCurrent(state,record)){const verification=await business(this.ctx,'outline_status',{task_id:record.task_id,action_id:record.action_id});if(!verification.ok)missing.push(verification.error)}
    if(['body','revise','guide','promises'].includes(record.kind)){
     const stages=record.kind==='guide'?['guide']:['guide','promises'];
     for(const kind of stages)if(state.build_preparation[kind]!=='ready')missing.push(kind==='guide'?'写作指引未就绪':'关键事实与承诺未就绪');
@@ -156,7 +171,7 @@ export class BusinessRuntime{
    }
    if(missing.length){view.state='failed';view.error=record.preparation_error??'本轮未产出所需文件：'+missing.join('、')+'。已有成果保留，请重新发起该阶段。'}
   }
-  if(view.state==='failed')view.resolved=actionSatisfied(state,record);
+  if(view.state==='failed')view.resolved=!validationMissing&&actionSatisfied(state,record);
   return view;
  }
  async tasks(){const result=await business(this.ctx,'tasks');let recovered=false;for(const task of result.tasks)if(task.review_status==='running'){const record=(await this.latestRecord(task.id,'review'))?.record;if(record)recovered=await this.recoverReview(record)||recovered}return recovered?business(this.ctx,'tasks'):result}
@@ -185,6 +200,7 @@ export class BusinessRuntime{
   finally{this.release(tid)}
  }
  async requireCurrent(tid,kind,state){
+  if(kind==='outline'&&manualDirectoryCurrent(state))return;
   const record=(await this.latestRecord(tid,kind))?.record;
   if((['guide','promises'].includes(kind)&&state.build_preparation[kind]!=='ready')||(!['guide','promises'].includes(kind)&&(!record||record.input_version!==state.input_versions[kind]||(await this.projection(record)).state!=='completed')))throw new BusinessError(409,{analyse:'解读依据已变化，请重新解读',outline:'目录依据已变化，请重新生成目录',guide:'写作指引依据已变化，请重新生成写作指引',promises:'承诺清单依据已变化，请重新生成关键事实与承诺'}[kind]);
  }
@@ -193,8 +209,11 @@ export class BusinessRuntime{
   this.admit(tid,'操作正在提交，请读取最新状态');
   try{
    if(!instructions[payload.kind]||typeof payload.request_id!=='string'||payload.request_id.length<8)throw new BusinessError(422,'操作参数无效');
+   if(payload.read_only!==undefined&&(typeof payload.read_only!=='boolean'||payload.read_only&&payload.kind!=='revise'))throw new BusinessError(422,'read_only只接受布尔值，且只读核验使用revise阶段');
    const dir=join(actions,tid);await mkdir(dir,{recursive:true});const key=createHash('sha256').update(payload.request_id).digest('hex');const path=join(dir,key+'.json');const hash=createHash('sha256').update(JSON.stringify(payload)).digest('hex');const old=await jsonFile(path);
    if(old){if(old.payload_hash!==hash)throw new BusinessError(409,'同一请求的操作内容已变化');return {session_id:old.session_id,action_id:old.action_id,replayed:true}}
+   const active=await jsonFile(join(dir,'latest.json'));
+   if(active&&active.end_seq==null&&!active.stopped_at&&this.executionOwners.get(tid)?.actionId===active.action_id&&this.executionOwners.get(tid)?.waitingForIdle&&this.ctx.agents.get(active.session_id)?.status==='running')throw new BusinessError(409,'当前项目阶段正在执行，请直接按已收到的阶段指令完成所选范围，不要再次调用run启动阶段');
    await this.settling.get(tid);const state=await this.state(tid);if(['running','needs_input'].includes(state.execution?.state))throw new BusinessError(409,'当前执行尚未结束');
    await this.freezeAnalysis(tid);
    if(payload.input_version!==state.input_versions[payload.kind])throw new BusinessError(409,'操作依据已变化，请刷新页面后继续');
@@ -229,12 +248,14 @@ export class BusinessRuntime{
     this.ctx.get('permissionPresets')?.set(handle.agent.session,'danger-full-access');
     if(this.ctx.get('sessionTitle'))await this.ctx.sessionTitle.rename(handle.agent.session,state.task.title);
     const section_paths=state.body_sections.filter(s=>payload.kind==='build'?(s.status==='missing'||s.status==='draft'):sections.some(p=>p.volume===s.volume&&p.title===s.title)).map(s=>s.path);
-    const record={action_id:key,start_seq:handle.agent.session.snapshotEvents().length,session_id:sessionId,task_id:tid,kind:payload.kind,model,payload_hash:hash,input_version:(await business(this.ctx,'state',{task_id:tid})).input_versions[payload.kind],created_at:Date.now(),sections,section_paths,...(payload.kind==='analyse'?{analysis_sources:await business(this.ctx,'analysis_source_version',{task_id:tid})}:{}),...(payload.kind==='analyse'?{analysis_before:Object.fromEntries(state.files.map(f=>[f.path,f.hash]))}:{})};
+    const history_before_seq=options.agent?(handle.agent.session.snapshotEvents().findLast(e=>e.type==='turn/start')?.seq??0):handle.agent.session.seq;
+    const record={history_before_seq,action_id:key,start_seq:handle.agent.session.snapshotEvents().length,session_id:sessionId,task_id:tid,kind:payload.kind,read_only:payload.read_only===true,instruction:payload.instruction??'',model,payload_hash:hash,input_version:(await business(this.ctx,'state',{task_id:tid})).input_versions[payload.kind],created_at:Date.now(),sections,section_paths,...(payload.kind==='analyse'?{analysis_sources:await business(this.ctx,'analysis_source_version',{task_id:tid})}:{}),...(payload.kind==='analyse'?{analysis_before:Object.fromEntries(state.files.map(f=>[f.path,f.hash]))}:{})};
     await atomic(path,record);await atomic(join(dir,'latest.json'),record);
-    const prompt=instructions[payload.kind]+(payload.kind==='review'?'\n审核中的招标条款歧义、来源冲突、外部事实或证明不足，直接在报告“需确认”中列出原文依据、影响及尚待确认的范围，继续完整审核，不调用ask_user_question让用户逐项裁决。只有缺少开始审核所必需的文件或无法识别受审对象才提问；修改业务规则或替用户作新的承诺须询问。':'')+'\n页面输入：'+JSON.stringify(payload)+'\n制作状态：'+JSON.stringify(state.build_preparation)+'；目录篇幅：'+JSON.stringify(state.directory?.content.page_target??null)+(bidderSnapshot?'\n已确认投标主体信息（唯一身份依据）：'+JSON.stringify(bidderSnapshot)+'。先读取此快照，已有公司地址、电话、传真、邮箱、签字代表姓名和职务及签署日期直接使用，不再次提问。缺失或项目专属承诺才提问。所有公司资质与业绩只检索本主体；写作素材全库共用，注入后修订并检查旧项目和旧主体名称。':'')+'\n当前任务绝对路径：'+cwd+'；来源集合以work/parse/sources.json为准。';
+    const prompt=(record.read_only?readOnlyInstruction:instructions[payload.kind])+(payload.kind==='review'?'\n审核中的招标条款歧义、来源冲突、外部事实或证明不足，直接在报告“需确认”中列出原文依据、影响及尚待确认的范围，继续完整审核，不调用ask_user_question让用户逐项裁决。只有缺少开始审核所必需的文件或无法识别受审对象才提问；修改业务规则或替用户作新的承诺须询问。':'')+'\n页面输入：'+JSON.stringify(payload)+'\n制作状态：'+JSON.stringify(state.build_preparation)+'；目录篇幅：'+JSON.stringify(state.directory?.content.page_target??null)+(bidderSnapshot?'\n已确认投标主体信息（唯一身份依据，仅供本轮明确任务使用，不构成新增填写授权）：'+JSON.stringify(bidderSnapshot)+'。仅在本轮明确要求涉及这些字段时使用已有值，不再次提问；不因快照、缺口或通用技能而扩大任务范围。公司资质与业绩只检索本主体；写作素材全库共用，使用方式遵守当前阶段。':'')+'\n'+taskPathContext(tid)+'\n来源集合以当前任务 work/parse/sources.json 为准。';
     const outlineContext=payload.kind==='outline'?await business(this.ctx,'outline_begin',{task_id:tid,action_id:key}):null;
-    const stagePrompt=outlineContext?prompt+'\n本轮目录派发/汇总契约：'+JSON.stringify(outlineContext):prompt;
-    record.prompt=stagePrompt;await this.updateRecord(record,{prompt:stagePrompt});await this.applyStageTools(handle.agent,payload.kind);
+    const currentDirectory=state.directory&&payload.kind!=='outline'?'\n当前有效投标目录：'+JSON.stringify({contract:'tender.directory/tender-response-docs@1',artifact_id:state.directory.artifact_id,content_seq:state.directory.content_seq})+'。当前上下文已有本版本所需内容则复用；缺失时先用read_artifact的index查看范围，再按section读取当前章节及其依据，必须传索引返回的content_seq、完整册名volume和section_path；不传空册名。只有确需完整全局JSON才用full。人工调整是当前目录依据，不沿用旧标题、顺序、层级。':'';
+    const stagePrompt=(outlineContext?prompt+'\n本轮目录派发/汇总契约：'+JSON.stringify(outlineContext):prompt)+currentDirectory+'\n阶段交接：用户原始消息和问答保留；旧阶段工具执行记录按路径归档，不能把旧结论当作当前证据。八份解读及用户裁决以work/analysis/下的现行文件（含clarifications.md）为准；主体、目录和制作承诺使用当前版本，完整引用须回查work/parse/原文。正文、准备文件及现有质量校验按本阶段技能读取执行。';
+    record.prompt=stagePrompt;await this.updateRecord(record,{prompt:stagePrompt});await this.applyStageTools(handle.agent,payload.kind,record.read_only);
     if(!options.agent)handle.agent.followup(createUserMessage({content:[{type:'text',text:stagePrompt}],source:{kind:'human'}}));
     this.track(handle,tid,key);return {session_id:sessionId,action_id:key,instructions:stagePrompt,replayed:false};
    }catch(e){await unlink(join(locks,tid)).catch(()=>{});await unlink(path).catch(()=>{});if(previous)await atomic(join(dir,'latest.json'),previous);else await unlink(join(dir,'latest.json')).catch(()=>{});throw e}
@@ -243,6 +264,10 @@ export class BusinessRuntime{
  async freezeAnalysis(tid,sessionId){const entry=await this.latestRecord(tid,'analyse');if(!entry||(sessionId&&entry.record.session_id!==sessionId)||entry.record.analysis_progress)return;const view=await this.projection(entry.record);if(['running','needs_input'].includes(view.state))return;const state=await business(this.ctx,'state',{task_id:tid});entry.record.analysis_progress=analysisProgress(state.files,entry.record.analysis_before,entry.record.created_at);await atomic(entry.path,entry.record)}
  async preparationProblem(tid,sessionId,message){const record=await jsonFile(join(actions,tid,'latest.json'));if(record?.session_id===sessionId)await this.updateRecord(record,{preparation_error:message})}
  async writeReviewState(record,finished_state,review_error){await this.updateRecord(record,{finished_state,review_error})}
+ async verifyCompleted(tid){
+  const record=await jsonFile(join(actions,tid,'latest.json'));
+  if(record?.outcome?.state==='completed'&&['outline','guide','promises','body','revise','build'].includes(record.kind)&&(await this.projection(record)).state==='completed')await this.updateRecord(record,{verified_completed_at:Date.now()});
+ }
  async reviewProgress(tid,sessionId){return business(this.ctx,'review_progress',{task_id:tid,session_id:sessionId})}
  async continueReview(tid,actionId){
   this.admit(tid,'操作正在提交，请读取最新状态');
@@ -281,7 +306,7 @@ export class BusinessRuntime{
     try{await business(this.ctx,'record_preparation',{task_id:tid,stage:record.kind,session_id:record.session_id})}catch(error){await this.preparationProblem(tid,record.session_id,error.message)}
    }
    record=await jsonFile(join(actions,tid,'latest.json'));
-   if(record?.action_id===actionId)return this.projection(record);
+   if(record?.action_id===actionId){await this.verifyCompleted(tid);return this.projection(record)}
   }).catch(e=>{console.error('ooo-bidpliot execution persistence:',e.message)}).finally(async()=>{
    await unlink(join(locks,tid)).catch(()=>{});
    if(this.settling.get(tid)===done){this.settling.delete(tid);this.executionOwners.delete(tid)}

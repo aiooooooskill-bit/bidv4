@@ -6,6 +6,7 @@ import readerCss from "./reader.css";
 import workspaceCss from "./workspace.css";
 import {startRenderService} from './lib/renderService';
 import {startBusinessLinks} from './lib/businessLinks';
+import {startProjectUpdates} from './lib/projectUpdates';
 import tokensCss from '../docs/ui/tokens.css';
 import libraryCss from './library.css';
 const cssText=tokensCss+baseCss+readerCss+workspaceCss+libraryCss;
@@ -77,7 +78,7 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => { mountStyle(); return unmountStyle; }, "ooo-bidpliot: style");
   ctx.effect(startRenderService, 'ooo-bidpliot: document rendering');
   ctx.effect(startBusinessLinks, 'ooo-bidpliot: authenticated document links');
-  ctx.effect(() => (ctx.get('sessions') as {list:{subscribe:(fn:()=>void)=>()=>void}}).list.subscribe(()=>window.dispatchEvent(new Event('ooo-bidpliot:changed'))), 'ooo-bidpliot: shared project updates');
+  ctx.effect(() => startProjectUpdates((ctx.get('sessions') as {list:Parameters<typeof startProjectUpdates>[0]}).list,()=>window.dispatchEvent(new Event('ooo-bidpliot:changed'))), 'ooo-bidpliot: shared project updates');
   ctx.effect(() => {
     const deactivate = (event: Event) => {
       const detail = (event as CustomEvent<{ id?: string; activate:()=>void }>).detail;

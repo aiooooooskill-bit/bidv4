@@ -2,11 +2,12 @@
 
 目录产物（tender.directory）的树节点没有稳定 id——身份就是标题文本；正文文件与
 节点的映射因此按「清洗后的标题」对账（清洗规则在此单一实现，工具与技能文档引用
-同一份约定）。标题改版后失配由 check_pipeline 的 [body] 段报事实、用户裁决，
-不做锁定（无锁铁则：探测 + 提示裁决 + 恢复点兜底）。
+同一份约定）。人工编辑器保存时通过明确的改名关系同步正文路径与制作记录；
+模型重构目录后的归集仍须按真实正文核对，不猜测章节身份。
 """
 from __future__ import annotations
 import json
+import hashlib
 import re
 GUIDE_RELPATH = 'body/写作指引.md'
 PROMISE_RELPATH = 'body/关键事实与承诺.md'
@@ -30,6 +31,12 @@ def sanitize_name(title: str, limit: int=60) -> str:
     s = re.sub('\\s+', ' ', s).strip()
     s = s.lstrip('.')
     return s[:limit].strip() or '未命名'
+
+def volume_key(name: str) -> str:
+    """册名用于存储时追加既有片段摘要，避免清洗或截断后互相覆盖。"""
+    safe = sanitize_name(name)
+    return safe + ('-' + hashlib.sha256(name.encode()).hexdigest()[:8] if safe != name else '')
+
 
 def _iter_nodes(tree: list[dict]):
     for n in tree:
@@ -58,8 +65,17 @@ def iter_leaves(content: dict) -> list[tuple[str, str, str]]:
     return out
 
 
+def body_delivery(node: dict, content: dict) -> str:
+    """直接挂接格式模板的节点有自己的内容，不因挂了附件就成为空容器。"""
+    mode = str(node.get('交付形态') or '').strip()
+    registry = content.get('registry') or {}
+    own_template = any(registry.get(rid, {}).get('type') == '模板'
+                       for rid in node.get('来源位置') or [])
+    return '模板或附件填充' if own_template and mode in ('', '目录容器') else mode
+
+
 def body_nodes(content: dict, root, owned_paths=()) -> list[tuple[str, str, str]]:
-    """正文目标：所有叶子，以及实际持有正文文件的父节点。
+    """正文目标：叶子、格式内容父节点，以及已有/记账的父正文。
 
     父节点的引言或尚未拆分的既有正文仍是内容，不能因增加子目录而消失。
     不要求原本只有结构的父节点新建空正文。
@@ -67,12 +83,17 @@ def body_nodes(content: dict, root, owned_paths=()) -> list[tuple[str, str, str]
     out = []
     for doc in content.get('response_documents') or []:
         vol = document_name(doc)
-        prefix = sanitize_name(vol) + '/' if multi_volume(content) else ''
+        prefix = volume_key(vol) + '/' if multi_volume(content) else ''
         for node in _iter_nodes(doc.get('directory') or []):
             title = str(node.get('目录名称') or '').strip()
             path = 'body/' + prefix + sanitize_name(title) + '.docx'
-            if title and (not node.get('children') or path in owned_paths or (root / path).is_file()):
-                out.append((vol, title, str(node.get('交付形态') or '').strip()))
+            mode = body_delivery(node, content)
+            # 普通正文标签常由叶子沿用；增加子项不代表另写一份父正文。
+            own_body = mode == '模板或附件填充' or any(
+                (content.get('registry') or {}).get(rid, {}).get('type') == '模板'
+                for rid in node.get('来源位置') or [])
+            if title and (not node.get('children') or own_body or path in owned_paths or (root / path).is_file()):
+                out.append((vol, title, mode))
     return out
 
 
