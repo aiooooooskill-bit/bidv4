@@ -5,20 +5,21 @@ import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 
-// Copy application code so its fixed dataRoot resolves inside the fixture.
+// Code and the isolated Harness home are siblings, matching real package upgrades.
 // Dependencies, assets and Python tools are reused without copying user data.
 export async function runIsolatedTest(filename,flag,expected,timeout=60000){
  const root=fileURLToPath(new URL('../..',import.meta.url)),temporary=await mkdtemp(join(tmpdir(),'bidv4-app-test-'));
+ const installation=join(temporary,'plugin');await mkdir(installation);
  let child;
  try{
-  for(const dir of ['server','shared','tests'])await cp(join(root,dir),join(temporary,dir),{recursive:true});
-  for(const file of ['package.json','package-lock.json','cordis.patch.yml'])await cp(join(root,file),join(temporary,file));
-  for(const dir of ['node_modules','business','dist','src'])await symlink(join(root,dir),join(temporary,dir),process.platform==='win32'?'junction':'dir');
+  for(const dir of ['server','shared','tests'])await cp(join(root,dir),join(installation,dir),{recursive:true});
+  for(const file of ['package.json','package-lock.json','cordis.patch.yml'])await cp(join(root,file),join(installation,file));
+  for(const dir of ['node_modules','business','dist','src'])await symlink(join(root,dir),join(installation,dir),process.platform==='win32'?'junction':'dir');
   await mkdir(join(temporary,'dsh-home'),{recursive:true});
-  const env={...process.env,[flag]:'1',DSH_HOME:join(temporary,'dsh-home'),DSH_TELEMETRY_DISABLED:'1'};
+  const env={...process.env,[flag]:'1',DSH_HOME:join(temporary,'dsh-home'),DATA_DIR:join(temporary,'ooo-bidpliot-data'),DSH_TELEMETRY_DISABLED:'1'};
   delete env.NODE_TEST_CONTEXT;delete env.DSH_TOOLS_MODE;
   const result=await new Promise((resolve,reject)=>{
-   child=spawn(process.execPath,['--test',join(temporary,'tests',filename)],{cwd:temporary,env,stdio:['ignore','pipe','pipe']});let output='';
+   child=spawn(process.execPath,['--test',join(installation,'tests',filename)],{cwd:installation,env,stdio:['ignore','pipe','pipe']});let output='';
    child.stdout.on('data',b=>{output+=b});child.stderr.on('data',b=>{output+=b});child.on('error',reject);
    const timer=setTimeout(()=>{child.kill('SIGKILL');reject(new Error('Isolated application fixture timed out'))},timeout);
    child.on('close',code=>{clearTimeout(timer);resolve({code,output})});

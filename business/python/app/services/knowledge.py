@@ -202,18 +202,20 @@ async def replace_file(kid: str, revision: int, file: IncomingFile):
     with mutation_lock('kb', kid):
         _editable(kid, revision)
         async with replacement_upload(file, store.kb_files_dir(), KB_ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES) as (temp, name, digest):
-            target = store.unique_file_path(name)
+            target = None
             try:
                 with cs.transaction() as conn:
                     item = _editable(kid, revision)
                     duplicate = conn.execute('SELECT id FROM kb_items WHERE file_hash=? AND id<>?', (digest, kid)).fetchone()
                     if duplicate:
                         raise BusinessError(409, '相同内容已在公司资料中，请使用已有资料')
+                    target = store.unique_file_path(name)
                     os.replace(temp, target)
                     conn.execute('UPDATE kb_items SET file_name=?,file_hash=?,ext=? WHERE id=?', (target.name, digest, Path(name).suffix.lower(), kid))
                     _reset_recognition(conn, kid)
             except BaseException:
-                target.unlink(missing_ok=True)
+                if target is not None:
+                    target.unlink(missing_ok=True)
                 raise
             store.delete_item_files(item['file_name'])
         reindex_item(kid)

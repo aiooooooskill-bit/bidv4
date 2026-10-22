@@ -177,3 +177,70 @@ def test_template_replace_keeps_key_and_default_and_delete_resets_default(librar
     assert docx_ops.active_template_name() is None
     with pytest.raises(BusinessError, match='内置版式'):
         asyncio.run(templates.delete_template(docx_ops.BUILTIN_TEMPLATE_KEY, ''))
+
+@pytest.mark.parametrize('kind', ['kb', 'mt'])
+def test_concurrent_replacements_with_same_filename_preserve_both_originals(library, monkeypatch, kind):
+    import hashlib
+    import threading
+    root, co = library
+    module, storage = (knowledge, store) if kind == 'kb' else (materials, mt)
+    old = []
+    for i in range(2):
+        result = upload(root, module.upload_file, f'旧文件{i}.docx', docx(f'原始资料{i}'), **({'company_id': co['id']} if kind == 'kb' else {}))
+        if kind == 'kb':
+            ingest.parsed(result['id'])
+            ingest.finish(result['id'], {'doc_type': 'other', 'fields': {}})
+        old.append(db.kb_get_item(result['id']) if kind == 'kb' else db.mt_get_file(result['id']))
+    rawdir = storage.kb_files_dir() if kind == 'kb' else storage.mt_files_dir()
+    first_install = threading.Event()
+    release_first = threading.Event()
+    second_allocation = threading.Event()
+    actual_replace, actual_unique = module.os.replace, storage.unique_file_path
+    errors = []
+    contents = [docx('新原件甲 UNIQUE_A'), docx('新原件乙 UNIQUE_B')]
+    def unique(name):
+        path = actual_unique(name)
+        if threading.current_thread().name == 'replacement-b':
+            second_allocation.set()
+        return path
+    def replace(src, dest):
+        if threading.current_thread().name == 'replacement-a' and dest.parent == rawdir:
+            first_install.set()
+            assert release_first.wait(10)
+        return actual_replace(src, dest)
+    monkeypatch.setattr(storage, 'unique_file_path', unique)
+    monkeypatch.setattr(module.os, 'replace', replace)
+    def worker(i):
+        try:
+            src = root / f'replacement-input-{i}.docx'
+            src.write_bytes(contents[i])
+            file = IncomingFile(src, '同名新原件.docx')
+            args = {'kid': old[i]['id'], 'revision': old[i]['revision']} if kind == 'kb' else {'fid': old[i]['id'], 'file_hash': old[i]['file_hash']}
+            try:
+                asyncio.run(module.replace_file(file=file, **args))
+            finally:
+                asyncio.run(file.close())
+        except BaseException as error:
+            errors.append(error)
+    a = threading.Thread(target=worker, args=(0,), name='replacement-a')
+    b = threading.Thread(target=worker, args=(1,), name='replacement-b')
+    a.start()
+    try:
+        assert first_install.wait(10)
+        b.start()
+        # The first write is held before installation, so an unsafe allocation
+        # in the other replacement deterministically chooses the same name.
+        second_allocation.wait(0.5)
+    finally:
+        release_first.set()
+        a.join(15)
+        if b.ident is not None:
+            b.join(15)
+    assert not a.is_alive() and not b.is_alive()
+    assert not errors, errors
+    getter = db.kb_get_item if kind == 'kb' else db.mt_get_file
+    current = [getter(item['id']) for item in old]
+    assert current[0]['file_name'] != current[1]['file_name']
+    for item, expected in zip(current, contents):
+        assert (rawdir / item['file_name']).read_bytes() == expected
+        assert item['file_hash'] == hashlib.sha256(expected).hexdigest()

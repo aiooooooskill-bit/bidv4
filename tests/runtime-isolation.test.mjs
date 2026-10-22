@@ -11,6 +11,7 @@ import {mkdtemp,rm,readFile,readdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {createBusinessScope} from './helpers/runtime-host.mjs';
 import {BusinessRuntime} from '../server/native/runtime.mjs';
 import {startSubtask,subagentFailure} from '../server/native/tools.mjs';
@@ -106,7 +107,7 @@ test('本地子Agent失败的原始原因由插件保留',async()=>{
 test('官方pi-ai发送宿主附件字节，业务卸载后宿主模型仍可使用',async()=>{
  const f=await fixture(),received=[];let agent;
  const endpoint=createServer(async(req,res)=>{
-  let body='';for await(const chunk of req)body+=chunk;received.push(JSON.parse(body));res.writeHead(200,{'Content-Type':'text/event-stream'});
+  received.push(await readJson(req));res.writeHead(200,{'Content-Type':'text/event-stream'});
   for(const delta of [{content:'wire completed'},{}])res.write('data: '+JSON.stringify({id:'fixture',object:'chat.completion.chunk',created:1,model:'wire',choices:[{index:0,delta,finish_reason:Object.keys(delta).length?null:'stop'}]})+'\n\n');
   res.end('data: [DONE]\n\n');
  });

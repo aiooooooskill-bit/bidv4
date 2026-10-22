@@ -61,9 +61,12 @@ export function registerChatTools(ctx,link){
   throw new BusinessError(422,'项目操作无效');
  });
  register('ooo_bidpliot_run','执行同一项目的解析解读、目录、制作、修订、审查或完整流程。analyse包含解析和八份解读；build含写作准备、正文和合册；full依次复用有效成果并完成解读、目录、制作、审查。章节只读核验也先以revise并显式read_only=true启动阶段，取得权限及本轮完成记账，不能用零散读取/校验代替。返回阶段指令后由当前Agent直接执行，不创建其他Agent或会话。resume用于修复缺项或答复后继续原自动流程。不得把failed/needs_input宣称完成。',{
-  task_id:{type:'string'},kind:{type:'string',enum:['analyse','outline','guide','promises','build','body','revise','review','full']},resume:{type:'boolean'},main_file:{type:'string'},supplements:{type:'array',items:{type:'string'}},page_target:{type:['integer','null']},numbering:{type:'string',enum:['decimal','chapter','gov','none']},sections:{type:'array',description:'仅用status返回的body_sections条目的volume和title原值选择有独立正文的章节，不猜册名、不拆祖先路径为额外章节。',items:{type:'object',properties:{volume:{type:'string'},title:{type:'string'}},required:['volume','title'],additionalProperties:false}},instruction:{type:'string'},read_only:{type:'boolean',description:'revise仅做读取核验、保留原稿时显式传true；此权限同时约束主线程和写手。普通定向修改不传或false。'},
+  task_id:{type:'string'},kind:{type:'string',enum:['analyse','outline','guide','promises','build','body','revise','review','full']},resume:{type:'boolean'},main_file:{type:'string'},supplements:{type:'array',items:{type:'string'}},page_target:{oneOf:[{type:'integer'},{type:'null'}]},numbering:{type:'string',enum:['decimal','chapter','gov','none']},sections:{type:'array',description:'仅用status返回的body_sections条目的volume和title原值选择有独立正文的章节，不猜册名、不拆祖先路径为额外章节。',items:{type:'object',properties:{volume:{type:'string'},title:{type:'string'}},required:['volume','title'],additionalProperties:false}},instruction:{type:'string'},read_only:{type:'boolean',description:'revise仅做读取核验、保留原稿时显式传true；此权限同时约束主线程和写手。普通定向修改不传或false。'},
  },['task_id','kind'],async(args,exec)=>{
   const tid=args.task_id;await runtime.bindConversation(tid,exec.agent);
+  if(args.kind==='stop')throw new BusinessError(409,'请使用原生停止按钮停止当前执行');
+  // Settling waits for this Agent to become idle; awaiting it from its own turn deadlocks.
+  if(runtime.executionOwners.get(tid)?.waitingForIdle&&runtime.executionOwners.get(tid)?.agent===exec.agent)throw new BusinessError(409,'当前阶段仍在本会话执行，请完成当前阶段并结束本轮；不要重复调用run。自动流程会继续后续阶段。');
   if(args.kind==='full'){
    if(args.read_only)throw new BusinessError(422,'只读核验使用revise阶段，不能启动完整制作');
    const workflow=await runtime.workflows.start(tid,{...args,agent:exec.agent});
@@ -79,7 +82,7 @@ export function registerChatTools(ctx,link){
   const state=await runtime.state(args.task_id);if(state.execution?.state!=='needs_input')throw new BusinessError(409,'项目当前没有待答问题');
   await runtime.bindConversation(args.task_id,exec.agent);
   await runtime.answer(args.task_id,state.execution.session_id,{call_ids:state.execution.questions.map(q=>q.callId),batches:args.batches});
-  if(state.workflow?.state==='needs_input')runtime.workflows.resumeAfter(args.task_id,exec.agent);
+  if(state.workflow?.action_id===state.execution.action_id&&['running','needs_input'].includes(state.workflow.state))runtime.workflows.resumeAfter(args.task_id,exec.agent);
   return {task_id:args.task_id,instructions:'答复已保存，在本会话继续未完成阶段。'};
  });
  register('ooo_bidpliot_read','读取真实成果以在原生对话中展示解读或最终内容。Markdown返回正文；review返回本轮完整审查报告。文件下载使用status/run返回的真实链接。',{

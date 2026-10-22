@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,symlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {randomUUID} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {loadLayeredEnv} from '@deepseek-ai/dsh-app-boot';
@@ -19,8 +20,7 @@ else test(testName,{timeout:50000},async()=>{
  const original=Array.from({length:150},(_,i)=>`evidence ${i} `+'原始取证内容'.repeat(40)).join('\n');
  const endpoint=createServer(async(req,res)=>{
   try{
-   let raw='';for await(const chunk of req)raw+=chunk;
-   const request=JSON.parse(raw);requests.push(request);
+   const request=await readJson(req);requests.push(request);
    const last=request.messages.at(-1);
    const summarizing=JSON.stringify(last).includes('You are now acting as a compaction engine');
    if(mode==='overflow'&&!summarizing&&!overflowed){

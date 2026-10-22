@@ -86,8 +86,9 @@ if(process.env.BIDV4_NATIVE_FIXTURE==='1')test('正式预设与官方dsh会话�
   try{await runtime.ingestKnowledge(digital.id)}finally{runtime.select=select}
   const digitalState=await business(scope.ctx,'route',{method:'GET',path:'/kb/items/'+digital.id});
   assert.equal(digitalState.parse_status,'ready');assert.equal(digitalState.extract_status,'failed');assert.match(digitalState.content,/有效数字正文/);assert.match(digitalState.error,/模型配置不可用/);
+  const questionStart=h.agent.session.snapshotEvents().length;
   h.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'native-question-fixture'}]}));await h.agent.whenIdle();await scope.ctx.sessions.flush(h.agent.session);
-  const record={action_id:'probe',start_seq:0,created_at:Date.now(),task_id:tid,session_id:id,kind:'probe',model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(record));await writeFile(join(dataRoot,'actions',tid,'probe.json'),JSON.stringify(record));
+  const record={action_id:'probe',start_seq:questionStart,created_at:Date.now(),task_id:tid,session_id:id,kind:'probe',model:{provider:'fixture',model:'configured-model'}};await mkdir(join(dataRoot,'actions',tid),{recursive:true});await writeFile(join(dataRoot,'actions',tid,'latest.json'),JSON.stringify(record));await writeFile(join(dataRoot,'actions',tid,'probe.json'),JSON.stringify(record));
   let state=await runtime.state(tid);assert.equal(state.execution.state,'needs_input');assert.equal(state.execution.questions[0].callId,'question-call');
   await assert.rejects(runtime.answer(tid,id,{call_ids:['question-call'],batches:[{call_id:'question-call',answers:[]}]}),/问题与回答不一致/);
   await business(scope.ctx,'route',{method:'POST',path:'/kb/items/'+knowledgeId+'/retrigger',query:{revision:(await business(scope.ctx,'route',{method:'GET',path:'/kb/items/'+knowledgeId})).revision}});await writeFile(join(dataRoot,'knowledge-jobs',knowledgeId+'.json'),JSON.stringify({id:knowledgeId,pid:2147483647}));
