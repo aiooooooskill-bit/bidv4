@@ -1,33 +1,8 @@
-"""tender-body-writer 派发说明程序化拼装（2026-09-08 token 治理批）。
+"""Prepare existing writer context and bind every requested directory section.
 
-动因：主代理派发说明塌成节名五～十字（SKILL「必带清单缺一不派」是纪律，管不住
-模型行为方差——2026-09-08 实测 32/32 派发仅 7~10 字符），子代理被迫开局自救：
-521 次 ls/grep/read 重建本该一句话给到的上下文，读回的全文再被此后 ~26 轮逐轮
-重发（占整本 14.5M 输入 token 的约六成）。修法=派发契约从纪律升机制：task 调用
-进 sidecar 时（agent.py _DispatchEnrichMiddleware）把共享上下文程序拼进
-description——任务前缀/输出路径/指引行/要求清单（registry 解析为原文+出处）/
-素材块逐块名片（标题/字数/含图/来源文件/备注——指引期检索的内容层复用，写手
-据此直接列使用计划，不再每节重检索一遍素材库）/缺口列原文（指引期知识库命中的
-公司事实与缺料点名，2026-09-10 接线——此前该列零消费，检索命中沉淀不进派发，
-资质/基本情况类节的公司事实对写手不可见）/承诺清单全部值/兄弟节摘要，
-写手开局只读方法论一份。
-
-契约与边界：
-- 只对 tender-body-writer 生效（中间件三层过滤：工具名/子代理名/任务上下文）；
-- 2026-09-15 模型自主拆分批起支持**多节派发**：首行可列多个节名（顿号/逗号/
-  分号/加号分隔），共享块（纪律/前缀/日期/承诺/方法论）一份 + 逐节块（输出
-  路径/模式/图示/要求/原件定位/素材/缺口）每节一份；任一节名对不上或多义时
-  先用首行整体单探针兜底（节名自身含分隔符的场景）、仍不中才**整体**放行
-  （不半拼——拼装节与未拼装节信息不对称，写手行为不可预期）；
-  单节派发输出与旧版逐字节一致（零回归面）；
-- 节名对不上目录叶子、或一节多义时原样放行（宁可不猜——拼错节的说明比瘦说明更糟）；
-- 产出文本零 REQ/MAND/SCORE/TPL 编号（2026-09-08 派发契约：编号会被写手镜像
-  进正文首句）；依据列 ID 由 registry 解析为「要求原文+出处」后即弃；
-- 拼装块除天级「今天日期」行外无时间戳、同子代理 run 内字节稳定（前缀缓存
-  铁律；日期与任务上下文块同精度——写手子代理不继承任务上下文拿不到日期，
-  模型自编日期不可信，封面/投标函落款用这行）；兄弟摘要随派发时点
-  变化，但那属于各子代理自己的独立前缀，不伤共享前缀；
-- 任何内部异常一律放行原文，绝不打断 run。
+Business writing instructions are preserved. The native dispatch operation must
+resolve all requested sections before admitting a writer; unknown or ambiguous
+sections cannot silently fall through into an unbounded child task.
 """
 
 from __future__ import annotations
@@ -54,9 +29,6 @@ from .services.errors import BusinessError
 logger = logging.getLogger(__name__)
 
 _ENRICH_MARK = "〔系统附"  # 幂等标记：含此标记的描述（重派/续跑再走一层）不再拼装
-# 超过=富描述：语义信任原文不重复拼装，但仍注入最小路径锚点。2026-09-15 模型
-# 自主拆分批 200→300：多节派发的首行节名清单天然更长，按旧阈值会被误判富描述
-_MAX_ORIG_DESC = 300
 _MAX_SIBLINGS = 3  # 兄弟摘要上限（防派发随波数线性膨胀）
 _SIBLING_HEAD_CHARS = 200
 _WRAPPER_RE = re.compile(r"^(?:重写|续写|新写|撰写|补写|写)\s*")
@@ -132,7 +104,7 @@ def _guide_row(
 ) -> tuple[list[str], dict[str, int]] | None:
     """匹配叶子的指引行 (cells, 列名→下标)；无指引文件或无对应行返回 None。
 
-    多册时指引「节」列是「册名/标题」复合（与 check_pipeline [body] 同款拆分）。
+    多册时指引「节」列按完整「原册名/标题」匹配，不猜斜杠的分隔位置。
     """
     p = artifact_store.work_dir(task_id) / body_contract.GUIDE_RELPATH
     try:
@@ -140,18 +112,9 @@ def _guide_row(
     except OSError:
         return None
     multi = body_contract.multi_volume(content)
-    wvol = body_contract.sanitize_name(vol)
-    wtitle = body_contract.sanitize_name(title)
+    expected = f'{vol}/{title}' if multi else title
     for _lineno, cells, cols in _parse_guide_rows(guide_text):
-        raw = cells[cols["节"]].strip()
-        gvol, gtitle = "", raw
-        if multi and "/" in raw:
-            head, _, tail = raw.partition("/")
-            gvol, gtitle = head.strip(), tail.strip()
-        if multi:
-            if body_contract.sanitize_name(gvol) == wvol and body_contract.sanitize_name(gtitle) == wtitle:
-                return cells, cols
-        elif body_contract.sanitize_name(gtitle) == wtitle:
+        if cells[cols["节"]].strip() == expected:
             return cells, cols
     return None
 
@@ -208,10 +171,9 @@ def _sibling_lines(
     own = {body_contract.sanitize_name(t) + ".docx" for t in own_titles}
     files: list[Path] = []
     for vol in dict.fromkeys(vols):
-        # 册名清洗后拼路径（实际落点=docx_assemble_volume/check_pipeline 的 sanitize_name
-        # 口径；原样拼接在册名含 /: 等字符时指错目录——摘要静默空、路径行误导）
+        # 册名存储键与正文、合册共用；不从显示册名自行拼文件夹。
         vdir = artifact_store.work_dir(task_id) / "body" / (
-            body_contract.sanitize_name(vol) if multi else ""
+            body_contract.volume_key(vol) if multi else ""
         )
         if not vdir.is_dir():
             continue
@@ -390,56 +352,63 @@ class SectionTarget(NamedTuple):
     multi: bool
 
 
-def resolve_section(needle: str, task_id: str) -> SectionTarget | None:
-    """探针对账目录叶子 → 目标（含「节名→输出路径」的单点推导）。
-
-    全量拼装与重派守卫共用：路径推导只允许存在这一份（2026-09-15 路径可靠性批）。
-    对不上/多义返回 None（宁可不猜）。任何异常也返回 None（不打断调用方）。
-    """
-    try:
-        _row, content, _mtime = body_contract.load_directory(task_id)
-        if not content:
-            return None
-        leaves = body_contract.body_nodes_for_task(task_id, content)
-        if not leaves:
-            return None
-        match = _match_leaf(needle, leaves)
-        if match is None:
-            return None
-        vol, title, delivery = match
-        multi = body_contract.multi_volume(content)
-        rel = f"body/{body_contract.sanitize_name(vol) + '/' if multi else ''}{body_contract.sanitize_name(title)}.docx"
-        return SectionTarget(vol, title, delivery, rel, content, multi)
-    except Exception:
-        logger.debug("节名对账失败（task=%s needle=%s）", task_id, needle[:30], exc_info=True)
-        return None
+def _section_target(match, content):
+    vol, title, delivery = match
+    multi = body_contract.multi_volume(content)
+    rel = f"body/{body_contract.volume_key(vol) + '/' if multi else ''}{body_contract.sanitize_name(title)}.docx"
+    return SectionTarget(vol, title, delivery, rel, content, multi)
 
 
-# 多节派发分隔符（2026-09-15 模型自主拆分批）：派发首行可列多个节名。刻意不含
-# / 与空白——「册名/标题」的斜杠是册分隔、标题内空格不是节界
 _MULTI_SEP_RE = re.compile(r"[、，,;；＋+&]")
 
 
-def first_line_needles(desc: str) -> list[str]:
-    """派发描述首行 → 节名探针列表：按分隔符切块、逐块剥「写」类前缀/「节」类
-    后缀（去重保序）。
-
-    只解析首行——第二行起是特殊意图句（临时参考件路径等），旧实现把整段描述当
-    单一探针、被意图句打碎静默放行（2026-09-15 修）；单节描述同走此处（长度 1）。
-    """
-    stripped = (desc or "").strip()
-    first = stripped.splitlines()[0] if stripped else ""
+def dispatch_targets(desc: str, task_id: str) -> list[SectionTarget]:
+    """Bind the original dispatch to canonical directory leaves before activation."""
+    first = _WRAPPER_RE.sub('', desc.strip().splitlines()[0]) if desc.strip() else ''
     if not first:
         return []
-    out: list[str] = []
-    for frag in _MULTI_SEP_RE.split(first):
-        needle = _needle(frag)
-        if needle and needle not in out:
-            out.append(needle)
-    return out
+    _, content, _ = body_contract.load_directory(task_id)
+    if not content:
+        return []
+    leaves = body_contract.body_nodes_for_task(task_id, content)
+    titles = sorted({body_contract.sanitize_name(title) for _, title, _ in leaves}, key=len, reverse=True)
+    targets = []
+    while first:
+        # Consume complete known titles before treating punctuation as a task
+        # separator: e.g. 附件1、身份证明 or 数据范围、更新频率与质量保障.
+        exact = None
+        for title in titles:
+            if first.startswith(title):
+                rest = first[len(title):].lstrip()
+                if not rest or _MULTI_SEP_RE.match(rest):
+                    exact = title
+                    break
+        if exact:
+            needle, first = exact, first[len(exact):]
+        else:
+            match = _MULTI_SEP_RE.search(first)
+            needle, first = (first[:match.start()], first[match.start():]) if match else (first, '')
+        match = _match_leaf(_needle(needle), leaves)
+        if match is None:
+            return []
+        target = _section_target(match, content)
+        if target.rel not in {t.rel for t in targets}:
+            targets.append(target)
+        first = _MULTI_SEP_RE.sub('', first.lstrip(), count=1).strip()
+    return targets
 
 
-def _section_context_lines(task_id: str, target: SectionTarget) -> tuple[str, list[str]]:
+def body_dispatch(desc: str, task_id: str) -> dict:
+    targets = dispatch_targets(desc, task_id)
+    if not targets:
+        raise BusinessError(422, '正文任务首行须明确列出本次目录中的节名；存在未知或多义章节，尚未启动写手')
+    enriched = build_enriched_description(desc, task_id)
+    if enriched is None:
+        raise BusinessError(422, '正文派发上下文未生成，尚未启动写手；请核对本次指引及节名')
+    return {'description': enriched, 'section_paths': [t.rel for t in targets]}
+
+
+def _section_context_lines(task_id: str, target: SectionTarget, revision: bool) -> tuple[str, list[str]]:
     """单节逐节块 → (输出路径行, 其余行：模式/图示/要求/原件定位/素材/缺口)。
 
     单节与多节拼装共用（2026-09-15 模型自主拆分批）——逐节事实推导只存在这一份。
@@ -472,23 +441,22 @@ def _section_context_lines(task_id: str, target: SectionTarget) -> tuple[str, li
         logger.debug("派发拼装：原件定位解析失败，跳过该行", exc_info=True)
 
     if mode and mode != "—":
-        lines.append(f"写作模式：{mode}")
+        lines.append(f"既有写作模式（仅供核对，不构成本轮生成要求）：{mode}" if revision else f"写作模式：{mode}")
     elif delivery:
         lines.append(f"交付形态：{delivery}（指引无对应行，按目录节点形态处理）")
     # 图示项过滤与 validate_body 对账侧同款口径（[、;；,，] 切分、丢空与
     # 「—」项）：混合记法「表:对比、—」不把「—」当计划项透传
     fig_items = [x.strip() for x in re.split(r"[、;；,，]", fig) if x.strip() and x.strip() != "—"] if fig else []
     if fig_items:
-        lines.append(
-            "本节图示清单（指引计划，逐项产出，收尾对账——类型:主题；"
-            "表=建节 body 的 table 块、分层/辐射/甘特/流程=docx_diagram_insert"
-            "（流程 kind=flow）、原型=docx_html_figure（内联样式 HTML））："
-        )
+        lines.append('既有图示规划（仅供核对与汇报，不构成本轮新增图表授权）：' if revision else
+                     '本节图示清单（指引计划，逐项产出，收尾对账——类型:主题；'
+                     '表=建节 body 的 table 块、分层/辐射/甘特/流程=docx_diagram_insert'
+                     '（流程 kind=flow）、原型=docx_html_figure（内联样式 HTML））：')
         lines.append("、".join(fig_items))
     if req_lines:
         lines.append("要求清单（正文呼应要求本身或招标文件真实章节条款号）：")
         lines.extend(req_lines)
-        if has_tpl:
+        if has_tpl and not revision:
             lines.append(
                 "本节含格式件：从 sources/ 招标原件拷贝（docx_source_inject；"
                 "pdf 原件无可拷元素，按解析文本自行成形）。"
@@ -502,30 +470,25 @@ def _section_context_lines(task_id: str, target: SectionTarget) -> tuple[str, li
             logger.debug("派发拼装：素材块名片解析失败，降级 id 原文", exc_info=True)
             mat_lines = None
         if mat_lines:
-            lines.append(
-                "可用素材块（拷贝授权范围：据此列使用计划，按需整块或挑块内区间注入，无需再检索）："
-            )
+            lines.append('既有素材来源（仅供核对，本轮不注入）：' if revision else
+                         '可用素材块（拷贝授权范围：据此列使用计划，按需整块或挑块内区间注入，无需再检索）：')
             lines.extend(mat_lines)
         else:
             lines.append(f"可用素材块：{mat}")
     if gap:
-        lines.append(
-            "公司材料与缺口（指引缺口列原文；【知识库】=知识库命中的公司事实，"
-            "证书数字照抄不得改写；【缺】=库里没有，加批注待办，禁止编造）："
-        )
+        lines.append('公司材料与既有缺口（仅供核对及汇报；未被原始要求点名时不补写、不新增批注）：' if revision else
+                     '公司材料与缺口（指引缺口列原文；【知识库】=知识库命中的公司事实，'
+                     '证书数字照抄不得改写；【缺】=库里没有，加批注待办，禁止编造）：')
         lines.append(gap)
     return f"DOCX工具path：{rel}；validate_body.section：{rel}；文件工具路径：{artifact_store.work_dir(task_id).parent}/work/{rel}", lines
 
 
 def build_enriched_description(desc: str, task_id: str) -> str | None:
-    """瘦派发描述 → 补全派发说明；不适合拼装返回 None（调用方原样放行）。
+    """瘦派发描述 → 补全派发说明；不适合拼装返回 None（调用方拒绝派发）。
 
     模型原话永远第一行（UI 子代理卡标题取首行）；其后是程序拼的上下文块。
-    多节派发（2026-09-15 模型自主拆分批）：首行列多个节名时共享块一份 + 逐节
-    块每节一份；任一节名对不上 → 整体放行（不半拼）。富描述（>300 字）：语义
-    信任原文，但仍注入最小路径锚点——输出路径是程序算的契约事实，不随描述长度
-    丢失（2026-09-15 r_eedd621716b5：13 节富描述被整体放行后写手自选了章节
-    子目录路径，合册 46/59 触发删目录+第三遍重写）。
+    多节派发：首行列多个节名时共享块一份 + 逐节块每节一份；全部节名必须
+    成功绑定，不能静默忽略未知节名。描述长度不改变当前阶段与输出路径契约。
     """
     try:
         if not isinstance(desc, str) or not desc.strip() or _ENRICH_MARK in desc:
@@ -534,54 +497,27 @@ def build_enriched_description(desc: str, task_id: str) -> str | None:
         issues = build_state.guide_reference_issues(task_id, guide_path.read_text()) if guide_path.is_file() else []
         if issues:
             raise BusinessError(422, '；'.join(issues))
-        needles = first_line_needles(desc)
-        if not needles:
-            return None
-        targets: list[SectionTarget] = []
-        seen: set[tuple[str, str]] = set()
-        for needle in needles:
-            t = resolve_section(needle, task_id)
-            if t is None:
-                targets = []
-                break
-            if (t.vol, t.title) in seen:
-                continue  # 模型把同一节名写了两遍：静默去重（节名含分隔符时
-                # 碎片也会各自命中同一叶子，同款收敛到单节）
-            seen.add((t.vol, t.title))
-            targets.append(t)
+        targets = dispatch_targets(desc, task_id)
         if not targets:
-            # 兜底：首行整体当单一探针再试一次——节名自身含顿号/加号时
-            # （如「人员、设备配置表」撞上同名前缀叶子致碎片歧义），分块
-            # 探针全灭但整名唯一命中；仍不中才整体放行
-            stripped = desc.strip()
-            first = stripped.splitlines()[0] if stripped else ""
-            whole = resolve_section(_needle(first), task_id) if first else None
-            if whole is None:
-                return None
-            targets = [whole]
-        if len(desc) > _MAX_ORIG_DESC:
-            rich = [
-                desc.strip(),
-                f"{_ENRICH_MARK}：路径锚点（程序自动生成，直接使用）：",
-                f"任务目录前缀：{artifact_store.work_dir(task_id).parent}/",
-            ]
-            for t in targets:
-                label = f"（{t.title}）" if len(targets) > 1 else ""
-                rich.append(f"DOCX工具path{label}：{t.rel}；validate_body.section{label}：{t.rel}；文件工具路径{label}：{artifact_store.work_dir(task_id).parent}/work/{t.rel}")
-            rich.append(f"今天日期：{date.today().isoformat()}")
-            return "\n".join(rich)
+            return None
+        execution = config.data_dir() / 'actions' / task_id / 'latest.json'
+        action = json.loads(execution.read_text()) if execution.is_file() else {}
+        revision = action.get('kind') == 'revise'
+        read_only = action.get('read_only') is True
+        start = '仅按原始要求读取指定现稿位置并逐节validate_body，完成后返回摘要' if read_only else '先docx_section_read读取现稿，按指定范围定向修订' if revision else '直接从建节开工'
+        chain = '按原始要求指定位置读取现稿→' if read_only else '读取现稿→按原始要求定向处理→' if revision else '建节→注入→改写→'
         if len(targets) == 1:
-            # 单节：输出与 2026-09-15 前逐字节一致（测试锚定、零回归面）
-            path_line, ctx_lines = _section_context_lines(task_id, targets[0])
+            # 单节：提供一份共享上下文与本节的两类输出路径
+            path_line, ctx_lines = _section_context_lines(task_id, targets[0], revision)
             out = [
                 desc.strip(),
                 f"{_ENRICH_MARK}：本节派发上下文（程序自动生成，直接使用；"
                 "无需再读 写作指引/关键事实与承诺，也无需 check_pipeline_state）。"
-                "开工纪律：任务目录前缀、输出路径、要求原文与出处、承诺值、素材名片"
+                "开工纪律：当前任务绝对路径、输出路径、要求原文与出处、承诺值、素材名片"
                 "**全部已在下方**——开局禁止 ls/glob 探测目录，禁止检索或使用 "
                 "REQ/MAND/SCORE/TPL 内部编号（要求已按原文解析给出，编号不在你的语境），"
-                "直接从建节开工",
-                f"任务目录前缀：{artifact_store.work_dir(task_id).parent}/",
+                + start,
+                f"当前任务绝对路径：{artifact_store.work_dir(task_id).parent}",
                 path_line,
                 # 天级日期（写手子代理不继承任务上下文块拿不到日期，模型自编日期
                 # 不可信——封面/投标函等落款用这行；单日内字节稳定，前缀缓存无伤）
@@ -592,17 +528,17 @@ def build_enriched_description(desc: str, task_id: str) -> str | None:
             out = [
                 desc.strip(),
                 f"{_ENRICH_MARK}：本任务派发上下文（程序自动生成，直接使用；本任务"
-                f"共 {len(targets)} 节，**逐节完成**——每节独立走 建节→注入→改写→"
+                f"共 {len(targets)} 节，**逐节完成**——每节独立走 {chain}"
                 "validate_body 自查，全部节完成才收尾；无需再读 写作指引/关键事实"
-                "与承诺，也无需 check_pipeline_state）。开工纪律：任务目录前缀、各节"
+                "与承诺，也无需 check_pipeline_state）。开工纪律：当前任务绝对路径、各节"
                 "输出路径、要求原文与出处、承诺值、素材名片**全部已在下方**——开局"
                 "禁止 ls/glob 探测目录，禁止检索或使用 REQ/MAND/SCORE/TPL 内部编号"
                 "（要求已按原文解析给出，编号不在你的语境），直接从第一节开工",
-                f"任务目录前缀：{artifact_store.work_dir(task_id).parent}/",
+                f"当前任务绝对路径：{artifact_store.work_dir(task_id).parent}",
                 f"今天日期：{date.today().isoformat()}",
             ]
             for i, t in enumerate(targets, 1):
-                path_line, ctx_lines = _section_context_lines(task_id, t)
+                path_line, ctx_lines = _section_context_lines(task_id, t, revision)
                 out.append(f"【第 {i} 节：{t.title}】")
                 out.append(path_line)
                 out.extend(ctx_lines)
@@ -610,7 +546,7 @@ def build_enriched_description(desc: str, task_id: str) -> str | None:
         out.append("承诺清单全部值（承诺类数字只能用这里）：")
         out.extend(
             promises
-            or ["（清单文件缺失或为空——缺项一律用 docx_comment_add 加批注（锚定相关段落）带回，不得编造）"]
+            or ["（清单文件缺失或为空——本轮仅在摘要记录，不补写或新增批注）" if revision else "（清单文件缺失或为空——缺项一律用 docx_comment_add 加批注（锚定相关段落）带回，不得编造）"]
         )
         sibs = _sibling_lines(
             task_id, targets[0].content, [t.vol for t in targets], {t.title for t in targets}
@@ -618,6 +554,18 @@ def build_enriched_description(desc: str, task_id: str) -> str | None:
         if sibs:
             out.append("兄弟节开头摘要（避免重复展开）：")
             out.extend(sibs)
+        parsed = sorted(p.resolve() for p in (artifact_store.work_dir(task_id) / 'parse').glob('*/*.md') if p.is_file())
+        if parsed:
+            out.append('本任务实际解析稿路径（read直接使用，不要从来源名推测解析文件名；按上述出处行号局部读取）：')
+            out.extend(str(p) for p in parsed)
+        if action.get('instruction'):
+            out.extend(['本轮页面原始要求（不能因派发摘要省略而丢失；仅在当前已分配章节内执行，主线程事项不由写手重复；后续用户明确修正优先）：', action['instruction']])
+        if read_only:
+            out.append('当前阶段：只读。仅完成本轮原始要求明确指定的读取、核验及逐节validate_body；现有规划、素材、主体快照、承诺与待办不扩大任务范围。不自动转为业务实质审查或追加取证，不修订、不插图、不新增批注。完成已分配范围后汇报真实操作、工具结果和仍有的待办，直接返回主线程。')
+            return '\n'.join(out)
+        if revision:
+            out.append('当前阶段：局部修订。先docx_section_read读取现稿；只修改本轮要求涉及的片段，保留未被点名的方案、标题、表格、时间单位和图片。删除未确认承诺时，改写该片段使句意完整，不得为规避校验清空整段方案。仅用户明确要求删除整段时使用delete；不创建、不注入、不重建，不把已有正文改成精简新稿。失败按工具返回的真实视图恢复，先核对原文是否已被替换，不猜段号。逐节validate_body并汇报全部待办，不把批注或规划缺口变成本轮新增任务。')
+            return '\n'.join(out)
         # 写作方法论内联：写手子代理没有 SkillsMiddleware，此前每节都要自己
         # read_file 读一遍（205 次实测）；这段已在任务描述里，开局不必再读。
         skill = _skill_text()
@@ -631,5 +579,5 @@ def build_enriched_description(desc: str, task_id: str) -> str | None:
     except BusinessError:
         raise
     except Exception:
-        logger.debug("派发说明拼装失败，放行原文（task=%s）", task_id, exc_info=True)
+        logger.debug("派发说明拼装失败，拒绝派发（task=%s）", task_id, exc_info=True)
         return None

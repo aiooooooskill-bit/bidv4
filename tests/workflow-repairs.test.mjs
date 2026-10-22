@@ -89,7 +89,7 @@ test('原文选择与补充来源立即保存，重新进入保持身份；新�
   find(view,n=>n.type==='input'&&n.props.type==='checkbox').props.onChange({target:{checked:true}});await view.settle();assert.equal(flow.source_selection.supplements[0].file,'招标.docx');
   view.unmount();view=f.mount('ProjectWorkbench',{tid:'t1',mode:'analysis',onBack(){},onMode(){}});await view.settle();assert.equal(select().props.value,'A更新.docx');assert.equal(find(view,n=>n.type==='input'&&n.props.type==='checkbox').props.checked,true);
   fail=true;select().props.onChange({target:{value:'招标.docx'}});await view.settle();assert.equal(select().props.value,'A更新.docx');assert.equal(saved.length,2);
-  find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();assert.equal(actions[0].main_file,'A更新.docx');assert.deepEqual(actions[0].supplements,['招标.docx']);
+  await find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();assert.equal(actions[0].main_file,'A更新.docx');assert.deepEqual(actions[0].supplements,['招标.docx']);
  }finally{view.unmount();f.close()}
 });
 
@@ -115,7 +115,7 @@ for(const timing of ['before','during'])test(`来源保存成功后，${timing}�
   if(timing==='during'){pendingRead=load();await view.settle()}
   saving.resolve();await view.settle();assert.equal(find(view,n=>n.props['aria-label']==='选择原文').props.value,'更新.docx');
   reading.resolve();await pendingRead;await view.settle();assert.equal(find(view,n=>n.props['aria-label']==='选择原文').props.value,'更新.docx');
-  find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();
+  await find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();
   assert.equal(actions[0].main_file,'更新.docx');assert.equal(actions[0].input_version,'v2');
  }finally{reading.resolve();saving.resolve();view.unmount();f.close()}
 });
@@ -168,7 +168,8 @@ test('制作整本不受当前章节选择影响；章节与整册预览按真�
   find(view,n=>n.props.onSelect).props.onSelect('技术','已写');await view.settle();
   assert.ok(find(view,n=>n.props.name==='body/已写.docx').props.url.includes('v=v5'));
   find(view,n=>n.type==='button'&&n.props.children==='继续制作标书').props.onClick();await view.settle();assert.deepEqual(actions[0],['build',[]]);
-  find(view,n=>n.type==='button'&&n.props.children==='更新当前章').props.onClick();await view.settle();assert.deepEqual(actions[1].slice(0,2),['body',[{volume:'技术',title:'已写'}]]);
+  find(view,n=>n.type==='button'&&n.props.children==='重新生成当前章').props.onClick();assert.equal(actions.length,1);
+  await find(view,n=>n.type==='button'&&n.props.children==='确认重新生成').props.onClick();await view.settle();assert.deepEqual(actions[1].slice(0,2),['body',[{volume:'技术',title:'已写'}]]);
   find(view,n=>n.type==='button'&&n.props.children==='预览整册').props.onClick();await view.settle();assert.equal(find(view,n=>n.props.name==='技术标.docx').props.url,'/api/bidv4/artifacts/volume/file?v=4');
   find(view,n=>n.type==='button'&&n.props.children==='返回章节预览').props.onClick();await view.settle();assert.equal(find(view,n=>n.props.name==='body/已写.docx').props.name,'body/已写.docx');
  }finally{view.unmount();f.close()}
@@ -190,7 +191,11 @@ test('停止后单章缺失准备可生成；运行阶段跟随实际范围，�
   flow.execution.state='needs_input';flow.execution.questions=[{questions:[{header:'维护期',question:'维护期是多少？'}]}];assert.ok(progress().some(n=>n.props.children==='等待维护期答复'));
   flow.execution.state='running';flow.build_preparation.promises='ready';assert.ok(progress().some(n=>n.props.children==='正在生成投标函'));
   props.disabled=false;flow.execution.state='stopped';flow.build_preparation.guide='stale';flow.build_preparation_changes.guide=['目录内容或目标篇幅已变化'];assert.equal(generate().props.disabled,true);
-  assert.ok(nodes(view.render()).some(n=>n.props.children==='写作准备需要核对'));find(view,n=>n.type==='button'&&n.props.children==='查看写作指引').props.onClick();await view.settle();assert.ok(find(view,n=>n.type==='button'&&n.props.children==='生成写作指引'));
+  flow.files=[{path:'body/写作指引.md',content:'已有指引'}];view.render();
+  assert.equal(nodes(view.render()).filter(n=>n.props['aria-label']==='写作准备').length,1);
+  assert.ok(nodes(view.render()).some(n=>n.props.children==='目录内容或目标篇幅已变化'));
+  assert.ok(!nodes(view.render()).some(n=>n.props.className==='preparation-summary'||n.type==='aside'));
+  find(view,n=>n.type==='button'&&Array.isArray(n.props.children)&&n.props.children.join('')==='核对写作指引').props.onClick();await view.settle();assert.ok(find(view,n=>n.type==='button'&&n.props.children==='生成写作指引'));
  }finally{view.unmount();f.close()}
 });
 
@@ -222,11 +227,11 @@ test('重复点击当前制作页签保留真实未保存拦截；整册未就�
   assert.ok(!nodes(guard.render()).some(n=>n.props.label==='未保存修改'&&n.props.open));
   context=guard.render().props.value;context.mark('t1:directory',false);guard.render();view.render();
   assert.equal(find(view,n=>n.props.children==='继续制作标书').props.disabled,false);
-  assert.ok(!nodes(view.render()).some(n=>n.props.children==='下载标书'));
+  assert.ok(!nodes(view.render()).some(n=>n.props.children==='下载 Word'));
   assert.ok(nodes(view.render()).some(n=>n.props.children==='下载历史整册'));
   flow.volume_states=[{name:'技术',artifact_id:'old',status:'ready'}];view.render();
   assert.equal(find(view,n=>n.type==='button'&&n.props.children==='标书已制作').props.disabled,true);
-  assert.ok(nodes(view.render()).some(n=>n.props.children==='下载标书'));
+  assert.ok(nodes(view.render()).some(n=>n.props.children==='下载 Word'));
  }finally{view.unmount();guard.unmount();f.close()}
 });
 
@@ -245,6 +250,7 @@ test('目录行内改名、更多排序、添加和跨父级移动保存完整�
   click('+ 添加一级目录');view.render();find(view,n=>n.props['aria-label']==='章节标题').props.onChange({target:{value:'附件'}});view.render();click('确认');view.render();
   await click('保存目录');await view.settle();
   const saved=sent[0].content;assert.equal(sent[0].base_content_seq,2);assert.equal(saved.numbering,'gov');assert.equal(saved.page_target,null);assert.equal(saved.response_documents[0].scope,'编制说明保留');
+  assert.deepEqual(sent[0].renamed_sections,[{volume:'投标文件',from_title:'实施',to_title:'实施安排'}]);
   const roots=saved.response_documents[0].directory;assert.deepEqual(roots.map(n=>n.目录名称),['保障','方案','附件']);assert.equal(roots[0].children[0].目录名称,'实施安排');assert.equal(roots[0].children[0].level,2);assert.deepEqual(roots[0].children[0].来源,['REQ-01']);assert.ok(!JSON.stringify(saved).includes('_id'));
  }finally{view.unmount();f.close()}
 });

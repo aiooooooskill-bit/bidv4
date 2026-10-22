@@ -472,7 +472,8 @@ def test_catalog_ignores_line_like_tokens_inside_real_filenames(setup, name):
 def test_terminal_findings_are_visible_decidable_and_validated(setup):
     tid, _, _, _ = setup
     source = artifact_store.sources_dir(tid) / '投标.docx'
-    d = Document(source); d.add_paragraph('授权代表联系方式：【待补】'); d.save(source)
+    d = Document(source); p = d.add_paragraph('授权代表联系方式：【待补】')
+    d.add_comment(p.runs, text='工程验收：签章附件待核验', author='fixture'); d.save(source)
     review.prepare(tid)
     setup[3]['input_version'] = review.basis(tid); setup[2].write_text(json.dumps(setup[3]))
     finish(setup)
@@ -482,7 +483,8 @@ def test_terminal_findings_are_visible_decidable_and_validated(setup):
     assert issue['risk_type'] == 'suggestion'
     review.decide(tid, 'review-test', issue['id'], 'pending', '终稿需要补齐')
     assert review.snapshot(tid)['report']['decisions'][issue['id']]['note'] == '终稿需要补齐'
-    assert any('未传 block_ids' in n for c in report['check_notes'] for n in c['notes'])
+    assert any('工程验收：签章附件待核验' in n for c in report['check_notes'] for n in c['notes'])
+    assert not any('未传 block_ids' in n for c in report['check_notes'] for n in c['notes'])  # 实际素材记录已校验，不能再保留旧的跳过提示
     report['document_issues'] = []
     with pytest.raises(ValueError, match='不一致'): review.validate_saved_report(tid, report)
 
@@ -525,6 +527,40 @@ def test_reviewed_list_uses_persistent_digests(setup, monkeypatch):
         return original_open(filename, *args, **kwargs)
     monkeypatch.setattr(builtins, 'open', no_source_open)
     assert task_stage.enrich([db.get_task(tid)])[0]['review_status'] == 'reviewed'
+
+
+@pytest.mark.parametrize('continuous', [False, True])
+def test_status_digest_rereads_a_changed_file_without_caching_mixed_bytes(setup, monkeypatch, continuous):
+    import builtins, hashlib
+    tid, *_ = setup
+    path = artifact_store.work_dir(tid) / '执行中文件.md'
+    path.write_bytes(b'initial content')
+    original_open = builtins.open
+    reads = []
+    class ConcurrentWrite:
+        def __enter__(self):
+            self.stream = original_open(path, 'rb')
+            reads.append(True)
+            return self.stream.__enter__()
+        def __exit__(self, *args):
+            result = self.stream.__exit__(*args)
+            if continuous or len(reads) == 1:
+                path.write_bytes(('completed version ' + str(len(reads))).encode())
+            return result
+    def changing_open(filename, *args, **kwargs):
+        return ConcurrentWrite() if Path(filename) == path.resolve() else original_open(filename, *args, **kwargs)
+    monkeypatch.setattr(builtins, 'open', changing_open)
+    key = 'file-digest:' + hashlib.sha256(str(path.resolve()).encode()).hexdigest()
+    if continuous:
+        with pytest.raises(page_flow.FileChangedDuringRead, match='文件在读取期间已变化'):
+            page_flow.file_hash(path)
+        assert len(reads) == 3
+        assert db.get_setting(key) is None
+    else:
+        digest = page_flow.file_hash(path)
+        assert len(reads) == 2
+        assert digest == hashlib.sha256(path.read_bytes()).hexdigest()
+        assert json.loads(db.get_setting(key))['sha256'] == digest
 
 
 def test_file_digest_is_reused_by_an_actual_second_python_process(setup):

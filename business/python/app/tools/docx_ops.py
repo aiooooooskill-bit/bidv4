@@ -51,6 +51,7 @@ docx 翻译成文本世界（读视图/编号寻址），写入全由程序机�
 get_or_add_image（按内容去重、自动避让 partname）。
 """
 from __future__ import annotations
+from .revision_edits import RevisionEdits, EDITS, Index
 import functools
 import hashlib
 import json
@@ -118,7 +119,8 @@ def _dest_path(task_id: str, rel: str, *, must_exist: bool) -> tuple[Path, str]:
         raise ValueError('路径越界（docx 正文只允许落在任务 work/body/ 目录下）')
     if must_exist and (not p.is_file()):
         raise ValueError(f'文件不存在：work/{rel}（先用 docx_section_create 创建）')
-    return (p, relative_work_path(task_id, p))
+    from ..services.section_write import destination
+    return (destination(p), relative_work_path(task_id, p))
 
 def _rotate_restore_point(dst: Path) -> None:
     """旧文件入恢复点栈（<文件名>.restorepoints/NNNN.bak、留 RESTORE_KEEP 个轮换
@@ -135,6 +137,40 @@ def _rotate_restore_point(dst: Path) -> None:
 def _docx_path_lock(path: Path):
     with file_lock(path):
         yield
+
+_MATERIAL_VAR = 'bidv4.materials'
+
+def material_usage(doc) -> list[str]:
+    nodes = doc.settings.element.findall(qn('w:docVars'))
+    values = [v.get(qn('w:val')) for n in nodes for v in n.findall(qn('w:docVar'))
+              if v.get(qn('w:name')) == _MATERIAL_VAR]
+    if not values:
+        return []
+    if len(values) != 1:
+        raise ValueError('素材使用记录重复，不能跳过校验')
+    value = json.loads(values[0])
+    if not isinstance(value, list) or any(not isinstance(v, str) or not v.strip() for v in value):
+        raise ValueError('素材使用记录损坏，不能跳过校验')
+    return value
+
+def _set_material_usage(doc, refs: list[str]) -> None:
+    settings = doc.settings.element
+    variables = settings.find(qn('w:docVars'))
+    if variables is None:
+        variables = OxmlElement('w:docVars')
+        settings.insert_element_before(variables,
+            'w:rsids', 'm:mathPr', 'w:attachedSchema', 'w:themeFontLang',
+            'w:clrSchemeMapping', 'w:doNotIncludeSubdocsInStats',
+            'w:doNotAutoCompressPictures', 'w:forceUpgrade', 'w:captions',
+            'w:readModeInkLockDown', 'w:smartTagType', 'w:shapeDefaults',
+            'w:doNotEmbedSmartTags', 'w:decimalSymbol', 'w:listSeparator')
+    for v in list(variables):
+        if v.get(qn('w:name')) == _MATERIAL_VAR:
+            variables.remove(v)
+    variable = OxmlElement('w:docVar')
+    variable.set(qn('w:name'), _MATERIAL_VAR)
+    variable.set(qn('w:val'), json.dumps(list(dict.fromkeys(refs)), ensure_ascii=False))
+    variables.append(variable)
 
 def _atomic_save(doc, path: Path) -> None:
     """docx 落盘原子替换：uuid 后缀 tmp + os.replace，异常清理残件。"""
@@ -560,10 +596,6 @@ def view_lines(doc: Document) -> list[str]:
             bits += '〔删除修订：接受后此段消失〕'
         elif _has_tracked(para._p):
             bits += '〔已含修订标记〕'
-        notes = [t for m in para._p.findall(qn('w:commentRangeStart')) if (raw := (m.get(qn('w:id')) or '')).isdigit() and (t := comment_texts.get(int(raw)))]
-        if notes:
-            shown = '；'.join((n[:40] + ('…' if len(n) > 40 else '') for n in notes))
-            bits += f'〔批注：{shown}〕'
         text = _accepted_text(para._p) or '（空段落）'
         if len(text) > _VIEW_TEXT_LIMIT:
             text = text[:_VIEW_TEXT_LIMIT] + f'…（截断，全段 {len(text)} 字，请在 Word 中查看）'
@@ -589,6 +621,9 @@ def view_lines(doc: Document) -> list[str]:
                 last_tc = tc
             view.append(f'[T{ti}] R{ri}：' + ' '.join(bits))
             prev_cells = list(row.cells)
+    if comment_texts:
+        view.append('[Word批注：元数据，非正文；不可用para/find修改批注，不应为清理旧批注重建正文；批注留待Word审阅处理]')
+        view.extend(f'[批注@{loc}] {text}' for loc, text in section_comments_labeled(doc))
     head = f'共 {len(paras)} 个段落、{len(doc.tables)} 个表格（段落按 P 编号，表格按 T 编号）'
     if comment_texts:
         head += f'，待办批注 {len(comment_texts)} 条'
@@ -1334,16 +1369,19 @@ def docx_section_create(path: str, title: str, paragraphs: str='', replace: bool
                     doc.add_paragraph(text.strip(), style=body_style.name if body_style else None)
                     n_init += 1
         dst.parent.mkdir(parents=True, exist_ok=True)
+        _set_material_usage(doc, [])
         _atomic_save(doc, dst)
     head = '[已重建] ' if replaced else '[已创建] '
     stat = f'正文 {n_init} 段' + (f'+表格 {n_tables} 张' if n_tables else '')
     return f'{head}work/{rel}（标题「{title.strip()}」，{stat}）\n下一步：贴素材底稿用 docx_material_inject；直接写内容/修订用 docx_section_revise。'
 
 @_tool_guard('读取')
-def docx_section_read(path: str) -> str:
+def docx_section_read(path: str, table: Index | None = None, row: Index | None = None, col: Index | None = None, para: Index | None = None) -> str:
     """读取正文节 docx 的文本视图（段落编号 P1..Pn + 样式 + 图片/修订标记，表格 T1..Tm）。
 
-    用途：写或修订前先读视图拿段落序号；docx_section_revise 的 para 序号以本视图为准。
+    用途：写或修订前先读视图拿段落序号；docx_section_revise 的 para 序号以本视图为准。P4传para=4；T1R2C3传table=1,row=2,col=3，均为整数。
+    长稿经过官方历史裁剪后中段可能不可见；传para正整数（例如218）读取该P段完整接受修订原文，不截断，不从批注猜正文。para不能与table/row/col混传。
+    长单元格在概览中可能截断；同时传table、row、col三个正整数读取该格全部原文和格内段落，不读取DOCX二进制、不猜省略部分。find须完整落在同一格内段落中。
     """
     task_id = _task_id()
     if not task_id:
@@ -1352,7 +1390,24 @@ def docx_section_read(path: str) -> str:
         dst, rel = _dest_path(task_id, path, must_exist=True)
     except ValueError as e:
         return f'[读取失败] {e}'
-    doc = Document(str(dst))
+    with _docx_path_lock(dst):
+        doc = Document(str(dst))
+    selected = (table, row, col)
+    if para is not None:
+        if any(value is not None for value in selected):
+            return '[读取失败] para段落定位不能与table、row、col单元格定位混传'
+        if not 1 <= para <= len(doc.paragraphs):
+            return '[读取失败] para超出当前段落范围；使用实际P段号，不猜序号'
+        return f'[P{para} 完整段落] 修订传para={para}；以下仅为接受修订后的正文，不含Word批注。\n' + _accepted_text(doc.paragraphs[para - 1]._p)
+    if any(value is not None for value in selected):
+        if any(value is None for value in selected):
+            return '[读取失败] table、row、col须一起传入，均为正整数'
+        if not (1 <= table <= len(doc.tables) and 1 <= row <= len(doc.tables[table - 1].rows)
+                and 1 <= col <= len(doc.tables[table - 1].rows[row - 1].cells)):
+            return '[读取失败] 单元格坐标超出实际表格范围；按概览中的T/R/C定位，不猜序号'
+        cell = doc.tables[table - 1].rows[row - 1].cells[col - 1]
+        return (f'[T{table}R{row}C{col} 完整单元格] 修订传table={table},row={row},col={col}；find须落在同一格内段落。\n'
+                + '\n'.join(f'[格内段{i}] {_accepted_text(p._p)}' for i, p in enumerate(cell.paragraphs, 1)))
     return '\n'.join(view_lines(doc))
 
 def _parse_material_ranges(lines: str) -> list[tuple[int, int]]:
@@ -1476,6 +1531,8 @@ def docx_material_inject(block_id: str, dest: str, lines: str='') -> str:
             return '[注入失败] 映射区间内没有可注入的段落/表格元素'
         n_style, style_remap = _merge_missing_styles(src, dst_doc, copied)
         n_num = _merge_missing_numbering(src, dst_doc, copied, style_id_remap=style_remap)
+        ref = b['id'] + (':' + ','.join(f'L{lo}-L{hi}' for lo, hi in req) if req else '')
+        _set_material_usage(dst_doc, material_usage(dst_doc) + [ref])
         _atomic_save(dst_doc, dst)
     try:
         db.mt_touch_blocks([b['id']])
@@ -1634,11 +1691,11 @@ def docx_image_insert(dest: str, image: str, after: str='', page: int=1) -> str:
     （Word 审阅可逐张接受/拒绝）。多张图=多次调用。
     Args:
         dest: 目标节文件（须已用 docx_section_create 创建）
-        image: 图片路径（工作区相对，三类来源）：①知识库图片
+        image: 图源业务参数（不使用普通文件工具的绝对路径，三类来源）：①知识库图片（相对数据根目录下的workspace/）
                knowledge/parse/<文件名（含扩展名）>/images/img_001.png——search_company_assets
                命中行会给出路径；PDF 是整页渲染图、文件名即页码（img_007.png=第 7 页，
                空白页跳过），docx 是文档内嵌图；
-               ②当前任务上传图 sources/<文件名>（可带任务前缀）；
+               ②当前任务上传图 sources/<文件名>，相对当前任务目录；
                ③PDF 原件（knowledge/files/xxx.pdf 或 sources/xxx.pdf）——传页号
                现场渲染那一页为图。支持 png/jpg/bmp/gif/webp（webp 自动转 png
                插入）；docx 原件不支持（换 PDF 或图片版）。
@@ -1816,7 +1873,7 @@ def docx_comment_add(path: str, text: str, after: str='') -> str:
     """给正文节 docx 加一条 Word 批注——缺料/待澄清/待核验等待办的唯一落点。
 
     批注锚定在指定段落上：Word 审阅侧栏可见（作者 ooo-bidpliot）、打印与 PDF
-    导出默认不带；docx_section_read 视图该段行尾显示〔批注：…〕，validate_body
+    导出默认不带；docx_section_read 视图末尾以[批注@P序号]独立显示，批注不属于可修订正文，validate_body
     清点待办批注，合册时批注原样迁移进整本。**正文里禁止写【待补】【待澄清】
     占位文字**（会进交付稿）——缺什么、要用户裁决什么、哪个数字待核验，都走本工具。
     Args:
@@ -2177,7 +2234,7 @@ def docx_diagram_insert(dest: str, kind: str, spec: str, after: str='', caption:
     return bits
 
 @_tool_guard('修订')
-def docx_section_revise(path: str, edits: str) -> str:
+def docx_section_revise(path: str, edits: RevisionEdits) -> str:
     """对正文节 docx 做定向修订，全部落成 Word 原生修订标记（用户在 Word 中审阅接受/拒绝）。
 
     用途：素材底稿注入后的适配修订（换公司名/项目名/参数）、招标格式件填空
@@ -2186,13 +2243,13 @@ def docx_section_revise(path: str, edits: str) -> str:
     （覆盖正文段落与表格单元格），标记损坏即拒绝保存。
     Args:
         path: 目标节文件（相对任务 work/，如 body/技术部分/3.1 需求分析.docx）
-        edits: JSON 数组，两类条目（不可混在同一条里）——正文段落
+        edits: 原生结构化数组（不编码成JSON字符串），两类条目（不可混在同一条里）——正文段落
               {"para": 段落序号, "action": "replace|insert_after|delete",
                "find": 期望原文片段（replace 必填，防段落漂移的双重校验）,
                "text": 新文本, "style": 样式名（仅 insert_after 可选，如
                "Tender Cover"/"Tender Cover Sub"——封面等非正文段落挂指定
                版式；样式不存在回落正文样式并在返回中注记）}；表格单元格
-               {"table": T序号, "row": 行, "col": 列,
+               {"table": 整数表序号（T1填1）, "row": 整数行, "col": 整数列,
                "action": "replace|fill", "find": 格内期望原文（replace 必填，须
                完整出现在同一格内段落）, "text": 新文本}——fill 仅限空格子
                （接受视角为空，填空动作）。replace 只替换首处命中；同段多条按
@@ -2212,51 +2269,34 @@ def docx_section_revise(path: str, edits: str) -> str:
         dst, rel = _dest_path(task_id, path, must_exist=True)
     except ValueError as e:
         return f'[修订失败] {e}'
-    try:
-        items = json.loads(edits)
-    except ValueError:
-        return '[修订失败] edits 不是合法 JSON'
-    if not isinstance(items, list) or not items:
-        return '[修订失败] edits 须为非空 JSON 数组'
-    errs: list[str] = []
-    para_items: list[dict] = []
-    cell_items: list[dict] = []
-    for it in items:
-        if not isinstance(it, dict):
-            errs.append('每项须为对象')
-            continue
-        has_para = isinstance(it.get('para'), int) and (not isinstance(it.get('para'), bool))
-        has_cell = all((isinstance(it.get(k), int) and (not isinstance(it.get(k), bool)) for k in ('table', 'row', 'col')))
-        if has_para and has_cell:
-            errs.append('para 与 table/row/col 不可同时传')
-            continue
-        if has_para:
-            act = it.get('action')
-            if act not in ('replace', 'insert_after', 'delete'):
-                errs.append(f"P{it.get('para')}：action 须为 replace|insert_after|delete")
-            elif act == 'replace' and (not it.get('find') or it.get('text') is None):
-                errs.append(f"P{it.get('para')}：replace 需 find 与 text")
-            elif act == 'insert_after' and (not it.get('text')):
-                errs.append(f"P{it.get('para')}：insert_after 需 text")
-            else:
-                para_items.append(it)
-        elif has_cell:
-            act = it.get('action')
-            where = f"T{it.get('table')}({it.get('row')},{it.get('col')})"
-            if act not in ('replace', 'fill'):
-                errs.append(f'{where}：action 须为 replace|fill')
-            elif act == 'replace' and (not it.get('find') or it.get('text') is None):
-                errs.append(f'{where}：replace 需 find 与 text')
-            elif act == 'fill' and (not it.get('text')):
-                errs.append(f'{where}：fill 需 text')
-            else:
-                cell_items.append(it)
-        else:
-            errs.append('每项须含整数 para（正文段落）或 table/row/col 三件套（表格单元格）')
-    if errs:
-        return '[修订失败] ' + '；'.join(errs)
     with _docx_path_lock(dst):
         doc = Document(str(dst))
+
+        def failure(detail, location=None, find=None):
+            # The staged on-disk original has not been saved. Reuse it only on failure;
+            # do not expose the partially edited in-memory draft or cache every cell.
+            original = Document(str(dst))
+            witness = ''
+            if location is not None:
+                t, r, c = location
+                paragraphs = original.tables[t - 1].cell(r - 1, c - 1).paragraphs
+                witness = f'\n选定单元格T{t}R{r}C{c}当前原文（整批未保存，不含批内临时修改）：\n' + '\n'.join(_accepted_text(p._p) for p in paragraphs)
+                if find:
+                    matches = [f'T{ti}R{ri}C{ci}' for ti, table in enumerate(original.tables, 1)
+                               for ri, row in enumerate(table.rows, 1) for ci, cell in enumerate(row.cells, 1)
+                               if any(find in _accepted_text(p._p) for p in cell.paragraphs)]
+                    witness += '\n精确匹配位置：' + ('、'.join(matches) if matches else '原稿中未找到同一格内段落的该原文')
+                    witness += '\n这些是原稿实际精确匹配，不自动换格或替换；用docx_section_read传table/row/col核对完整单元格后重做。'
+            return ('[修订失败] ' + detail + witness + '\n本批未保存。按下方原稿真实位置和原文重做，不遍历猜段号；'
+                    'P4对应para=4，T1R2C3对应table=1,row=2,col=3，均为整数；段落和表格定位不能混传。\n'
+                    + '\n'.join(view_lines(original)))
+
+        try:
+            items = [item.model_dump() for item in EDITS.validate_python(edits, strict=True)]
+        except ValueError as error:
+            return failure(str(error))
+        para_items = [item for item in items if 'para' in item]
+        cell_items = [item for item in items if 'table' in item]
         paras = doc.paragraphs
         before = _flatten_rejected(doc)
         applied = 0
@@ -2275,7 +2315,7 @@ def docx_section_revise(path: str, edits: str) -> str:
         for it in sorted(para_items, key=lambda x: x['para'], reverse=True):
             i = it['para']
             if i < 1 or i > len(paras):
-                return f'[修订失败] 段落序号 {i} 超出范围（现共 {len(paras)} 段；序号以 docx_section_read 为准）'
+                return failure(f'段落序号 {i} 超出范围（现共 {len(paras)} 段；序号以 docx_section_read 为准）')
             para = paras[i - 1]
             rev_id = _next_rev_id(doc)
             act = it['action']
@@ -2303,20 +2343,20 @@ def docx_section_revise(path: str, edits: str) -> str:
                     done.append(f'P{i} 删除（原位保留删除标记，序号不变）')
                     touched_paras.append(i)
             except ValueError as e:
-                return f'[修订失败] P{i}：{e}'
+                return failure(f'P{i}：{e}')
             applied += 1
         for it in cell_items:
             t_no, r, c = (it['table'], it['row'], it['col'])
             if t_no < 1 or t_no > len(doc.tables):
-                return f'[修订失败] 表格序号 {t_no} 超出范围（现共 {len(doc.tables)} 张；序号以 docx_section_read 为准）'
+                return failure(f'表格序号 {t_no} 超出范围（现共 {len(doc.tables)} 张；序号以 docx_section_read 为准）')
             tbl = doc.tables[t_no - 1]
             if r < 1 or r > len(tbl.rows) or c < 1 or (c > len(tbl.columns)):
-                return f'[修订失败] T{t_no} 单元格坐标 ({r},{c}) 超出范围（{len(tbl.rows)}行×{len(tbl.columns)}列；坐标以视图 R行C列 为准）'
+                return failure(f'T{t_no} 单元格坐标 ({r},{c}) 超出范围（{len(tbl.rows)}行×{len(tbl.columns)}列；坐标以视图 R行C列 为准）')
             cell_paras = tbl.cell(r - 1, c - 1).paragraphs
             rev_id = _next_rev_id(doc)
             if it['action'] == 'fill':
                 if any((_accepted_text(p._p).strip() for p in cell_paras)):
-                    return f'[修订失败] T{t_no}({r},{c}) 非空格子不能用 fill——read 视图取该格原文片段改用 replace'
+                    return failure(f'T{t_no}({r},{c}) 非空格子不能用 fill——read 视图取该格原文片段改用 replace')
                 _tracked_fill(cell_paras[0], str(it['text']), rev_id)
                 done.append(f"T{t_no} R{r}C{c} 填空「{_snip(str(it['text']))}」")
                 touched_cells.append((t_no, r, c))
@@ -2324,13 +2364,13 @@ def docx_section_revise(path: str, edits: str) -> str:
                 find = str(it['find'])
                 target = next((p for p in cell_paras if find in _accepted_text(p._p)), None)
                 if target is None:
-                    return f'[修订失败] T{t_no}({r},{c}) 格内未找到期望文本「{find[:60]}」（find 须完整出现在同一格内段落）'
+                    return failure(f'T{t_no}({r},{c}) 格内未找到期望文本「{find[:60]}」（find 须完整出现在同一格内段落）', (t_no, r, c), find)
                 try:
                     _tracked_replace(target, find, str(it['text']), rev_id)
                     done.append(f"T{t_no} R{r}C{c} 替换「{_snip(find)}」→「{_snip(str(it['text']))}」")
                     touched_cells.append((t_no, r, c))
                 except ValueError as e:
-                    return f'[修订失败] T{t_no}({r},{c})：{e}'
+                    return failure(f'T{t_no}({r},{c})：{e}')
             applied += 1
         if inserts_pending:
             final_idx = {id(p._p): n for n, p in enumerate(doc.paragraphs, 1)}
@@ -2338,7 +2378,7 @@ def docx_section_revise(path: str, edits: str) -> str:
                 n = final_idx.get(id(el))
                 done[di] = f'P{n} 新段（插在原 P{orig_i} 后）「{_snip(text)}」' if n else f'原 P{orig_i} 后插段「{_snip(text)}」'
         if _flatten_rejected(doc) != before:
-            return '[修订失败] 修订标记一致性自校验未通过（未保存）——请重读视图核对序号与原文后重试'
+            return failure('修订标记一致性自校验未通过（未保存）——请重读视图核对序号与原文后重试')
         _atomic_save(doc, dst)
     bits = f'[已修订] work/{rel}：{applied} 处已落成 Word 修订标记（作者 {_AUTHOR}），在 Word 中审阅可逐条接受/拒绝：\n  ' + '\n  '.join((str(x) for x in done))
     if style_notes:
@@ -2631,18 +2671,20 @@ def docx_assemble_volume() -> str:
     multi = body_contract.multi_volume(content)
     numberer_scheme = str(content.get('numbering') or '').strip() or 'decimal'
     wroot = work_dir(task_id).resolve()
+    from ..services.build_state import read as read_build_state
+    section_titles = read_build_state(task_id).get('section_titles', {})
     from ..services import document_format, document_pagination
     format_rules = document_format.rules(task_id)
     consumed: set[str] = set()
     reports: list[str] = []
-    volume_rels = {f"body/{body_contract.VOLUME_PREFIX}{body_contract.sanitize_name(body_contract.document_name(d))}.docx" for d in docs}
-    known_body_paths = {'body/' + (body_contract.sanitize_name(vol) + '/' if multi else '') + body_contract.sanitize_name(title) + '.docx'
+    volume_rels = {f"body/{body_contract.VOLUME_PREFIX}{body_contract.volume_key(body_contract.document_name(d))}.docx" for d in docs}
+    known_body_paths = {'body/' + (body_contract.volume_key(vol) + '/' if multi else '') + body_contract.sanitize_name(title) + '.docx'
                         for vol, title, _ in body_contract.body_nodes_for_task(task_id, content)}
     unassigned = {p.relative_to(wroot).as_posix() for p in (wroot / 'body').rglob('*.docx')} - known_body_paths - volume_rels
     seen_vols: dict[str, str] = {}
     for doc in docs:
         vol = body_contract.document_name(doc)
-        vol_key = body_contract.sanitize_name(vol)
+        vol_key = body_contract.volume_key(vol)
         if vol_key in seen_vols:
             reports.append(f'⚠️ 册名「{vol}」与「{seen_vols[vol_key]}」清洗后同名（节目录与整本文件会互覆），本册未合册——请在目录产物中改册名后重新合册')
             continue
@@ -2747,13 +2789,15 @@ def docx_assemble_volume() -> str:
                         break
             from .body_repartition import _blocks
             children = _blocks(src)
+            own_names = [title, *section_titles.get(rel_src, [])]
             own_titles = []
             leading = set()
-            if children and children[0].tag.split('}')[-1] == 'p' and _is_title_para(children[0], title):
+            if children and children[0].tag.split('}')[-1] == 'p' and any(_is_title_para(children[0], name) for name in own_names):
                 own_titles.append(children[0])
                 children = children[1:]
             if h is not None:
-                own_index = _embedded_own_title(children, src, title)
+                own_indices = {index for name in own_names if (index := _embedded_own_title(children, src, name)) is not None}
+                own_index = next(iter(own_indices)) if len(own_indices) == 1 else None
                 if own_index is not None:
                     leading = set(children[:own_index])
                     own_titles.append(children[own_index])
@@ -2842,7 +2886,7 @@ def docx_assemble_volume() -> str:
             document_pagination.configure_sections(out,toc_start,has_cover,format_rules)
             reports.append(f'{vol}：目录页已生成（{len(toc_rows)} 条；原生目录域，由Office/WPS打开时计算页码）')
         try:
-            dst, rel = _dest_path(task_id, f'body/{body_contract.VOLUME_PREFIX}{body_contract.sanitize_name(vol)}.docx', must_exist=False)
+            dst, rel = _dest_path(task_id, f'body/{body_contract.VOLUME_PREFIX}{body_contract.volume_key(vol)}.docx', must_exist=False)
         except ValueError as e:
             return f'[合册失败] {e}'
         with _docx_path_lock(dst):

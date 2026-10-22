@@ -1,4 +1,5 @@
 from .errors import BusinessError, FileDownload, IncomingFile, Response
+from .library_files import mutation_lock, replacement_upload
 """写作素材库 API（v2 手工构建）：文件上传/解析、目录树、块 CRUD。
 
 素材块 = 用户在目录树上勾选的章节区间集合 + 备注；与知识库彻底分离
@@ -86,18 +87,50 @@ async def get_outline(fid: str):
         raise BusinessError(status_code=404, detail='素材文件不存在')
     return {'id': fid, 'outline': mlib.read_outline(fid), 'parse_status': f['parse_status'], 'error': f.get('error')}
 
-async def delete_file(fid: str):
-    if not db.mt_get_file(fid):
-        raise BusinessError(status_code=404, detail='素材文件不存在')
-    mlib.delete_file(fid)
+def _editable_file(fid: str, file_hash: str | None = None):
+    f = db.mt_get_file(fid)
+    if not f:
+        raise BusinessError(404, '素材文件不存在，请重新读取资料库')
+    if file_hash is not None and f['file_hash'] != file_hash:
+        raise BusinessError(409, '来源文件已被更换，请重新读取后再操作')
+    if f['parse_status'] in ('pending', 'parsing'):
+        raise BusinessError(409, '来源文件正在解析，请稍候再操作')
+    return f
+
+
+async def replace_file(fid: str, file_hash: str, file: IncomingFile):
+    with mutation_lock('mt', fid):
+        _editable_file(fid, file_hash)
+        async with replacement_upload(file, mlib.mt_files_dir(), MT_ALLOWED_EXTENSIONS, None) as (temp, name, digest):
+            target = mlib.unique_file_path(name)
+            try:
+                from ..company_store import transaction
+                with transaction() as conn:
+                    old = _editable_file(fid, file_hash)
+                    if conn.execute('SELECT id FROM mt_files WHERE file_hash=? AND id<>?', (digest, fid)).fetchone():
+                        raise BusinessError(409, '相同内容已在写作素材库中，请使用已有文件')
+                    os.replace(temp, target)
+                    conn.execute("UPDATE mt_files SET file_name=?,file_hash=?,parse_status='pending',error=NULL,updated_at=? WHERE id=?", (target.name, digest, db._now(), fid))
+                    conn.execute('DELETE FROM mt_blocks WHERE file_id=?', (fid,))
+                    conn.execute('DELETE FROM kb_segments WHERE item_id=?', (fid,))
+            except BaseException:
+                target.unlink(missing_ok=True)
+                raise
+            mlib.delete_file_disk(old['file_name'])
+    mlib.schedule_parse(fid)
+    return {'id': fid, 'file_name': target.name}
+
+
+async def delete_file(fid: str, file_hash: str):
+    with mutation_lock('mt', fid):
+        _editable_file(fid, file_hash)
+        mlib.delete_file(fid)
     return {'ok': True}
 
+
 async def reparse_file(fid: str):
-    """重新解析（失败重试；ready 也可重触发，解析幂等）。"""
-    if not db.mt_get_file(fid):
-        raise BusinessError(status_code=404, detail='素材文件不存在')
-    if not mlib.schedule_parse(fid):
-        raise BusinessError(status_code=409, detail='该文件正在解析中，请稍候')
+    _editable_file(fid)
+    mlib.schedule_parse(fid)
     return {'ok': True}
 
 async def get_file_raw(fid: str):
@@ -194,27 +227,38 @@ def _truncate_preview(content: dict, budget: int) -> dict:
 async def create_block(fid: str, body: dict):
     """建块：{title, note, ranges: [[s,e],…]}——ranges 来自勾选节点的行号区间
     （可勾父子节点，服务端嵌套去重叠；区间须有效）。"""
-    f = db.mt_get_file(fid)
-    if not f:
-        raise BusinessError(status_code=404, detail='素材文件不存在')
-    if f['parse_status'] != 'ready':
-        raise BusinessError(status_code=422, detail='文件尚未解析完成，稍候再试')
-    ranges = body.get('ranges')
-    if not isinstance(ranges, list) or not ranges:
-        raise BusinessError(status_code=422, detail='ranges 须为非空的 [[起始行,结束行],…] 列表')
-    block = mlib.create_block(fid, str(body.get('title') or ''), str(body.get('note') or ''), ranges)
-    if not block:
-        raise BusinessError(status_code=422, detail='区间全部无效（行号越界或为空）')
-    return block
+    with mutation_lock('mt', fid):
+        f = db.mt_get_file(fid)
+        if not f:
+            raise BusinessError(status_code=404, detail='素材文件不存在')
+        if f['parse_status'] != 'ready':
+            raise BusinessError(status_code=422, detail='文件尚未解析完成，稍候再试')
+        ranges = body.get('ranges')
+        if not isinstance(ranges, list) or not ranges:
+            raise BusinessError(status_code=422, detail='ranges 须为非空的 [[起始行,结束行],…] 列表')
+        block = mlib.create_block(fid, str(body.get('title') or ''), str(body.get('note') or ''), ranges)
+        if not block:
+            raise BusinessError(status_code=422, detail='区间全部无效（行号越界或为空）')
+        return block
 
 async def update_block(bid: str, body: BlockUpdateBody):
-    """改标题/备注：{title?, note?}（缺省=不改）。"""
-    block = mlib.update_block(bid, body.title, body.note)
+    block = db.mt_get_block(bid)
     if not block:
-        raise BusinessError(status_code=404, detail='素材块不存在')
+        raise BusinessError(404, '素材块不存在，请重新读取资料库')
+    with mutation_lock('mt', block['file_id']):
+        _editable_file(block['file_id'])
+        block = mlib.update_block(bid, body.title, body.note)
+        if not block:
+            raise BusinessError(404, '素材块不存在，请重新读取资料库')
     return block
 
+
 async def delete_block(bid: str):
-    if not mlib.delete_block(bid):
-        raise BusinessError(status_code=404, detail='素材块不存在')
+    block = db.mt_get_block(bid)
+    if not block:
+        raise BusinessError(404, '素材块不存在，请重新读取资料库')
+    with mutation_lock('mt', block['file_id']):
+        _editable_file(block['file_id'])
+        if not mlib.delete_block(bid):
+            raise BusinessError(404, '素材块不存在，请重新读取资料库')
     return {'ok': True}

@@ -152,7 +152,7 @@ def check_pipeline_state() -> str:
         if dir_content:
             for d in dir_content.get('response_documents') or []:
                 _vol = str(d.get('name') or '').strip() or '主册'
-                vol_file_names.add(body_contract.VOLUME_PREFIX + body_contract.sanitize_name(_vol) + '.docx')
+                vol_file_names.add(body_contract.VOLUME_PREFIX + body_contract.volume_key(_vol) + '.docx')
         for p in all_body:
             if p.name in (body_contract.GUIDE_NAME, body_contract.PROMISE_NAME):
                 continue
@@ -180,7 +180,7 @@ def check_pipeline_state() -> str:
                     if len(rel.parts) > expected_depth:
                         misplaced.append(rel.as_posix())
                         continue
-                    vol = body_contract.sanitize_name(rel.parts[0]) if len(rel.parts) > 1 else ''
+                    vol = rel.parts[0] if len(rel.parts) > 1 else ''
                     actual.add((vol, body_contract.sanitize_name(p.stem)))
                 if misplaced:
                     lines.append('[body] ' + str(len(misplaced)) + ' 个文件嵌套在子目录（与合册平铺约定不符，合册找不到——移到 body/ 根层或多册目录下）：' + '、'.join(misplaced[:8]) + ('…' if len(misplaced) > 8 else ''))
@@ -188,10 +188,10 @@ def check_pipeline_state() -> str:
                 known: set[tuple[str, str]] = set()
                 targets = body_contract.body_nodes_for_task(task_id, dir_content)
                 for vol, title, _mode in targets:
-                    pair = (body_contract.sanitize_name(vol) if multi else '', body_contract.sanitize_name(title))
+                    pair = (body_contract.volume_key(vol) if multi else '', body_contract.sanitize_name(title))
                     known.add(pair)
                     seen_titles[pair] = seen_titles.get(pair, 0) + 1
-                expected = {(body_contract.sanitize_name(vol) if multi else '', body_contract.sanitize_name(title)) for vol, title, mode in targets if mode not in body_contract.NON_PROSE_DELIVERY}
+                expected = {(body_contract.volume_key(vol) if multi else '', body_contract.sanitize_name(title)) for vol, title, mode in targets if mode not in body_contract.NON_PROSE_DELIVERY}
                 dup = [k for k, n in seen_titles.items() if n > 1]
                 if dup:
                     lines.append('[body] 同册存在同名叶子（清洗后文件名冲突）：' + '、'.join((f'{v}/{s}' if v else s for v, s in sorted(dup))) + '——文件名映射歧义，需用户改名其一')
@@ -214,11 +214,11 @@ def check_pipeline_state() -> str:
                         guide_text = ''
                     for _lineno, cells, cols in _parse_guide_rows(guide_text):
                         title = cells[cols['节']].strip()
-                        vol = ''
-                        if multi and '/' in title:
-                            head, _, tail = title.partition('/')
-                            vol, title = (head.strip(), tail.strip())
-                        key = (body_contract.sanitize_name(vol) if multi else '', body_contract.sanitize_name(title))
+                        matches = [(vol, name) for vol, name, _mode in targets if title == (f'{vol}/{name}' if multi else name)]
+                        if len(matches) != 1:
+                            continue
+                        vol, title = matches[0]
+                        key = (body_contract.volume_key(vol) if multi else '', body_contract.sanitize_name(title))
                         if key not in known or key in actual:
                             continue
                         note_i = next((i for k, i in cols.items() if '缺口' in k or '备注' in k), 4)

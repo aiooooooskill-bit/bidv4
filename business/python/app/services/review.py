@@ -65,7 +65,7 @@ def basis(tid):
     names = [selected['main'], *[s['file'] for s in selected['supplements']], *config['bids']]
     sources = {n: page_flow.file_hash(artifact_store.sources_dir(tid) / n) if (artifact_store.sources_dir(tid) / n).is_file() else None for n in names if n}
     body = {s['path']: page_flow.file_hash(root / s['path']) if (root / s['path']).is_file() else None for s in sections(tid)} if config['mode'] == 'platform' else {}
-    context = {'sources': sources, 'selection': selected, 'review_input': config, 'body': body,
+    context = {'sources': sources, 'selection': {k: selected[k] for k in ('main', 'supplements')}, 'review_input': config, 'body': body,
                'directory': page_flow.directory(tid) if config['mode'] == 'platform' else None,
                'analysis': {p.name: page_flow.file_hash(p) for p in (root / 'analysis').glob('*.md')},
                'review_method': review_method.method_version()}
@@ -73,6 +73,8 @@ def basis(tid):
         context.update(planning={p.name: page_flow.file_hash(p) for p in (root / 'body').glob('*.md')},
                        planning_state=build_state(tid), assets=asset_basis(tid, ['guide', 'promises', *body]),
                        bidder=bidder_basis(tid))
+        from .source_usage import basis as reference_basis
+        context['references'] = reference_basis(tid, ['guide', 'promises', *body])
     return page_flow.digest(context)
 
 
@@ -80,7 +82,12 @@ def prepare(tid):
     docs = inputs(tid)
     if not any(d['kind'] == 'tender' for d in docs) or not any(d['kind'] == 'bid' for d in docs):
         raise BusinessError(422, '请先上传招标和投标文件，或完成平台标书正文制作')
-    return [{'id': d['id'], 'prepared': document.prepare(d['file'], d['parse_dir'])} for d in docs]
+    from . import review_annotations
+    result = []
+    for d in docs:
+        result.append({'id': d['id'], 'prepared': document.prepare(d['file'], d['parse_dir'])})
+        review_annotations.prepare(d)
+    return result
 
 def documents(tid):
     result = []
@@ -91,8 +98,21 @@ def documents(tid):
             raise BusinessError(422, '审查文件尚未完整解析：' + d['name'])
         with md.open() as stream:
             lines = sum(len(line.splitlines()) for line in stream)
-        result.append({k: d[k] for k in ('id', 'name', 'kind', 'sha256')} | {'path': str(md), 'outline_path': str(d['parse_dir'] / (d['name'] + '.outline.json')), 'lines': lines})
+        from .review_annotations import descriptor
+        result.append({k: d[k] for k in ('id', 'name', 'kind', 'sha256')} | {'path': str(md), 'outline_path': str(d['parse_dir'] / (d['name'] + '.outline.json')), 'lines': lines,
+            'annotations': descriptor(d)})
     return result
+
+def evidence_documents(tid):
+    docs = documents(tid)
+    return {d['id']: d for doc in docs for d in (doc, doc['annotations']) if d is not None}
+
+def prepared_documents(tid):
+    docs = documents(tid)
+    # Deliver every annotation once with the preparation receipt. Later batch
+    # calls and report/state polling keep only the canonical paths and ranges.
+    return {'documents': docs, 'annotation_evidence': [d | {'text': source_excerpt(d['path'], 1, d['lines'])}
+            for doc in docs if (d := doc['annotations']) is not None]}
 
 def review_basis(tid, validate=False):
     docs = documents(tid)
@@ -106,6 +126,12 @@ def source_excerpt(path, start, end):
     with Path(path).open() as stream:
         lines = chain.from_iterable(line.splitlines() for line in stream)
         return '\n'.join(islice(lines, start - 1, end))
+
+
+def evidence_segments(evidence):
+    """Keep the entire original interval within the existing 101-line card limit."""
+    return [{'document_id': evidence['document_id'], 'start': start, 'end': min(start + 100, evidence['end'])}
+            for start in range(evidence['start'], evidence['end'] + 1, 101)]
 
 
 def resolve_evidence(docs, tender, bid, basis_tender):
@@ -122,16 +148,17 @@ def resolve_evidence(docs, tender, bid, basis_tender):
                 raise ValueError('证据角色或范围无效；单段引用不超过101行')
             if kind == 'tender':
                 covered.setdefault(e['document_id'], set()).update(range(e['start'], e['end'] + 1))
-            result[kind].append(e | {'quote': source_excerpt(d['path'], e['start'], e['end'])})
+            result[kind].append(e | {'quote': source_excerpt(d['path'], e['start'], e['end'])}
+                                | ({'evidence_type': 'annotation', 'parent_document_id': d['parent_document_id']} if d.get('evidence_type') == 'annotation' else {}))
     for base in basis_tender:
         if not set(range(base['start'], base['end'] + 1)) <= covered.get(base['document_id'], set()):
-            raise ValueError('招标引用必须保留完整要点依据；回查原文后可扩展或补充引用')
+            raise ValueError('招标引用必须保留完整要点依据；请保留或补充实际引用：' + json.dumps(evidence_segments(base), ensure_ascii=False))
     return result
 
 
 def compile_report(tid, value):
     report = Report.model_validate(value)
-    docs = {d['id']: d for d in documents(tid)}
+    docs = evidence_documents(tid)
     basis = review_basis(tid, True)
     catalog = {r['id']: r for r in basis['catalog']}
     ids = [r.basis_id for r in report.requirements]
@@ -152,6 +179,8 @@ def compile_report(tid, value):
             errors.append(key + '：背景信息不得套用无关投标引用或问题')
         if req['status'] in ('responded', 'conflict') and not req['bid']:
             errors.append(key + '：已响应或冲突必须提供投标证据')
+        if req['status'] in ('responded', 'conflict') and all(e.get('evidence_type') == 'annotation' for e in req['bid']):
+            errors.append(key + '：Word批注不能代替已印入正文的响应或承诺')
         if req['status'] in ('missing', 'conflict') and not any(i.requirement_id == key for i in report.issues):
             errors.append(key + '：缺失或冲突必须关联问题')
     for issue in report.issues:
@@ -203,7 +232,7 @@ def save_report(tid, session, value):
         missing = [s['title'] for s in sections(tid) if not (artifact_store.work_dir(tid) / s['path']).is_file()]
         if missing:
             report['limitations'].append('当前平台目录尚有未生成章节：' + '、'.join(missing) + '；本次只核查现有正文。')
-    envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': documents(tid), 'report': report, 'decisions': {}, 'method': {'name': '标书审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'analysis': review_basis(tid, True), 'checks': review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])}
+    envelope = {'session_id': session, 'input_version': record['input_version'], 'completed': False, 'created_at': datetime.now(timezone.utc).isoformat(), 'documents': list(evidence_documents(tid).values()), 'report': report, 'decisions': {}, 'method': {'name': '标书审查', 'source_commit': review_method.SOURCE_COMMIT, 'version': review_method.method_version()}, 'analysis': review_basis(tid, True), 'checks': review_method.original_checks(tid, inputs(tid), selection(tid)['mode'])}
     write_atomic(_report_path(tid, session), json.dumps(envelope, ensure_ascii=False))
     return {'saved': True, 'requirements': len(report['requirements']), 'issues': len(report['issues']) + len(report['document_issues'])}
 

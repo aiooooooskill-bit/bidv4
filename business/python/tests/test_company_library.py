@@ -53,7 +53,7 @@ def test_entity_revision_and_independent_representative(tmp_path,monkeypatch):
     with pytest.raises(BusinessError):asyncio.run(lib.save_representative(update))
     assert 'company_id' not in r
     assert asyncio.run(lib.overview())['representatives'][0]['id']==r['id']
-    ingest.schedule_ingest(i['id'])
+    db.kb_update_item(i['id'],extract_status='running')
     with pytest.raises(BusinessError,match='正在识别'):asyncio.run(lib.review_asset(i['id'],lib.ReviewBody(revision=cs.asset_state(i['id'])['revision'],company_id=c['id'],title=i['title'],business=m)))
 
 def test_materials_are_global_with_source_and_pagination(tmp_path,monkeypatch):
@@ -132,7 +132,7 @@ def test_confirmed_identity_fills_actual_tender_letter_docx(tmp_path,monkeypatch
     target='body/投标函.docx';assert docx_section_create(path=target,title='投标函').startswith('[已创建]')
     assert docx_source_inject(source=source.name,dest=target).startswith('[已注入]')
     edits=[{'table':1,'row':n,'col':2,'action':'fill','text':value} for n,value in enumerate(identity.values(),2)]
-    result=docx_section_revise(path=target,edits=json.dumps(edits,ensure_ascii=False));assert result.startswith('[已修订]'),result
+    result=docx_section_revise(path=target,edits=edits);assert result.startswith('[已修订]'),result
     generated=Document(artifact_store.work_dir(tid)/target)
     accepted=docx_section_read(path=target)
     assert all(value in accepted for value in identity.values())

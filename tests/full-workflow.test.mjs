@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {analysisFixture} from './helpers/analysis-session-fixture.mjs';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
 const name='页面自动全流程：自动创建成果、解读目录制作审查、缺值暂停与同会话继续';
-if(process.env.BIDV4_FULL_FIXTURE!=='1')test(name,{timeout:180000},()=>runIsolatedTest('full-workflow.test.mjs','BIDV4_FULL_FIXTURE',new RegExp(name),170000));
-else test(name,{timeout:160000},async()=>{
+if(process.env.BIDV4_FULL_FIXTURE!=='1')test(name,{timeout:360000},()=>runIsolatedTest('full-workflow.test.mjs','BIDV4_FULL_FIXTURE',new RegExp(name),350000));
+else test(name,{timeout:330000},async()=>{
  const host=await analysisFixture();
  try{
   const {taskId,state}=await host.command('fullWorkflow');

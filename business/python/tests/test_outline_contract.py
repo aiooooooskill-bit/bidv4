@@ -163,7 +163,7 @@ def test_small_batches_preserve_originals_and_require_final_complete(env):
              'bindings':[{'source_id':'TPL-01','path':['技术方案（附件N）']}]}
     accepted = oc.plan_batch(tid, oc.PlanBatch.model_validate({'volumes':[patch], 'exclusions':[e.model_dump() for e in excluded], 'decisions':previous['decisions']}))
     assert accepted['ok'] and not accepted['frozen']
-    assert accepted['pending_sources']==[] and accepted['pending_units']==[]
+    assert accepted['remaining_source_count']==0 and accepted['remaining_decision_count']==0
     assert oc.dispatch(tid,plan.name)['phase'] == 'structure_locked'
     assert assemble_tender().startswith('[组装失败]')
     assert oc.plan_batch(tid, oc.PlanBatch(complete=True))['frozen']

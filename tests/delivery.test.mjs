@@ -53,6 +53,6 @@ test('回滚自身被文件系统拒绝时，保留唯一 data 和原代码以�
  try{assert.equal(result.code,1);assert.match(result.output,/更新回滚未完成.*已保留可恢复文件/);assert.ok(backup&&stage);assert.equal(await readFile(join(dir,backup,'original.mjs'),'utf8'),'original code');assert.equal(await readFile(join(dir,stage,'data/app.db'),'utf8'),'only database')}finally{if(backup)await chmod(join(dir,backup),0o700)}
 }));
 test('目录检查清楚拒绝不受支持的 dsh 版本和空环境',()=>fixture(async dir=>{
- await writeFile(join(dir,'package.json'),JSON.stringify({name:'ooo-bidpliot',dsh:{bundle:{patch:'cordis.patch.yml'}},peerDependencies:{'@deepseek-ai/dsh':'0.2.0-rc.2'}}));
+ await writeFile(join(dir,'package.json'),JSON.stringify({name:'ooo-bidpliot',dsh:{bundle:{patch:'cordis.patch.yml'}},peerDependencies:{'@deepseek-ai/dsh':'0.2.1-rc.2'}}));
  const report=await checkInstallation(dir,{probePython:false,dshVersion:'0.3.0'});assert.equal(report.ok,false);assert.ok(report.errors.some(message=>message.includes('dsh 版本不匹配')));assert.ok(report.checks.some(check=>check.name==='Python环境'&&!check.ok));assert.ok(report.checks.some(check=>check.name==='dist/client.js'&&!check.ok));assert.equal(report.version,null);
 }));

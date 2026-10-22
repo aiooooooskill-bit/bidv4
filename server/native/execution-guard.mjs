@@ -4,9 +4,10 @@ import {basename,join,resolve} from 'node:path';
 import {business,dataRoot,BusinessError} from './business.mjs';
 import {taskForAgent} from './conversations.mjs';
 import {normalizeWorkPath} from './work-paths.mjs';
+import {bodyAssignment} from './body-assignments.mjs';
 
 const planningFiles={'body/写作指引.md':'guide','body/关键事实与承诺.md':'promises'};
-const chapterTools=new Set(['docx_section_create','docx_section_revise','docx_material_inject','docx_source_inject','docx_image_insert','docx_comment_add','docx_diagram_insert','docx_html_figure']);
+export const chapterTools=new Set(['docx_section_create','docx_section_revise','docx_material_inject','docx_source_inject','docx_image_insert','docx_comment_add','docx_diagram_insert','docx_html_figure']);
 const mutations=new Set([...chapterTools,'docx_section_repartition','docx_format_rule','write','edit','build_preparation','validate_body','docx_assemble_volume','publish_artifact','assemble_tender','outline_plan']);
 export const outlineAssignments=new Map();
 
@@ -26,11 +27,14 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
   return next();
  },{global:true});
  const guard=ctx.on('tools/execute',async(exec,next)=>{
-  if(!exec.agent||(!mutations.has(exec.name)&&!['read','read_image','glob','grep','review_basis','review_batch','save_review_batch','finish_review_report'].includes(exec.name))||(exec.name==='docx_format_rule'&&(!exec.arguments.target||exec.arguments.target==='read'))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
+  if(!exec.agent||(!mutations.has(exec.name)&&!['task','read','read_image','glob','grep','review_basis','review_batch','save_review_batch','finish_review_report'].includes(exec.name))||(exec.name==='docx_format_rule'&&(!exec.arguments.target||exec.arguments.target==='read'))||(exec.name==='build_preparation'&&(!exec.arguments.stage||exec.arguments.stage==='read')))return next();
   const tid=taskForAgent(exec.agent)??basename(exec.agent.session.header.cwd??''),cwd=join(dataRoot,'workspace',tid);
   if(!taskForAgent(exec.agent)&&resolve(exec.agent.session.header.cwd??'')!==resolve(cwd))return next();
+  const needsWritingStage=chapterTools.has(exec.name)||['docx_section_repartition','docx_assemble_volume'].includes(exec.name)||(exec.name==='validate_body'&&(exec.arguments.section==='body'||exec.arguments.section?.endsWith('.docx')));
+  const stageRequired='正文写入和本轮校验须先用ooo_bidpliot_run启动对应阶段；只读核验使用revise并显式read_only=true，不能用零散工具代替本轮权限与完成记账';
   const directoryPublish=exec.name==='assemble_tender'||(exec.name==='publish_artifact'&&exec.arguments.contract==='tender.directory/tender-response-docs@1');
-  let record;try{record=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'))}catch(e){if(e.code==='ENOENT'){if(directoryPublish)throw new BusinessError(409,'请先启动目录阶段并完成本轮分类与结构检查');return next()}throw e}
+  let record;try{record=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'))}catch(e){if(e.code==='ENOENT'){if(directoryPublish)throw new BusinessError(409,'请先启动目录阶段并完成本轮分类与结构检查');if(needsWritingStage)throw new BusinessError(409,stageRequired);return next()}throw e}
+  if(exec.name==='task'){if(record.read_only&&exec.arguments.subagent_type!=='tender-body-writer')throw new BusinessError(409,'只读核验只能派发正文读取校验，不能启动其他写作角色');return next()}
   if(directoryPublish&&record.kind!=='outline')throw new BusinessError(409,'目录发布只允许在本轮目录阶段完成检查后执行');
   if(record.kind==='outline'){
    let owner=exec.agent;
@@ -65,7 +69,7 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
    }
    return next();
   }
-  if(!['body','revise','build','guide','promises'].includes(record.kind))return next();
+  if(!['body','revise','build','guide','promises'].includes(record.kind)){if(needsWritingStage)throw new BusinessError(409,stageRequired);return next()}
   let agent=exec.agent;
   while(agent.session.id!==record.session_id&&agent.session.header.origin==='subagent'&&agent.session.header.parentSession){agent=ctx.agents.get(agent.session.header.parentSession);if(!agent)break}
   if(['read','read_image','glob','grep'].includes(exec.name)){
@@ -74,14 +78,22 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
    const access=await business(ctx,'asset_access',{task_id:tid,path:target.targetKey},{signal:exec.signal});
    const result=await next();
    if(access.asset&&!result?.isError)await business(ctx,'record_asset_read',{task_id:tid,session_id:exec.agent.session.id,asset:access.asset},{signal:exec.signal});
+   if(['read','read_image'].includes(exec.name)&&access.source&&!result?.isError)await business(ctx,'record_source_read',{task_id:tid,session_id:exec.agent.session.id,source:access.source},{signal:exec.signal});
    return result;
   }
   if(!agent||agent.session.id!==record.session_id||record.stopped_at)throw new BusinessError(409,'当前制作执行已变化或停止，未写入文件');
   if(record.preparation_error)throw new BusinessError(409,record.preparation_error);
+  const child=exec.agent.session.id!==record.session_id;
+  const assigned=child?await bodyAssignment(tid,exec.agent.session.id):null;
+  if(child&&(!assigned||assigned.status!=='active'||assigned.action_id!==record.action_id||assigned.parent_id!==record.session_id))throw new BusinessError(409,'写手没有本轮有效章节分配，未写入文件；请由主线程重新明确派发');
+  if(child&&!chapterTools.has(exec.name)&&!(exec.name==='validate_body'&&exec.arguments.section?.endsWith('.docx')))throw new BusinessError(409,'正文写手只处理已分配章节，不能修改共享准备、全局校验或合册');
   const previous=pending.get(tid)??Promise.resolve(),done=Promise.withResolvers();pending.set(tid,done.promise);
   await previous;
   try{
    exec.signal.throwIfAborted();
+   const latest=JSON.parse(await readFile(join(dataRoot,'actions',tid,'latest.json'),'utf8'));
+   if(latest.action_id!==record.action_id||latest.session_id!==record.session_id||latest.stopped_at)throw new BusinessError(409,'等待写入期间制作执行已变化或停止，未写入文件');
+   if(latest.read_only&&exec.name!=='validate_body')throw new BusinessError(409,'本轮为只读核验，不能写入正文、共享准备或合册；原稿保留');
    const state=await business(ctx,'state',{task_id:tid},{signal:exec.signal});
    if(!state.bidder?.confirmed||state.bidder.stale)throw new BusinessError(409,'投标主体信息尚未确认或已变化，请停止后重新核对制作信息');
    const prepared=state.build_preparation.guide==='ready'&&state.build_preparation.promises==='ready';
@@ -94,10 +106,12 @@ export function installExecutionGuard(ctx,reportPreparationProblem){
     if(!state.body_sections.some(s=>s.path===path&&state.body_files.includes(path)))throw new BusinessError(409,'归集来源须为本任务当前目录的已有正文');
    }else if(chapterTools.has(exec.name)||(exec.name==='validate_body'&&exec.arguments.section?.endsWith('.docx'))){
     if(!['body','revise','build'].includes(record.kind)||!prepared)throw new BusinessError(409,'请先完成并校验写作指引和关键事实与承诺，尚未写入章节');
+    if(record.kind==='revise'&&exec.name==='docx_section_create')throw new BusinessError(409,'局部修订阶段不能创建或重建正文；现稿保留，请读取现稿定向修订。重新生成应另行使用正文生成阶段，不能为清理批注重建文件');
     const raw=exec.name==='validate_body'?exec.arguments.section:exec.arguments.path??exec.arguments.dest;
     const relative=normalizeWorkPath(raw),path=relative.endsWith('.docx')?relative:relative+'.docx';
     const validationOnly=exec.name==='validate_body'&&record.kind==='build'&&state.body_sections.some(s=>s.path===path);
     if(!record.section_paths.includes(path)&&!validationOnly)throw new BusinessError(409,'仅允许写入本次指定章节，其他章节未改动');
+    if(child&&!assigned.section_paths.includes(path))throw new BusinessError(409,'仅允许操作该写手已分配章节，其他写手章节未改动');
     const target=await ctx.fs.resolve(join(cwd,'work',path),{cwd});
     const work=await ctx.fs.resolve(join(cwd,'work'),{cwd});
     if(target.targetKey!==join(work.targetKey,path))throw new BusinessError(409,'章节路径指向其他文件，未写入');

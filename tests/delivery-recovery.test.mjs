@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {fixture,find,questionInput,response} from './helpers/component-fixture.mjs';
 import {deliveryReady,actionSatisfied} from '../shared/delivery-status.js';
 const text=n=>Array.isArray(n)?n.map(text).join(''):n&&typeof n==='object'?text(n.props?.children):n==null||typeof n==='boolean'?'':String(n);
@@ -90,25 +91,26 @@ test('lost-response retries preserve first submission time and resolve against t
   return response(url.includes('/page-flow/')?flow:url.includes('/artifacts')?{artifacts:[]}:{files:[]});
  });
  const view=f.mount('ProjectWorkbench',{tid:'t',mode:'build',onBack(){},onMode(){}});
- const originalNow=Date.now;let now=100;Date.now=()=>now;
+ const originalNow=Date.now;let now=1000;Date.now=()=>now;
  try{
   await view.settle();
   const execute=()=>find(view,n=>n.props.execute&&n.props.exportVolume).props.execute;
   await execute()('guide');await view.settle();
-  assert.equal(f.api.useTaskNotices().items[0].submission.created_at,100);
-  now=300;await execute()('guide');await view.settle();
+  assert.equal(f.api.useTaskNotices().items[0].submission.created_at,1000);
+  now=3000;await execute()('guide');await view.settle();
   assert.equal(requests[0].request_id,requests[1].request_id,'Network retry must reuse request identity');
-  assert.equal(f.api.useTaskNotices().items[0].submission.created_at,100,'Same request retains its first submission time');
-  flow.execution={...failed('guide','admitted-original'),created_at:110,state:'completed'};
+  assert.equal(f.api.useTaskNotices().items[0].submission.created_at,1000,'Same request retains its first submission time');
+  const admittedId=createHash('sha256').update(requests[0].request_id).digest('hex');
+  flow.execution={...failed('guide',admittedId),created_at:1100,state:'completed'};
   window.dispatchEvent(new Event('ooo-bidpliot:changed'));await view.settle();
   assert.equal(f.api.useTaskNotices().items.length,0,'Original admitted success resolves the lost-response retry');
-  now=400;await execute()('outline');await view.settle();
+  now=4000;await execute()('outline');await view.settle();
   assert.notEqual(requests[1].request_id,requests[2].request_id,'Different intent starts a new request');
-  assert.equal(f.api.useTaskNotices().items[0].submission.created_at,400);
-  flow.execution={...failed('outline','old-outline'),created_at:350,state:'completed'};
+  assert.equal(f.api.useTaskNotices().items[0].submission.created_at,4000);
+  flow.execution={...failed('outline','old-outline'),created_at:3500,state:'completed'};
   window.dispatchEvent(new Event('ooo-bidpliot:changed'));await view.settle();
   assert.equal(f.api.useTaskNotices().items.length,1,'Old success cannot clear the different, newer submission');
-  flow.execution={...flow.execution,created_at:410};
+  flow.execution={...flow.execution,created_at:4100};
   window.dispatchEvent(new Event('ooo-bidpliot:changed'));await view.settle();
   assert.equal(f.api.useTaskNotices().items.length,0);
  }finally{Date.now=originalNow;view.unmount();f.close()}

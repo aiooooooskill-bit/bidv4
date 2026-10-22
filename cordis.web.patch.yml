@@ -1,0 +1,4 @@
+# 运行版 Web 使用显式重新加载；避免每页的 HMR SSE 占满 HTTP/1.1 连接池。
+- id: client-hmr
+  name: '@deepseek-ai/dsh-client-hmr'
+  disabled: true

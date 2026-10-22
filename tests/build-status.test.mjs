@@ -56,7 +56,9 @@ test('运行、失败、停止和完成按当前执行与真实准备状态判�
   flow.body_sections.forEach(section=>section.status='ready');flow.body_files=flow.body_sections.map(section=>section.path);flow.volume_states.forEach(volume=>volume.status='ready');
   assert.equal(text(state(view)),'标书已制作');assert.equal(find(view,n=>n.type==='button'&&n.props.children==='标书已制作').props.disabled,true);
   flow.build_preparation.guide='stale';assert.equal(text(state(view)),'本轮已结束','准备过期后不能沿用整本已制作状态');
-  assert.ok(find(view,n=>n.props.className==='preparation-summary'));assert.ok(find(view,n=>n.type==='button'&&n.props.children==='查看写作指引'));
+  assert.equal(nodes(view.render()).filter(n=>n.props['aria-label']==='写作准备').length,1);
+  assert.ok(!nodes(view.render()).some(n=>n.props.className==='preparation-summary'||n.type==='aside'));
+  assert.ok(find(view,n=>n.type==='button'&&text(n)==='补齐写作指引'));
  }finally{view.unmount();guard.unmount();f.close()}
 });
 

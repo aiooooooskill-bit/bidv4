@@ -34,6 +34,8 @@ def record_read(tid, session_id, asset):
 
 
 def attach_reads(tid, value, path, session_id, replace=False):
+    from .source_usage import attach
+    attach(tid, value, path, session_id, replace)
     from .bidder import row
     bidder = row(tid)
     if not bidder or not session_id:
@@ -65,6 +67,9 @@ def inherit_reads(tid, session_id, from_session_id, seed=False):
     from .bidder import require_confirmed
     with artifact_store.write_lock():
         value = build_state.read(tid)
+        from .source_usage import inherit
+        inherit(value, session_id, from_session_id, seed)
+        build_state.save(tid, value)
         reads = value.setdefault('asset_reads', {})
         target = reads.get(session_id)
         if seed and target is not None:

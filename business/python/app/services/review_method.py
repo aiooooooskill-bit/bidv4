@@ -21,10 +21,10 @@ CATEGORIES = tuple(LABELS[k] for k in _SECTIONS if k != 'clarifications')
 def method_version():
     root = Path(__file__).parents[1] / 'skills'
     paths = [root / 'tender-review/SKILL.md', root / '_shared/evidence-rules.md',
-             root / '_shared/response-guidelines.md', root / 'document-parse/SKILL.md',
+             root / '_shared/response-guidelines.md', root / '_shared/path-conventions.md', root / 'document-parse/SKILL.md',
              root / 'tender-analysis/SKILL.md', *sorted((root / 'tender-analysis/references').glob('*.md'))]
     hashes = {p.relative_to(root).as_posix(): page_flow.file_hash(p) for p in paths}
-    hashes.update({p.name: page_flow.file_hash(p) for p in [Path(__file__), Path(__file__).with_name('review.py'), Path(__file__).with_name('review_batches.py'), Path(__file__).with_name('review_schema.py')]})
+    hashes.update({p.name: page_flow.file_hash(p) for p in [Path(__file__), Path(__file__).with_name('review.py'), Path(__file__).with_name('review_batches.py'), Path(__file__).with_name('review_schema.py'), Path(__file__).with_name('financial_assertions.py'), Path(__file__).with_name('review_annotations.py')]})
     return page_flow.digest(hashes)
 
 def analysis_directory(tid, docs):
