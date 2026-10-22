@@ -7,7 +7,15 @@ if(process.env.BIDV4_FULL_FIXTURE!=='1')test(name,{timeout:360000},()=>runIsolat
 else test(name,{timeout:330000},async()=>{
  const host=await analysisFixture();
  try{
-  const {taskId,state}=await host.command('fullWorkflow');
+  const defaultTask=await host.command('fullWorkflow');
+  const defaultFinal=await host.command('nativeAnswer',{taskId:defaultTask.taskId});
+  assert.equal(defaultFinal.workflow.state,'completed');
+  assert.equal(defaultFinal.workflow.options.include_review,false);
+  assert.deepEqual(defaultFinal.workflow.completed,['analyse','outline','build']);
+  const defaultEvidence=await host.command('projectEvidence',{taskId:defaultTask.taskId});
+  assert.ok(defaultEvidence.records.every(r=>r.kind!=='review'),'Default workflow must never start review');
+  assert.ok(!defaultEvidence.events.some(e=>e.type==='tool/call'&&e.data.name==='finish_review_report'));
+  const {taskId,state}=await host.command('fullWorkflow',{include_review:true});
   assert.equal(state.workflow.state,'needs_input',JSON.stringify(state.workflow));assert.equal(state.execution.kind,'build');assert.deepEqual(state.workflow.completed,['analyse','outline']);
   const session=state.execution.session_id,question=state.execution.questions[0];
   const reply=await host.api('/page-flow/'+taskId+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:session,call_ids:[question.callId],batches:[{call_id:question.callId,answers:[{id:'term',selected:['三年']}]}]})});assert.equal(reply.status,200,await reply.text());
@@ -34,7 +42,7 @@ else test(name,{timeout:330000},async()=>{
   const beforeModel=await(await host.api('/page-flow/'+taskId)).json();
   const changedModel=await host.api('/page-flow/'+taskId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'analyse',request_id:crypto.randomUUID(),input_version:beforeModel.input_versions.analyse,main_file:beforeModel.source_selection.main,supplements:[]})});assert.equal(changedModel.status,202);
   const actualModel=await host.command('settleProject',{taskId});assert.equal(actualModel.state.execution.state,'completed');assert.equal(actualModel.state.session_id,session);assert.equal(actualModel.state.execution.model.model,'fixture-second');assert.equal(actualModel.lastRequest.model,'fixture-second','Recorded model and the actual provider request must match the native session selection');
-  const nativeTask=await host.command('fullWorkflow');assert.equal(nativeTask.state.workflow.state,'needs_input');const nativeSession=nativeTask.state.session_id;
+  const nativeTask=await host.command('fullWorkflow',{include_review:true});assert.equal(nativeTask.state.workflow.state,'needs_input');const nativeSession=nativeTask.state.session_id;
   const nativeCompleted=await host.command('nativeAnswer',{taskId:nativeTask.taskId});assert.equal(nativeCompleted.workflow.state,'completed',JSON.stringify(nativeCompleted.workflow));assert.equal(nativeCompleted.session_id,nativeSession,'Native question-card answers continue the same main conversation');
   const stoppedTask=await host.command('analysisStart',{workflow:true});
   while(!(await host.command('analysisState')).streaming)await new Promise(resolve=>setTimeout(resolve,80));
