@@ -5,10 +5,12 @@ import {tmpdir} from 'node:os';
 import {dirname,join,relative,resolve} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
+import semver from 'semver';
 
 // This verifier runs the installed application's real immutable ASAR runtime.
 // Its profile, credentials directory, plugin installation and data are temporary.
 const project=fileURLToPath(new URL('..',import.meta.url));
+const projectManifest=JSON.parse(await readFile(join(project,'package.json'),'utf8'));
 const argv=process.argv.slice(2),option=name=>{const i=argv.indexOf(name);return i<0?undefined:argv[i+1]};
 for(const arg of argv.filter(arg=>arg.startsWith('--')))assert.ok(['--app','--workdir','--report','--package','--keep'].includes(arg),'Unknown option: '+arg);
 const packagePath=option('--package')?await realpath(resolve(option('--package'))):undefined;
@@ -23,7 +25,7 @@ const home=join(workspace,'dsh-home'),profile=join(home,'profiles/desktop');
 const installation=packagePath?join(profile,'node_modules/ooo-bidpliot'):join(workspace,'fixed-install');
 const reportPath=resolve(option('--report')??join(project,'docs/evidence/deepseek-021-desktop-'+(packagePath?'package':'host')+'-20261019.json'));
 const environment=Object.fromEntries(Object.entries(process.env).filter(([name])=>!/KEY|SECRET|TOKEN|PASSWORD|^NODE_OPTIONS$|^NODE_PATH$|^DSH_|^ELECTRON_/i.test(name)));
-Object.assign(environment,{DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1',DSH_CLIENT_VERSION:'0.2.1-rc.2'});
+Object.assign(environment,{DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1'});
 const electronEnvironment={...environment,ELECTRON_RUN_AS_NODE:'1',DSH_DESKTOP_NODE_EXECUTABLE:electron};
 const redact=value=>String(value).replace(/([?&]token=)[^\s)"']+/g,'$1[redacted]').replace(/(dsh_session=)[^;\s]+/g,'$1[redacted]');
 const report={releaseVersion:JSON.parse(await readFile(join(project,'package.json'),'utf8')).version,installMode:packagePath?'package':'link',...packagePath?{packagePath}:{},startedAt:new Date().toISOString(),workspace,installation,home,app,hostEntry:desktopHost,stages:[],passed:false};
@@ -82,14 +84,16 @@ try{
  await stage('已安装客户端版本与真实启动入口',async()=>{
   await access(electron);const code='const f=require("node:fs");const a=JSON.parse(f.readFileSync(process.argv[1],"utf8"));const c=JSON.parse(f.readFileSync(process.argv[2],"utf8"));const l=JSON.parse(f.readFileSync(process.argv[3],"utf8"));console.log(JSON.stringify({dsh:a.version,cordis:c.version,loader:l.version,node:process.versions.node,electron:process.versions.electron}))';
   const versions=JSON.parse(await run(electron,['--expose-internals','-e',code,join(runtime,'node_modules/@deepseek-ai/dsh/package.json'),join(runtime,'node_modules/@deepseek-ai/cordis/package.json'),join(runtime,'node_modules/@deepseek-ai/cordis-plugin-loader/package.json')],{env:electronEnvironment}));
-  assert.deepEqual({dsh:versions.dsh,cordis:versions.cordis,loader:versions.loader},{dsh:'0.2.1-rc.2',cordis:'4.0.5',loader:'1.0.6'});report.versions=versions;return versions;
+  assert.ok(semver.satisfies(versions.dsh,projectManifest.engines.dsh,{includePrerelease:true}),'Installed App must satisfy '+projectManifest.engines.dsh);
+  assert.deepEqual({cordis:versions.cordis,loader:versions.loader},{cordis:projectManifest.peerDependencies['@deepseek-ai/cordis'],loader:projectManifest.peerDependencies['@deepseek-ai/cordis-plugin-loader']});
+  environment.DSH_CLIENT_VERSION=versions.dsh;electronEnvironment.DSH_CLIENT_VERSION=versions.dsh;report.versions=versions;return versions;
  });
  await stage(packagePath?'干净发行包不含用户数据及旧核心':'干净交付目录仅安装业务依赖和独立Python',async()=>{
   if(packagePath){
    const bytes=await readFile(packagePath),files=(await run('tar',['-tzf',packagePath])).trim().split('\n');
    assert.ok(files.length>100);assert.ok(!files.some(path=>/(^|\/)(?:node_modules|data|backups|\.venv|\.git)(?:\/|$)/.test(path)),'Release archive must contain source and built assets without user data or runtime environments');
    const manifestPath=files.find(path=>path.split('/').filter(Boolean).length===2&&path.endsWith('/package.json'));assert.ok(manifestPath);
-   const manifest=JSON.parse(await run('tar',['-xOf',packagePath,manifestPath]));assert.equal(manifest.name,'ooo-bidpliot');assert.equal(manifest.version,report.releaseVersion);assert.equal(manifest.engines.dsh,'0.2.1-rc.2');assert.ok(!Object.keys(manifest.dependencies).some(name=>name.startsWith('@deepseek-ai/')));
+   const manifest=JSON.parse(await run('tar',['-xOf',packagePath,manifestPath]));assert.equal(manifest.name,'ooo-bidpliot');assert.equal(manifest.version,report.releaseVersion);assert.equal(manifest.engines.dsh,projectManifest.engines.dsh);assert.ok(!Object.keys(manifest.dependencies).some(name=>name.startsWith('@deepseek-ai/')));
    return {packagePath,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),files:files.length,version:manifest.version,containsUserData:false,containsLocalOfficialPackages:false};
   }
   const exported=await run(process.execPath,[join(project,'scripts/delivery.mjs'),'export',installation]);

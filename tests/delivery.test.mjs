@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 import {checkInstallation} from '../server/installation.mjs';
+import {evaluatePluginCompatibility} from '@deepseek-ai/dsh-app-boot';
 const root=fileURLToPath(new URL('..',import.meta.url));
 async function command(script,args=[]){return new Promise((resolve,reject)=>{const child=spawn(process.execPath,[script,...args],{stdio:['ignore','pipe','pipe']});let output='';child.stdout.on('data',b=>{output+=b});child.stderr.on('data',b=>{output+=b});child.on('error',reject);child.on('close',code=>resolve({code,output}))})}
 async function fixture(fn){const dir=await mkdtemp(join(tmpdir(),'ooo-bidpliot-delivery-unit-'));try{await fn(dir)}finally{await rm(dir,{recursive:true,force:true})}}
@@ -53,6 +54,19 @@ test('回滚自身被文件系统拒绝时，保留唯一 data 和原代码以�
  try{assert.equal(result.code,1);assert.match(result.output,/更新回滚未完成.*已保留可恢复文件/);assert.ok(backup&&stage);assert.equal(await readFile(join(dir,backup,'original.mjs'),'utf8'),'original code');assert.equal(await readFile(join(dir,stage,'data/app.db'),'utf8'),'only database')}finally{if(backup)await chmod(join(dir,backup),0o700)}
 }));
 test('目录检查清楚拒绝不受支持的 dsh 版本和空环境',()=>fixture(async dir=>{
- await writeFile(join(dir,'package.json'),JSON.stringify({name:'ooo-bidpliot',dsh:{bundle:{patch:'cordis.patch.yml'}},peerDependencies:{'@deepseek-ai/dsh':'0.2.1-rc.2'}}));
+ const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
+ await writeFile(join(dir,'package.json'),JSON.stringify({name:'ooo-bidpliot',dsh:{bundle:{patch:'cordis.patch.yml'}},engines:manifest.engines}));
+ await mkdir(join(dir,'node_modules'));await symlink(join(root,'node_modules/semver'),join(dir,'node_modules/semver'),process.platform==='win32'?'junction':'dir');
  const report=await checkInstallation(dir,{probePython:false,dshVersion:'0.3.0'});assert.equal(report.ok,false);assert.ok(report.errors.some(message=>message.includes('dsh 版本不匹配')));assert.ok(report.checks.some(check=>check.name==='Python环境'&&!check.ok));assert.ok(report.checks.some(check=>check.name==='dist/client.js'&&!check.ok));assert.equal(report.version,null);
 }));
+
+test('官方门禁与doctor一致接受同系列后续DSH，拒绝旧版和下一系列',async()=>{
+ const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
+ for(const [version,supported] of [['0.2.1-rc.3',true],['0.2.1-rc.4',true],['0.2.1',true],['0.2.2',true],['0.2.1-rc.2',false],['0.3.0-rc.1',false],['0.3.0',false]]){
+  const report=await checkInstallation(root,{probePython:false,dshVersion:version});
+  assert.equal(report.checks.find(check=>check.name==='dsh版本').ok,supported,version+' doctor');
+  assert.equal(evaluatePluginCompatibility(manifest,{},version)===undefined,supported,version+' official engines');
+  const peersOnly={...manifest,engines:{node:manifest.engines.node}};
+  assert.equal(evaluatePluginCompatibility(peersOnly,{},version)===undefined,supported,version+' official peers');
+ }
+});

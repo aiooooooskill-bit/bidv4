@@ -45,11 +45,11 @@ export function registerChatTools(ctx,link){
    for(const item of args.files){
     const ref=attachments.find(a=>a.attachmentId===item.attachment_id);if(!ref)throw new BusinessError(422,'附件不属于本次对话');
     const name=basename(item.name??ref.name??('附件-'+ref.attachmentId.slice(0,8)+'.'+(ref.mediaType?.split('/')[1]??'png')));
-    if(!['.docx','.pdf','.png','.jpg','.jpeg','.gif','.webp'].includes(extname(name).toLowerCase()))throw new BusinessError(415,'附件格式不支持');
+    if(!['.docx','.pdf','.xls','.xlsx','.png','.jpg','.jpeg','.gif','.webp'].includes(extname(name).toLowerCase()))throw new BusinessError(415,'附件格式不支持');
     if(item.purpose!=='bid'&&ref.bytes>100*1024*1024)throw new BusinessError(413,'招标来源文件超过100MB上限');
     await mkdir(join(dataRoot,'uploads'),{recursive:true});const directory=await mkdtemp(join(dataRoot,'uploads/chat-'));
     try{const path=join(directory,'file');if(ref.type==='image')await writeFile(path,(await ctx.attachments.readImage(ref)).data);else await pipeline(ctx.attachments.readFileStream(ref,exec.signal),createWriteStream(path));
-     await business(ctx,'route',{method:'POST',path:'/files',query:{task_id:tid,...(item.purpose==='bid'?{purpose:'bid'}:{})},upload:{path,filename:name}},{signal:exec.signal});imported.push(name);
+     await runtime.sourceFile('POST','/files',{task_id:tid,...(item.purpose==='bid'?{purpose:'bid'}:{})},{path,filename:name},exec.signal);imported.push(name);
     }finally{await rm(directory,{recursive:true,force:true})}
    }
    return {task_id:tid,imported};
@@ -64,12 +64,11 @@ export function registerChatTools(ctx,link){
   task_id:{type:'string'},kind:{type:'string',enum:['analyse','outline','guide','promises','build','body','revise','review','full']},resume:{type:'boolean'},include_review:{type:'boolean',description:'仅用于full。用户明确选择标书审核时为true，默认false；恢复流程保留原选择。'},main_file:{type:'string'},supplements:{type:'array',items:{type:'string'}},page_target:{oneOf:[{type:'integer'},{type:'null'}]},numbering:{type:'string',enum:['decimal','chapter','gov','none']},sections:{type:'array',description:'仅用status返回的body_sections条目的volume和title原值选择有独立正文的章节，不猜册名、不拆祖先路径为额外章节。',items:{type:'object',properties:{volume:{type:'string'},title:{type:'string'}},required:['volume','title'],additionalProperties:false}},instruction:{type:'string'},read_only:{type:'boolean',description:'revise仅做读取核验、保留原稿时显式传true；此权限同时约束主线程和写手。普通定向修改不传或false。'},
  },['task_id','kind'],async(args,exec)=>{
   const tid=args.task_id;await runtime.bindConversation(tid,exec.agent);
-  if(args.kind==='stop')throw new BusinessError(409,'请使用原生停止按钮停止当前执行');
-  // Settling waits for this Agent to become idle; awaiting it from its own turn deadlocks.
   if(runtime.executionOwners.get(tid)?.waitingForIdle&&runtime.executionOwners.get(tid)?.agent===exec.agent)throw new BusinessError(409,'当前阶段仍在本会话执行，请完成当前阶段并结束本轮；不要重复调用run。自动流程会继续后续阶段。');
   if(args.kind==='full'){
    if(args.read_only)throw new BusinessError(422,'只读核验使用revise阶段，不能启动完整制作');
-   const workflow=await runtime.workflows.start(tid,{...args,agent:exec.agent});
+   const state=await runtime.state(tid);
+   const workflow=await runtime.workflows.start(tid,{...args,input_versions:state.input_versions,agent:exec.agent});
    const record=workflow.state==='running'?(await runtime.latestRecord(tid,workflow.stage))?.record:null;
    return {...await projectStatus(ctx,tid,link),...(record&&record.action_id===workflow.action_id?{instructions:record.prompt}:{})};
   }

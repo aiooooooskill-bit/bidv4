@@ -2,6 +2,7 @@ import {deliveryReady} from '../../shared/delivery-status.js';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {join} from 'node:path';
 import {randomUUID} from 'node:crypto';
+import {isDeepStrictEqual} from 'node:util';
 import {dataRoot,BusinessError} from './business.mjs';
 const stages=['analyse','outline','build','review'];
 const incompleteReview=state=>state.execution?.kind==='review'&&state.execution.state==='failed';
@@ -11,25 +12,36 @@ async function save(tid,value){await mkdir(join(dataRoot,'workflows'),{recursive
 export class Workflows{
  constructor(runtime){this.runtime=runtime;this.jobs=new Map();this.records=new Map();this.starts=new Map();this.resumptions=new Map()}
  active(tid){return this.jobs.has(tid)}
+ validateInputs(state){if(!state.source_selection.main)throw new BusinessError(409,'请先选择或上传本项目的招标主文件');if(!state.bidder?.confirmed)throw new BusinessError(409,'请先确认本项目投标主体、签字代表和签署日期');if(state.bidder.stale)throw new BusinessError(409,'主体资料已变化，请重新核对制作信息')}
+ async plan(tid){const state=await this.runtime.state(tid),steps=[];for(const kind of stages){let reusable=false;if(['analyse','outline'].includes(kind)){try{await this.runtime.requireCurrent(tid,kind,state);reusable=true}catch(e){if(e.status!==409)throw e}}else reusable=kind==='build'?deliveryReady(state):state.review.status==='reviewed';steps.push({kind,reusable})}return {steps,input_versions:state.input_versions}}
  async snapshot(tid){const record=await read(tid);if(record?.state==='running'&&!this.active(tid))return {...record,state:'interrupted',error:'自动流程已中断，已有成果保留，可继续流程。'};return record}
- start(tid,options={}){if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,options).finally(()=>{if(this.starts.get(tid)===pending)this.starts.delete(tid)});this.starts.set(tid,pending);return pending}
+ start(tid,options={}){if(!options.input_versions||typeof options.input_versions!=='object'||Array.isArray(options.input_versions))throw new BusinessError(422,'请先读取并确认自动完成计划');if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,options).finally(()=>{if(this.starts.get(tid)===pending)this.starts.delete(tid)});this.starts.set(tid,pending);return pending}
+ continueAfterAnswer(tid){if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,{resume:true}).finally(()=>{if(this.starts.get(tid)===pending)this.starts.delete(tid)});this.starts.set(tid,pending);return pending}
  async startOnce(tid,options={}){
   this.runtime.assertOpen();
   if(this.active(tid))return this.snapshot(tid);
-  let record=await read(tid);
-  if(!options.resume||!record)await this.runtime.assertIdle(tid);
-  else{const current=await this.runtime.state(tid);if(['running','needs_input'].includes(current.execution?.state)&&current.execution.action_id!==record.action_id)throw new BusinessError(409,'项目已有其他执行');if(current.execution?.state==='needs_input')return record}
+  this.runtime.admit(tid,'当前项目正在提交');
+  let record,ready;
+  try{
+  record=await read(tid);
+  const state=!options.resume||!record?await this.runtime.idleState(tid):await this.runtime.state(tid);
+  // User starts are bound to the displayed plan. Answer continuations call
+  // startOnce internally and continue the already accepted workflow.
+  if(options.input_versions&&!isDeepStrictEqual(options.input_versions,state.input_versions))throw new BusinessError(409,'自动完成依据已变化，请关闭后重新确认流程');
+  if(options.resume&&record){if(['running','needs_input'].includes(state.execution?.state)&&state.execution.action_id!==record.action_id)throw new BusinessError(409,'项目已有其他执行');if(state.execution?.state==='needs_input')return record}
+  this.validateInputs(state);
   if(options.resume&&record&&!['completed','stopped'].includes(record.state)){
-   const state=await this.runtime.state(tid);
    const sameReviewBasis=incompleteReview(state)&&(await this.runtime.latestRecord(tid,'review'))?.record.input_version===state.input_versions.review&&(await this.runtime.reviewProgress(tid,record.session_id)).accepted>0;
    if(record.session_id&&(state.execution?.action_id!==record.action_id||state.execution.state==='stopped'||(state.execution.state==='failed'&&!sameReviewBasis)))record.session_id=null;
    for(let index=0;index<record.index;index++){const stage=stages[index];let valid=true;if(['analyse','outline'].includes(stage)){try{await this.runtime.requireCurrent(tid,stage,state)}catch(e){if(e.status!==409)throw e;valid=false}}if(stage==='build')valid=deliveryReady(state);if(!valid){record.index=index;record.completed=record.completed.slice(0,index);record.session_id=null;break}}
    if(!record.session_id){record.attempt=(record.attempt??0)+1;record.payload=null}
   }else record={id:randomUUID(),state:'running',index:0,completed:[],options:{page_target:options.page_target??null,numbering:options.numbering??'decimal',include_review:options.include_review===true},session_id:null,attempt:0};
   record.state='running';delete record.error;await save(tid,record);
-  this.records.set(tid,record);const ready=Promise.withResolvers();const job=this.run(tid,record,options.agent,ready).finally(()=>{this.jobs.delete(tid);this.records.delete(tid)});this.jobs.set(tid,job);
+  this.records.set(tid,record);ready=Promise.withResolvers();const job=Promise.resolve().then(()=>this.run(tid,record,options.agent,ready)).finally(()=>{this.jobs.delete(tid);this.records.delete(tid)});this.jobs.set(tid,job);
   // Both entries own the same job; chat execution continues in its current turn.
-  void job.catch(()=>{});await ready.promise;return {...record};
+  void job.catch(()=>{});
+  }finally{this.runtime.release(tid)}
+  await ready.promise;return {...record};
  }
  resumeAfter(tid,agent){
   const settlement=this.runtime.settling.get(tid),current=this.resumptions.get(tid);

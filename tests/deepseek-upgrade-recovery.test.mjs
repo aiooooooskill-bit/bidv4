@@ -60,7 +60,7 @@ else test(name,{timeout:160000},async()=>{
   assert.deepEqual(restored.events.slice(0,checkpoint.events.length),checkpoint.events,'SIGKILL recovery retains the complete durable parent prefix');
   assert.deepEqual(await fileHashes(taskId),saved,'Opening a crashed task cannot overwrite its existing files');
   await host.command('resumeExistingBuild');
-  const resume=await host.api('/page-flow/'+taskId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({resume:true})});assert.equal(resume.status,202,await resume.text());
+  const resume=await host.api('/page-flow/'+taskId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({resume:true,input_versions:(await(await host.api('/page-flow/'+taskId+'/workflow-plan')).json()).input_versions})});assert.equal(resume.status,202,await resume.text());
   const final=await host.command('waitWorkflow',{taskId});
   assert.equal(final.workflow.state,'completed',JSON.stringify({workflow:final.workflow,errors:final.fixture_errors}));assert.equal(final.session_id,sessionId);assert.equal(final.review.status,'reviewed');assert.equal(final.volume_states[0].status,'ready');
   const retained=await fileHashes(taskId);for(const [path,digest]of Object.entries(saved))assert.equal(retained[path],digest,'Resume validates and reuses '+path);

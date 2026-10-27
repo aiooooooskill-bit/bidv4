@@ -1,4 +1,6 @@
 [
+  {"method":"PATCH","path":"/tasks/{tid}","module":"projects","function":"rename_project","status":200},
+  {"method":"GET","path":"/files/{name}/excel","module":"files","function":"preview_excel","status":200},
   {
     "method": "POST",
     "path": "/files",

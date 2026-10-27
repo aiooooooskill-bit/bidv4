@@ -67,7 +67,8 @@ def test_deleting_selected_source_keeps_state_readable_and_invalidates_outputs(t
     asyncio.run(files.delete_file('main.txt', tid))
     current = page_flow.input_versions(tid)
     assert all(current[k] != before[k] for k in current)
-    assert page_flow.source_basis(tid)['sources'] == {'main.txt': None}
+    assert page_flow.source_basis(tid)['sources'] == {}
+    assert page_flow.source_selection(tid)['main'] == ''
     # Exercise the actual page-state runner, not just the version helper.
     result = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / 'runner.py')],
                             input=json.dumps({'operation': 'state', 'args': {'task_id': tid}, 'data_root': os.environ['DATA_DIR']}),

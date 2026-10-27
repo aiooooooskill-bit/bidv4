@@ -1,6 +1,6 @@
 # dsh 接入契约
 
-锁定本机 `@deepseek-ai/dsh 0.2.1-rc.2`，接口依据随包源码与类型，来源仓库为 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)。
+宿主支持范围为 `>=0.2.1-rc.3 <0.3.0-0`；`engines.dsh`、DSH peer 与 doctor 使用同一范围，候选版本参与比较。开发 SDK 固定为 `@deepseek-ai/dsh 0.2.1-rc.3`，接口依据随包源码与类型，来源仓库为 [deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)。支持范围不等于每个未来版本已经验收。
 
 - `cordis.patch.yml`注册页面服务，业务运行时注册唯一客户预设 `ooo-bidpliot`（定义位于 `server/native/preset.mjs`），包含原角色方法、文件／搜索／技能／具体提问及原Python业务工具。没有独立执行或审查预设。
 - 正式服务与`cordis.patch.yml`均声明`webServer`、`connection`、`agents`、`llm`、`agentDefaultModel`、`subprocess`、`attachments`依赖。`/api/bidv4`由当前插件处理，经`connection.admit`验证dsh登录；没有引擎HTTP代理。
@@ -9,7 +9,7 @@
 - 业务执行现在参与宿主官方事件策略与落盘屏障，不再建立独立事件总线。插件卸载停止自己发起的工作并释放所持句柄，宿主保留原生历史与会话生命周期。
 - 文件预设显式依赖`attachments`与`llm`，保证官方`read_image`注册；OCR只允许该工具，使用父级provider/model。原图片转写提示、PDF分页和转换文件契约保留。
 - 主会话与原有子任务均位于宿主当前配置的官方会话存储；聊天附件复用宿主配置的`DSH_HOME/attachments/v1`，不建立第二个私有附件库；业务输出位于各项目`work`。fs默认完整访问，业务工具落盘仍按项目/章节契约。
-- 业务数据根目录固定为实际插件安装目录的 `data/`，Node 通过 `data_root` 传给 Python `DATA_DIR`。项目文件在 `data/workspace/<task_id>/`，共享公司资料与素材在 `workspace/knowledge/`、`workspace/materials/`，用户 Word 版式在 `data/templates/`，内置版式及技能位于安装目录的 `business/python/app/`。主会话、页面动作与目录／正文子任务共用 `taskPathContext` 生成的任务、全局工作区和技能绝对路径；普通文件工具使用绝对路径，DOCX 等业务参数按各自相对路径契约传入，详见 [文件路径约定](../business/python/app/skills/_shared/path-conventions.md)。
+- 业务数据根目录为安装树旁的独立 `ooo-bidpliot-data/`，插件内 `data/` 只是符号链接或 junction 入口，Node 通过 `data_root` 传给 Python `DATA_DIR`。项目文件在 `data/workspace/<task_id>/`，共享公司资料与素材在 `workspace/knowledge/`、`workspace/materials/`，用户 Word 版式在 `data/templates/`，内置版式及技能位于安装目录的 `business/python/app/`。主会话、页面动作与目录／正文子任务共用 `taskPathContext` 生成的任务、全局工作区和技能绝对路径；普通文件工具使用绝对路径，DOCX 等业务参数按各自相对路径契约传入，详见 [文件路径约定](../business/python/app/skills/_shared/path-conventions.md)。
 - 目录 `task` 完成后返回 JSON 文本 `{response_file, fragment_path, summary}`；`fragment_path` 直接沿用 Python `outline_dispatch` 的派发路径，主线程按原册序读取并合并。文件名清洗与哈希仍只由现有 `outline_contract.fragment_path` 计算，主线程不按册名重建路径，正文子任务继续返回正文摘要。
 - 本地子Agent失败时，插件读取公开`localAgent`终态日志补足结果中缺失的诊断；目录/正文、OCR及知识整理均保留具体原因。
 - 页面状态投影为`running/needs_input/completed/failed/stopped`。具体选项按session_id、call_ids与结构化batches对账；单阶段停止请求同时校验 session_id/action_id，全流程停止校验 workflow_id，整批验证后提交官方`userQuestions.answer`。结束轮次却缺少阶段必需文件按失败展示。
@@ -25,10 +25,10 @@
 - 冷历史可以由官方控制器恢复一个空闲 Agent，以保留原生服务能力；查看不会派发模型，也不创建业务动作。业务运行时复用已恢复的同一 Agent。此前私有日志不自动迁移。
 - 客户端继续使用原 sidebar/footer/overlay 扩展点，工作台的自动流程入口与报告/文件展示复用现有组件。宿主会话目录、活动时间和执行状态变化时通知工作台刷新项目；逐字流、投影与引用计数更新不触发业务读取。执行中的工作台继续按既有周期读取进度，业务 Agent 和页面显示同一份真实数据。
 
-随包依据：`dsh-agent-default-model`、`dsh-agent-preset-registry`、`dsh-subagent`、`dsh-subagent-spawn-in-process`、`dsh-session-persistence-jsonl`、`dsh-session-checkpoint-policy`、`dsh-attachment-local`、`dsh-tool-fs`、`dsh-tool-ask-user`。使用未修改的官方`dsh-scope@0.2.1-rc.2`；本地vendor覆盖和依赖override已取消，不保留替换加载器或运行时补丁。
+随包依据：`dsh-agent-default-model`、`dsh-agent-preset-registry`、`dsh-subagent`、`dsh-subagent-spawn-in-process`、`dsh-session-persistence-jsonl`、`dsh-session-checkpoint-policy`、`dsh-attachment-local`、`dsh-tool-fs`、`dsh-tool-ask-user`。开发使用未修改的官方`dsh-scope@0.2.1-rc.3`，部署使用范围内宿主提供的组件；本地vendor覆盖和依赖override已取消，不保留替换加载器或运行时补丁。
 
 当前工程验证见 [合入验收](MERGE-ACCEPTANCE.md)。双插件整理按用户决定暂缓。
 
 0.2.1 子任务使用 `startActivation` 和 `childId`。四种内部角色使用官方 spawn provider 的命名实例，通过官方持久 descriptor.provider 恢复角色，继续只公开一个 `ooo-bidpliot` 预设。Agent 作用域的角色提示与工具白名单在创建/冷恢复时重装。父调用取消后显式 dispose 并等待子任务收尾；目录写入约束在派发前按保留的 childId 注册。阶段工具白名单必须在第一条模型请求前完成激活。
 
-官方组件只声明为宿主 peer，开发 SDK 提供独立目录验证环境；自有运行依赖保留在 dependencies。doctor 检验 engines.dsh 与 Cordis/loader 的精确版本，浏览器 React/客户端注入模块不作 Node 包必需检查。0.2.0 合成会话只作为只读原始字节的恢复测试材料，不提供旧宿主运行兼容。
+官方组件只声明为宿主 peer，开发 SDK 提供独立目录验证环境；自有运行依赖保留在 dependencies。doctor 使用 semver 检验 engines.dsh 范围，开启 includePrerelease，与官方门禁一致；Cordis/loader 仍按各自精确 peer 检查，浏览器 React/客户端注入模块不作 Node 包必需检查。0.2.0 合成会话只作为只读原始字节的恢复测试材料，不提供旧宿主运行兼容。

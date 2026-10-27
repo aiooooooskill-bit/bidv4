@@ -144,13 +144,15 @@ def get_task(tid: str) -> dict | None:
         conn.close()
     return dict(row) if row else None
 
-def rename_task(tid: str, title: str) -> dict:
+def rename_task(tid: str, title: str, *, previous_title: str) -> dict:
     title = (title or '').strip()
     if not title:
         raise ValueError('任务名不能为空')
     conn = _conn()
     try:
-        conn.execute('UPDATE tasks SET title=? WHERE id=?', (title, tid))
+        updated = conn.execute('UPDATE tasks SET title=? WHERE id=? AND title=?', (title, tid, previous_title))
+        if updated.rowcount != 1:
+            raise ValueError('项目名称已变化，请刷新后重新编辑')
     finally:
         conn.close()
     return {'id': tid, 'title': title}

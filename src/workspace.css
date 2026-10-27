@@ -199,3 +199,40 @@
 .bp-root .workflow-warning{margin-top:12px;padding:10px 12px;color:var(--bid-color-warning-text);background:var(--bid-color-warning-bg);border:1px solid var(--bid-color-warning-border);border-radius:6px;font-size:13px;display:flex;gap:8px}
 .bp-root .workflow-summary{font-size:12px;color:var(--bid-color-text-muted);margin:16px 0 0}
 .bp-root .workflow-actions{border-top:1px solid var(--bid-color-border);padding:16px 24px;display:flex;justify-content:flex-end;gap:10px}
+
+/* Project sources: management stays in a dialog; original viewers keep their layout. */
+.bp-root .source-toolbar>select{flex:1;width:auto;min-width:100px}
+.bp-root .source-toolbar>.bp-btn{flex:none;white-space:nowrap}
+.bp-root .project-files-content{padding:18px;font-size:13px}
+.bp-root .project-main-choice{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.bp-root .project-main-choice>select{flex:1;min-width:0}
+.bp-root .project-file-row{display:flex;align-items:flex-start;gap:10px;padding:14px 0;border-top:1px solid var(--bid-color-border)}
+.bp-root .project-file-row>input{margin-top:5px;flex:none}
+.bp-root .project-file-info{flex:1;min-width:0}
+.bp-root .project-file-info>div{display:flex;gap:9px;align-items:center;flex-wrap:wrap;color:var(--bid-color-text-muted);font-size:12px;margin-top:5px}
+.bp-root .project-file-name{font:inherit;color:var(--bid-color-text);border:0;background:none;text-align:left;padding:0;overflow-wrap:anywhere;cursor:pointer}
+.bp-root .project-file-actions{display:flex;gap:6px;flex:none}
+.bp-root .project-file-error{color:var(--bid-color-error-text)}
+.bp-root .excel-preview{display:flex;flex-direction:column;min-width:0;min-height:0;flex:1}
+.bp-root .excel-toolbar{padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--bid-color-border);font-size:12px}
+.bp-root .excel-toolbar>strong{min-width:0;overflow-wrap:anywhere}
+.bp-root .excel-table{overflow:auto;padding:12px;min-height:0;flex:1}
+.bp-root .excel-table table{border-collapse:collapse;font-size:12px;width:max-content;min-width:100%}
+.bp-root .excel-table th,.bp-root .excel-table td{border:1px solid var(--bid-color-border);padding:8px 10px;text-align:left;min-width:48px;max-width:420px;white-space:pre-wrap;overflow-wrap:anywhere;vertical-align:top}
+.bp-root .excel-table th{background:var(--bid-color-page);font-weight:500}
+.bp-root .excel-table td[data-warning=true]{background:var(--bid-color-warning-bg);color:var(--bid-color-warning-text)}
+.bp-root .excel-notes{padding:10px 12px;font-size:12px;color:var(--bid-color-text-muted);border-top:1px solid var(--bid-color-border);max-height:160px;overflow:auto}
+.bp-root .excel-notes p{color:var(--bid-color-warning-text);margin:6px 0}
+.bp-root .workflow-bidder-notice{margin:16px 20px 0;padding:10px 12px;background:var(--bid-color-warning-bg);color:var(--bid-color-warning-text);font-size:13px}
+.bp-root .workflow-plan-step{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--bid-color-border)}
+.bp-root .workflow-plan-step>div{flex:1}
+.bp-root .workflow-plan-step p{font-size:12px;color:var(--bid-color-text-muted);margin:4px 0 0}
+.bp-root .workflow-plan-step[data-current=true]>.workflow-number{background:var(--bid-color-primary);color:var(--bid-color-on-primary)}
+.bp-root .project-title-editor{position:relative;display:flex;align-items:flex-start;gap:6px;min-width:0}
+.bp-root .project-title-editor>.bp-tile-title{flex:1;min-width:0}
+.bp-root .project-title-edit{position:relative;z-index:1;flex:none;background:none;border:0;padding:5px;color:var(--bid-color-text-muted);font:inherit;cursor:pointer;min-width:28px}
+.bp-root .project-title-editor:has(>input){display:block}
+.bp-root .project-title-editor>input{width:100%;box-sizing:border-box;font:inherit;border:1px solid var(--bid-color-primary);padding:7px;border-radius:6px}
+.bp-root .project-title-actions{display:flex;gap:6px;margin-top:8px}
+.bp-root .project-title-editor>p{font-size:12px;color:var(--bid-color-error-text)}
+@media(max-width:620px){.bp-root .source-toolbar{flex-wrap:wrap}.bp-root .project-file-row{flex-wrap:wrap}.bp-root .project-file-actions{margin-left:24px}.bp-root .workflow-plan-step{flex-wrap:wrap}.bp-root .workflow-plan-step>.bp-badge{margin-left:40px}}

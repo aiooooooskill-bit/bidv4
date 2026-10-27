@@ -139,6 +139,8 @@ else test(testName,{timeout:180000},async()=>{
   const upload=new FormData();upload.set('file',new Blob([png],{type:'image/png'}),'工程源.png');await api('/files?task_id='+tid,upload);
   // Source-save HTTP route must use the same admission as action submission.
   const supplement=new FormData();supplement.set('file',new Blob([png],{type:'image/png'}),'补充.png');await api('/files?task_id='+tid,supplement);
+  // Upload now includes supplements by default; start excluded so this race saves a real change.
+  const uploaded=await api('/page-flow/'+tid);await api('/page-flow/'+tid+'/sources',{main_file:'工程源.png',supplements:[],input_version:uploaded.input_versions.analyse},'PUT');
   const initial=await api('/page-flow/'+tid),entered=Promise.withResolvers(),release=Promise.withResolvers();
   const stateReader=runtime.state.bind(runtime);let pause=true;
   runtime.state=async id=>{const value=await stateReader(id);if(pause&&id===tid){pause=false;entered.resolve();await release.promise}return value};

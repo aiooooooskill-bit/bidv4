@@ -49,11 +49,11 @@ async function fixture(){
 
 test('官方scope包完整且插件与配置都声明宿主附件依赖',async()=>{
  const installed=JSON.parse(await readFile(new URL('../node_modules/@deepseek-ai/dsh-scope/package.json',import.meta.url),'utf8'));
- assert.equal(installed.version,'0.2.1-rc.2');
  const manifest=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
+ assert.equal(installed.version,manifest.devDependencies['@deepseek-ai/dsh-scope']);
  assert.equal(manifest.dependencies['@deepseek-ai/dsh-scope'],undefined);assert.equal(manifest.overrides['@deepseek-ai/dsh-scope'],undefined);
  const lock=JSON.parse(await readFile(new URL('../package-lock.json',import.meta.url),'utf8'));
- assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].version,'0.2.1-rc.2');assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].link,undefined);
+ assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].version,installed.version);assert.equal(lock.packages['node_modules/@deepseek-ai/dsh-scope'].link,undefined);
  assert.ok(inject.includes('attachments'));
  const patch=await readFile(new URL('../cordis.patch.yml',import.meta.url),'utf8');assert.match(patch.split('    - id: ooo-bidpliot-agent-preset')[0],/        - attachments\n/);
 });

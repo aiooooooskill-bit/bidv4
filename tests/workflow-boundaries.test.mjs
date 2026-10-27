@@ -5,10 +5,10 @@ import {projectStatus} from '../server/native/chat-tools.mjs';
 import {BusinessRuntime} from '../server/native/runtime.mjs';
 import {transcribe} from '../server/native/tools.mjs';
 import {presetDefinition} from '../server/native/preset.mjs';
-const state=()=>({task:{id:'t1',title:'边界验收'},execution:null,analysis_progress:[],files:[],directory:null,source_selection:{main:'招标.docx',supplements:[],excluded:[]},body_files:[],body_sections:[],input_versions:{analyse:'v1'},workflow:{id:'workflow-1',state:'completed',completed:['analyse','outline','build','review']},volume_states:[{name:'技术标',artifact_id:'volume-1',status:'ready'}],review:{status:'unreviewed',input_version:'r1',report:null}});
+const state=()=>({task:{id:'t1',title:'边界验收'},execution:null,analysis_progress:[],files:[],directory:null,bidder:{confirmed:true,stale:false},source_selection:{main:'招标.docx',supplements:[],excluded:[]},body_files:[],body_sections:[],input_versions:{analyse:'v1'},workflow:{id:'workflow-1',state:'completed',completed:['analyse','outline','build','review']},volume_states:[{name:'技术标',artifact_id:'volume-1',status:'ready'}],review:{status:'unreviewed',input_version:'r1',report:null}});
 
 test('有未保存修改时自动完成不发请求，保存后可启动，停止仍校验流程身份',async()=>{
- const requests=[],f=await fixture(async(url,options)=>{requests.push({url,method:options.method,body:JSON.parse(options.body)});return response({ok:true})});
+ const requests=[],f=await fixture(async(url,options)=>{if(url.endsWith('/workflow-plan'))return response({input_versions:{analyse:'v1'},steps:[{kind:'analyse',reusable:true},{kind:'outline',reusable:false},{kind:'build',reusable:false}]});requests.push({url,method:options.method,body:JSON.parse(options.body)});return response({ok:true})});
  const guard=f.mount('NavigationGuard',{children:null});guard.render();
  const dirty=value=>{f.api.useNavigationGuard().mark('guide-editor',value);guard.render()};
  const flow=state(),control=f.mount('WorkflowControls',{tid:'t1',flow,onChanged:async()=>{}});

@@ -30,7 +30,7 @@ test('新目录默认隐藏写作准备，首次生成自动补齐，已有正�
 });
 
 test('安装与启用不要求外部排版软件',async()=>{
- const result=await checkInstallation(root,{dshVersion:'0.2.1-rc.2'});
+ const result=await checkInstallation(root);
  assert.equal(result.ok,true,JSON.stringify(result.errors));
  assert.ok(!result.checks.some(c=>/LibreOffice|排版引擎/.test(c.name)));
  assert.equal(result.layout,undefined);

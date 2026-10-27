@@ -65,35 +65,38 @@ test('资料库当前页签重复点击保持状态，栏目切换不重复加�
  }finally{view.unmount();f.close()}
 });
 
-test('原文选择与补充来源立即保存，重新进入保持身份；新上传不自动切换',async()=>{
+test('原文下拉只切换预览；补充文件默认参与项目，管理器保存主文件身份',async()=>{
  let flow={task:{id:'t1',title:'招标'},execution:null,analysis_progress:[],files:[],directory:null,source_selection:{main:'招标.docx',supplements:[],excluded:[]},body_files:[],body_sections:[],input_versions:{analyse:'v1'}};
- let files=[{name:'招标.docx',size:8,modified_at:'2026-10-12'}],fail=false;const saved=[],actions=[];
+ let files=[{name:'招标.docx',size:8,modified_at:'2026-10-12'}];const saved=[],actions=[];
  const f=await fixture(async(url,options={})=>{
   const u=new URL(url,'http://fixture');
-  if(u.pathname.endsWith('/sources')){if(fail){fail=false;return response({detail:'save unavailable'},503)}const body=JSON.parse(options.body);assert.equal(body.input_version,flow.input_versions.analyse);saved.push(body);flow={...flow,source_selection:{main:body.main_file,supplements:body.supplements.map(file=>({file,role:'补充文件'})),excluded:[]},input_versions:{analyse:'v'+(saved.length+1)}};return response(flow)}
+  if(u.pathname.endsWith('/sources')){const body=JSON.parse(options.body);assert.equal(body.input_version,flow.input_versions.analyse);saved.push(body);flow={...flow,source_selection:{main:body.main_file,supplements:body.supplements.map(file=>({file,role:'补充文件'})),excluded:[]},input_versions:{analyse:'v3'}};return response(flow)}
   if(u.pathname.endsWith('/action')){actions.push(JSON.parse(options.body));return response({session_id:'fixture'})}
   if(u.pathname.includes('/page-flow/'))return response(flow);
-  if(u.pathname.endsWith('/files')){if(options.method==='POST'){files.push({name:options.body.get('file').name,size:8,modified_at:'2026-10-12'});files.sort((a,b)=>a.name<b.name?-1:1);return response({ok:true})}return response({files})}
+  if(u.pathname.endsWith('/files')){if(options.method==='POST'){const name=options.body.get('file').name;files.push({name,size:8,modified_at:'2026-10-12'});flow={...flow,source_selection:{...flow.source_selection,supplements:[{file:name,role:'补充文件'}]},input_versions:{analyse:'v2'}};return response({ok:true})}return response({files})}
   if(u.pathname.endsWith('/artifacts'))return response({artifacts:[]});
   if(u.pathname.endsWith('/workbench'))return response({files:[]});
   throw new Error('unexpected '+url);
  });
- let view=f.mount('ProjectWorkbench',{tid:'t1',mode:'analysis',onBack(){},onMode(){}});
+ const props={tid:'t1',mode:'analysis',onBack(){},onMode(){}};let view=f.mount('ProjectWorkbench',props),manager;
  const select=()=>find(view,n=>n.props['aria-label']==='选择原文');
+ const managerNode=()=>find(view,n=>n.props.onPreview&&n.props.sources);
  try{
   await view.settle();assert.equal(select().props.value,'招标.docx');
-  await find(view,n=>n.type==='input'&&n.props.type==='file').props.onChange({target:{files:[new File(['update'],'A更新.docx')],value:'x'}});await view.settle();
-  assert.equal(select().props.value,'招标.docx');
-  view.unmount();view=f.mount('ProjectWorkbench',{tid:'t1',mode:'analysis',onBack(){},onMode(){}});await view.settle();assert.equal(select().props.value,'招标.docx');
-  select().props.onChange({target:{value:'A更新.docx'}});await view.settle();assert.equal(select().props.value,'A更新.docx');assert.equal(flow.source_selection.main,'A更新.docx');
-  find(view,n=>n.type==='input'&&n.props.type==='checkbox').props.onChange({target:{checked:true}});await view.settle();assert.equal(flow.source_selection.supplements[0].file,'招标.docx');
-  view.unmount();view=f.mount('ProjectWorkbench',{tid:'t1',mode:'analysis',onBack(){},onMode(){}});await view.settle();assert.equal(select().props.value,'A更新.docx');assert.equal(find(view,n=>n.type==='input'&&n.props.type==='checkbox').props.checked,true);
-  fail=true;select().props.onChange({target:{value:'招标.docx'}});await view.settle();assert.equal(select().props.value,'A更新.docx');assert.equal(saved.length,2);
-  await find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();assert.equal(actions[0].main_file,'A更新.docx');assert.deepEqual(actions[0].supplements,['招标.docx']);
- }finally{view.unmount();f.close()}
+  const managerProps={...managerNode().props};manager=f.mount('ProjectFiles',managerProps);
+  find(manager,n=>n.type==='input'&&n.props.type==='file').props.onChange({target:{files:[new File(['update'],'A更新.xlsx')],value:'x'}});
+  await find(manager,n=>n.type==='button'&&n.props.children==='上传并加入项目').props.onClick();await manager.settle();await view.settle();
+  assert.equal(select().props.value,'招标.docx');assert.equal(flow.source_selection.supplements[0].file,'A更新.xlsx');
+  select().props.onChange({target:{value:'A更新.xlsx'}});await view.settle();assert.equal(select().props.value,'A更新.xlsx');assert.equal(flow.source_selection.main,'招标.docx');assert.equal(saved.length,0);
+  Object.assign(managerProps,managerNode().props);find(manager,n=>n.type==='button'&&n.props.children==='管理文件').props.onClick();
+  await find(manager,n=>n.props['aria-label']==='选择招标主文件').props.onChange({target:{value:'A更新.xlsx'}});await manager.settle();await view.settle();
+  assert.equal(flow.source_selection.main,'A更新.xlsx');assert.equal(flow.source_selection.supplements[0].file,'招标.docx');
+  manager.unmount();manager=null;view.unmount();view=f.mount('ProjectWorkbench',props);await view.settle();assert.equal(select().props.value,'A更新.xlsx');
+  await find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();assert.equal(actions[0].main_file,'A更新.xlsx');assert.deepEqual(actions[0].supplements,['招标.docx']);
+ }finally{manager?.unmount();view.unmount();f.close()}
 });
 
-for(const timing of ['before','during'])test(`来源保存成功后，${timing}发出的旧详情读取不能覆盖新状态`,async()=>{
+for(const timing of ['before','during'])test(`来源管理保存成功后，${timing}发出的旧详情读取不能覆盖新状态`,async()=>{
  let flow={task:{id:'t1',title:'招标'},execution:null,analysis_progress:[],files:[{path:'analysis/structure.md',content:'基本信息',hash:'h1'}],directory:null,source_selection:{main:'原始.docx',supplements:[],excluded:[]},body_files:[],body_sections:[],input_versions:{analyse:'v1'}};
  const files=[{name:'原始.docx',size:8,modified_at:'1'},{name:'更新.docx',size:8,modified_at:'1'}];
  const reading=Promise.withResolvers(),saving=Promise.withResolvers();let holdRead=false;const actions=[];
@@ -103,21 +106,23 @@ for(const timing of ['before','during'])test(`来源保存成功后，${timing}�
   if(url.includes('/page-flow/'))return response(flow);
   if(url.includes('/files?'))return response({files});
   if(url.includes('/artifacts?'))return response({artifacts:[]});
-  if(url.includes('/workbench?')){if(holdRead)await reading.promise;return response({files:[]})}
+  if(url.includes('/workbench?')){if(holdRead){holdRead=false;await reading.promise}return response({files:[]})}
   throw new Error('unexpected '+url);
  });
- const view=f.mount('ProjectWorkbench',{tid:'t1',mode:'analysis',onBack(){},onMode(){}});
+ const view=f.mount('ProjectWorkbench',{tid:'t1',mode:'analysis',onBack(){},onMode(){}});let manager;
  try{
   await view.settle();const load=find(view,n=>n.props.file?.path==='analysis/structure.md').props.onSaved;
-  holdRead=true;let pendingRead;
-  if(timing==='before'){pendingRead=load();await view.settle()}
-  find(view,n=>n.props['aria-label']==='选择原文').props.onChange({target:{value:'更新.docx'}});await view.settle();
-  if(timing==='during'){pendingRead=load();await view.settle()}
-  saving.resolve();await view.settle();assert.equal(find(view,n=>n.props['aria-label']==='选择原文').props.value,'更新.docx');
+  manager=f.mount('ProjectFiles',{...find(view,n=>n.props.onPreview&&n.props.sources).props});
+  let pendingRead;
+  if(timing==='before'){holdRead=true;pendingRead=load();await view.settle()}
+  find(manager,n=>n.type==='button'&&n.props.children==='管理文件').props.onClick();
+  const pendingSave=find(manager,n=>n.props['aria-label']==='选择招标主文件').props.onChange({target:{value:'更新.docx'}});await manager.settle();
+  if(timing==='during'){holdRead=true;pendingRead=load();await view.settle()}
+  saving.resolve();await pendingSave;await manager.settle();await view.settle();assert.equal(find(view,n=>n.props['aria-label']==='选择原文').props.value,'更新.docx');
   reading.resolve();await pendingRead;await view.settle();assert.equal(find(view,n=>n.props['aria-label']==='选择原文').props.value,'更新.docx');
   await find(view,n=>n.type==='button'&&n.props.children==='开始解读').props.onClick();await view.settle();
   assert.equal(actions[0].main_file,'更新.docx');assert.equal(actions[0].input_version,'v2');
- }finally{reading.resolve();saving.resolve();view.unmount();f.close()}
+ }finally{reading.resolve();saving.resolve();manager?.unmount();view.unmount();f.close()}
 });
 
 test('详情刷新、重新进入及功能切换自动读取最新状态、目录、文档和原件版本，无常驻刷新按钮',async()=>{

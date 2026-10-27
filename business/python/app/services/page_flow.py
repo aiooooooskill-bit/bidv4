@@ -104,8 +104,8 @@ def set_sources(tid, main_file, supplements):
     bid_names = set(review_selection(tid)['bids'])
     if bid_names.intersection([main_file, *supplements]):
         raise BusinessError(422, '投标文件不能作为招标解读依据')
-    selected = [main_file, *supplements]
-    if not main_file or len(set(selected)) != len(selected) or any(n not in names for n in selected):
+    selected = ([main_file] if main_file else []) + supplements
+    if len(set(selected)) != len(selected) or any(n not in names for n in selected):
         raise BusinessError(422, '请选择已上传的招标原文与补充来源')
     selection = {'main': main_file, 'supplements': [{'file': s, 'role': '补充文件'} for s in supplements], 'excluded': sorted(names - set(selected))}
     write_atomic(artifact_store.work_dir(tid) / 'parse/sources.json', json.dumps(selection, ensure_ascii=False, indent=2))

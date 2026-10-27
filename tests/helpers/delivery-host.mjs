@@ -252,7 +252,7 @@ async function businessScenario(){
  const upload=new FormData();upload.set('file',new Blob([png],{type:'image/png'}),'交付验收原件.png');await api('/files?task_id='+taskId,upload);
  const sessions=[];
  for(const kind of ['analyse','outline','guide','promises','body','revise']){
-  const state=await api('/page-flow/'+taskId),payload={kind,request_id:randomUUID(),input_version:state.input_versions[kind],...(kind==='outline'?{page_target:120,numbering:'decimal'}:{}),...(kind==='analyse'?{main_file:'交付验收原件.png',supplements:[]}:{}),...(['body','revise'].includes(kind)?{sections:kind==='revise'?state.body_sections.filter(s=>s.title==='交付验收章节'):state.body_sections}:{}),...(kind==='revise'?{instruction:'替换交付验收段落'}:{})};
+  const state=await api('/page-flow/'+taskId),payload={kind,request_id:randomUUID(),input_version:state.input_versions[kind],...(kind==='outline'?{page_target:120,numbering:'decimal'}:{}),...(kind==='analyse'?{main_file:'交付验收原件.png',supplements:[]}:{}),...(kind==='body'?{sections:state.body_sections}:{}),...(kind==='revise'?{sections:state.body_sections.filter(section=>section.title==='交付验收章节'),instruction:'替换交付验收段落'}:{})};
   const admitted=await api('/page-flow/'+taskId+'/action',payload);sessions.push(admitted.session_id);
   await timeout(runtime.handles.get(admitted.session_id).agent.whenIdle(),kind);await runtime.settling.get(taskId);
   const result=await api('/page-flow/'+taskId);assert.equal(result.execution.state,'completed',JSON.stringify(result.execution));
@@ -304,7 +304,7 @@ async function startAnalysis(options={}){
  const {task}=await api('/tasks',{title:'智能解读真实会话隔离验收',request_id:randomUUID()});
  const upload=new FormData();upload.set('file',new Blob([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64')],{type:'image/png'}),'交付验收原件.png');await api('/files?task_id='+task.id,upload);
  const state=await api('/page-flow/'+task.id);
- let admitted;if(options.workflow){await api('/page-flow/'+task.id+'/sources',{main_file:'交付验收原件.png',supplements:[],input_version:state.input_versions.analyse},'PUT');await api('/page-flow/'+task.id+'/workflow',{});while(!ctx.get('bidBusiness').workflows.records.get(task.id)?.session_id)await new Promise(resolve=>setTimeout(resolve,50));admitted={session_id:ctx.get('bidBusiness').workflows.records.get(task.id).session_id}}else admitted=await api('/page-flow/'+task.id+'/action',{kind:'analyse',request_id:randomUUID(),input_version:state.input_versions.analyse,main_file:'交付验收原件.png',supplements:[]});
+ let admitted;if(options.workflow){const company=await api('/library/companies',{name:'自动流程验收主体',profile:{legal_name:'验收法人'}});await api('/projects/'+task.id+'/bidder',{company_id:company.id,signer_id:'legal',sign_date:'2026-10-26',revision:0},'PUT');await api('/page-flow/'+task.id+'/sources',{main_file:'交付验收原件.png',supplements:[],input_version:state.input_versions.analyse},'PUT');await api('/page-flow/'+task.id+'/workflow',{input_versions:(await api('/page-flow/'+task.id+'/workflow-plan')).input_versions});while(!ctx.get('bidBusiness').workflows.records.get(task.id)?.session_id)await new Promise(resolve=>setTimeout(resolve,50));admitted={session_id:ctx.get('bidBusiness').workflows.records.get(task.id).session_id}}else admitted=await api('/page-flow/'+task.id+'/action',{kind:'analyse',request_id:randomUUID(),input_version:state.input_versions.analyse,main_file:'交付验收原件.png',supplements:[]});
  analysisTask={taskId:task.id,sessionId:admitted.session_id};return analysisTask;
 }
 async function finishAnalysis(){
@@ -318,7 +318,7 @@ async function startFullWorkflow(options={include_review:true}){
  const state=await api('/page-flow/'+task.id);await api('/page-flow/'+task.id+'/sources',{main_file:'交付验收原件.png',supplements:[],input_version:state.input_versions.analyse},'PUT');
  const company=await api('/library/companies',{name:'自动流程验收公司',profile:{legal_name:'验收法人',legal_title:'总经理',address:'验收地址',phone:'123',email:'fixture@example.test',fax:'无'}});
  await api('/projects/'+task.id+'/bidder',{company_id:company.id,signer_id:'legal',sign_date:'2026-10-15',revision:0},'PUT');
- await api('/page-flow/'+task.id+'/workflow',options);return task.id;
+ await api('/page-flow/'+task.id+'/workflow',{...options,input_versions:(await api('/page-flow/'+task.id+'/workflow-plan')).input_versions});return task.id;
 }
 async function fullQuestionFlushRace(rounds=1){
  const runtime=ctx.get('bidBusiness'),gates=Array.from({length:rounds},()=>({entered:Promise.withResolvers(),release:Promise.withResolvers()})),gatedCalls=new Set(),roundEvidence=[],settlements=[];

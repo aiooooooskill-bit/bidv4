@@ -3,27 +3,23 @@ import {request,json,type Flow} from '../api';
 import {reportError,clearNotice} from './NoticeCenter';
 import {useNavigationGuard} from './NavigationGuard';
 import {Modal} from './Modal';
+import {BidderForm} from './BidderSetup';
 const labels:Record<string,string>={analyse:'解析与解读',outline:'投标目录',build:'正文制作与合册',review:'标书审核'};
-export function WorkflowControls({tid,flow,onChanged}:{tid:string;flow:Flow;onChanged:()=>Promise<void>}){
- const {hasDirty}=useNavigationGuard();
- const [busy,setBusy]=useState(false),[open,setOpen]=useState(false),[includeReview,setIncludeReview]=useState(false),workflow=flow.workflow;
+type Plan={steps:Array<{kind:string;reusable:boolean}>;input_versions:Record<string,string>};
+export function WorkflowControls({tid,flow,onChanged,disabled=false}:{tid:string;flow:Flow;onChanged:()=>Promise<void>;disabled?:boolean}){
+ const guard=useNavigationGuard(),hasDirty=guard.hasDirty;
+ const [busy,setBusy]=useState(false),[open,setOpen]=useState(false),[bidderOpen,setBidderOpen]=useState(false),[includeReview,setIncludeReview]=useState(false),[plan,setPlan]=useState<Plan|null>(null),workflow=flow.workflow;
  const active=workflow?.state==='running',waiting=workflow?.state==='needs_input'&&flow.execution?.state==='needs_input',executing=flow.execution?.state==='running';
- const resume=!!workflow&&!['completed','stopped'].includes(workflow.state);
- const submit=async(resume=false,stop=false)=>{if(hasDirty&&!stop)return;setBusy(true);try{await request(`/page-flow/${tid}/workflow`,stop?json('DELETE',{workflow_id:workflow!.id}):json('POST',resume?{resume:true}:{resume:false,include_review:includeReview}));setOpen(false);clearNotice(tid+':workflow');await onChanged()}catch(e){reportError(e,{id:tid+':workflow',scope:tid,title:'自动流程未完成'})}finally{setBusy(false)}};
+ const resume=!!workflow&&!['completed','stopped'].includes(workflow.state),bidderReady=!!flow.bidder?.confirmed&&!flow.bidder.stale;
+ const openOptions=async()=>{setOpen(true);setPlan(null);setBusy(true);setIncludeReview(resume?workflow?.options?.include_review===true:false);try{setPlan(await request<Plan>(`/page-flow/${tid}/workflow-plan`));clearNotice(tid+':workflow')}catch(e){reportError(e,{id:tid+':workflow',scope:tid,title:'流程状态读取未完成',retry:openOptions})}finally{setBusy(false)}};
+ const submit=async(stop=false)=>{if(!stop&&(!plan||hasDirty||disabled||executing||!flow.source_selection.main))return;if(!stop&&!bidderReady){setOpen(false);setBidderOpen(true);return}setBusy(true);try{await request(`/page-flow/${tid}/workflow`,stop?json('DELETE',{workflow_id:workflow!.id}):json('POST',{input_versions:plan!.input_versions,...(resume?{resume:true}:{resume:false,include_review:includeReview})}));setOpen(false);clearNotice(tid+':workflow');await onChanged()}catch(e){reportError(e,{id:tid+':workflow',scope:tid,title:'自动流程未完成'})}finally{setBusy(false)}};
  const status=workflow?.state==='completed'?'流程已完成':active?'正在'+(labels[workflow.stage??'analyse']??'执行'):workflow?.state==='needs_input'?'等待具体信息':workflow?.state==='stopped'?'流程已停止':workflow?.error;
- return <>{active||waiting?<button className="bp-btn" data-kind="danger" title={status} disabled={busy} onClick={()=>void submit(false,true)}>停止流程</button>:<button className="bp-btn" data-kind="primary" title={hasDirty?'请先保存当前修改，再自动完成流程':status??'自动完成解读、制作目录和制作投标文件，可选择标书审核'} disabled={hasDirty||busy||executing||!flow.source_selection.main} onClick={()=>{if(hasDirty||busy||executing||!flow.source_selection.main)return;if(resume)void submit(true);else{setIncludeReview(false);setOpen(true)}}}>{resume?'继续流程':'自动完成'}</button>}
- <Modal open={open} onClose={()=>{if(!busy)setOpen(false)}} label="自动完成" width="600px">
-  <div className="workflow-options">
-   <div className="workflow-heading"><h2>自动完成</h2><button className="workflow-close" aria-label="关闭" disabled={busy} onClick={()=>setOpen(false)}>×</button></div>
-   <p className="workflow-intro">按以下流程自动完成投标文件制作。</p>
-   <div className="workflow-caption">默认执行流程</div>
-   <div className="workflow-steps">{['解读','制作目录','制作投标文件'].map((label,index)=><div className="workflow-step" key={label}>{index>0&&<span className="workflow-arrow" aria-hidden="true">→</span>}<span className="workflow-number">{index+1}</span><span>{label}</span></div>)}</div>
-   <div className="workflow-optional"><div className="workflow-caption">可选流程</div>
-    <label className="workflow-review" data-selected={includeReview}><input type="checkbox" checked={includeReview} disabled={busy} onChange={e=>setIncludeReview(e.target.checked)}/><div><span className="workflow-review-title">标书审核<span className="workflow-tag">可选</span></span><p>投标文件制作完成后，继续进行标书审核。</p></div></label>
-    <div className="workflow-warning"><span aria-hidden="true">ⓘ</span><span>标书审核会消耗大量 Token，请按需选择。</span></div>
-   </div>
-   <p className="workflow-summary" aria-live="polite">{includeReview?'本次执行 4 个流程，制作完成后继续进行标书审核。':'本次执行 3 个流程，完成投标文件制作后结束。'}</p>
-  </div>
-  <div className="workflow-actions"><button className="bp-btn" disabled={busy} onClick={()=>setOpen(false)}>取消</button><button className="bp-btn" data-kind="primary" disabled={busy||hasDirty||executing||!flow.source_selection.main} onClick={()=>void submit()}>{busy?'提交中…':'开始自动完成'}</button></div>
- </Modal></>;
+ const steps=plan?.steps.filter(step=>step.kind!=='review'||includeReview)??[],next=steps.find(step=>!step.reusable);
+ return <>{active||waiting?<button className="bp-btn" data-kind="danger" title={status} disabled={busy} onClick={()=>void submit(true)}>停止流程</button>:<button className="bp-btn" data-kind="primary" title={hasDirty?'请先保存当前修改，再自动完成流程':status??'自动完成解读、制作目录和投标文件，可选择标书审核'} disabled={disabled||hasDirty||busy||executing||!flow.source_selection.main} onClick={()=>{if(disabled||hasDirty||busy||executing||!flow.source_selection.main)return;if(!bidderReady)setBidderOpen(true);else void openOptions()}}>{resume?'继续流程':'自动完成'}</button>}
+ <Modal open={bidderOpen} onClose={()=>guard.navigate(()=>setBidderOpen(false))} label="确认制作信息" width="760px">{bidderOpen?<><p className="workflow-bidder-notice">{flow.bidder?.stale?'主体资料已变化，请重新核对制作信息后继续。':'自动完成前，请先选择投标主体、签字代表和签署日期。'}</p><BidderForm tid={tid} state={flow.bidder} onClose={()=>setBidderOpen(false)} onSaved={async()=>{await onChanged();setBidderOpen(false);await openOptions()}}/></>:null}</Modal>
+ <Modal open={open} onClose={()=>{if(!busy)setOpen(false)}} label="自动完成" width="600px"><div className="workflow-options"><div className="workflow-heading"><h2>自动完成</h2><button className="workflow-close" aria-label="关闭" disabled={busy} onClick={()=>setOpen(false)}>×</button></div>
+ <p className="workflow-intro">{!plan?(busy?'正在核对当前成果…':'流程状态读取未完成，请关闭后重试。'):plan.steps.find(step=>step.kind==='analyse')?.reusable?'已有解读有效，将从后续未完成阶段继续。':'本次将使用当前全部选定来源进行解析与解读。'}</p>
+ <div className="workflow-plan">{steps.filter(step=>step.kind!=='review').map((step,index)=><div className="workflow-plan-step" data-current={next?.kind===step.kind} key={step.kind}><span className="workflow-number">{step.reusable?'✓':index+1}</span><div>{labels[step.kind]}<p>{step.reusable?'依据未变化，复用已有成果':step.kind==='build'?'已有正文保留，依据变化的章节需核对':'使用当前有效依据继续处理'}</p></div><span className="bp-badge" data-tone={step.reusable?'success':next?.kind===step.kind?'processing':undefined}>{step.reusable?'复用':next?.kind===step.kind?'本次开始':'待执行'}</span></div>)}</div>
+ <div className="workflow-optional"><label className="workflow-review" data-selected={includeReview}><input type="checkbox" checked={includeReview} disabled={busy||resume} onChange={e=>setIncludeReview(e.target.checked)}/><div><span className="workflow-review-title">标书审核<span className="workflow-tag">可选</span></span><p>投标文件制作完成后，继续进行标书审核。</p></div></label><div className="workflow-warning"><span aria-hidden="true">ⓘ</span><span>标书审核会消耗大量 Token，请按需选择。</span></div></div>
+ <p className="workflow-summary" aria-live="polite">{flow.bidder?.snapshot?.company.name?`投标主体：${flow.bidder.snapshot.company.name}。`:''}{plan?next?`本次从“${labels[next.kind]}”继续；${includeReview?'包含标书审核。':'完成投标文件制作后结束。'}`:'所有所选阶段已有有效成果，无需重复生成。':''}</p></div><div className="workflow-actions"><button className="bp-btn" disabled={busy} onClick={()=>setOpen(false)}>取消</button><button className="bp-btn" data-kind="primary" disabled={!plan||busy||disabled||hasDirty||executing||!flow.source_selection.main} onClick={()=>void submit()}>{busy?'提交中…':resume?'确认并继续流程':'开始自动完成'}</button></div></Modal></>;
 }

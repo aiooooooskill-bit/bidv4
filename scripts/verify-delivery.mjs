@@ -21,7 +21,7 @@ const environment={...process.env,DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1',BID_D
 delete environment.DSH_TOOLS_MODE;delete environment.NODE_TEST_CONTEXT;
 const releaseVersion=JSON.parse(await readFile(join(project,'package.json'),'utf8')).version;
 assert.match(releaseVersion,/^\d+\.\d+\.\d+$/);
-const report={name:'ooo-bidpliot',releaseVersion,startedAt:new Date().toISOString(),workspace,installation,hostHome:home,system:{platform:process.platform,arch:process.arch,node:process.version,dsh:'0.2.1-rc.2'},stages:[],passed:false};
+const report={name:'ooo-bidpliot',releaseVersion,startedAt:new Date().toISOString(),workspace,installation,hostHome:home,system:{platform:process.platform,arch:process.arch,node:process.version,dsh:JSON.parse(await readFile(join(project,'node_modules/@deepseek-ai/dsh/package.json'),'utf8')).version},stages:[],passed:false};
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const redact=text=>String(text).replace(/([?&]token=)[^\s)"']+/g,'$1[redacted]');
 let active;
