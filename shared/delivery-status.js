@@ -8,7 +8,13 @@ export function deliveryReady(flow) {
 
 export const actionNames={analyse:'招标解读',outline:'投标目录',guide:'写作指引',promises:'关键事实与承诺',body:'章节生成',revise:'章节修改',build:'制作与合册',review:'标书审查'};
 
+export function manualDirectoryCurrent(flow, action) {
+  return !!flow.directory?.user_input_version && flow.directory.user_input_version===flow.input_versions.outline &&
+    (!action || Number.isFinite(action.created_at) && flow.directory.user_saved_at>=action.created_at);
+}
+
 export function actionSatisfied(flow, action) {
+  if(action.kind==='outline')return manualDirectoryCurrent(flow,action);
   if(action.kind==='build')return deliveryReady(flow);
   const after=modified=>Number.isFinite(action.created_at) && modified>=action.created_at;
   if(['guide','promises'].includes(action.kind)) {

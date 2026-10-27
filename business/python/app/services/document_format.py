@@ -97,6 +97,13 @@ def paragraph(p, spec):
 
 def fit_table(element, available_twips):
     """合册版心变窄时等比收拢原表格；合并格、文字和行高不变。"""
+    # Imported floating tables retain coordinates relative to the old page.
+    # A flowing volume must paginate these rows, rather than overlay/clip them.
+    for table in element.iter(qn('w:tbl')):
+        properties = table.find(qn('w:tblPr'))
+        if properties is not None:
+            for position in list(properties.findall(qn('w:tblpPr'))):
+                properties.remove(position)
     grid = element.find(qn('w:tblGrid'))
     if grid is None: return
     widths = [int(c.get(qn('w:w'), '0')) for c in grid]

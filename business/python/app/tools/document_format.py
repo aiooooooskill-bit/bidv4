@@ -15,7 +15,7 @@ def docx_format_rule(target: Literal['read','body','heading1','heading2','headin
     """读取默认/本项目规则，或用招标解析原文覆盖指定正文/标题/页脚规则。
 
     小四=12pt。正文未规定时宋体12pt、1.5倍；标题使用原生Heading1..9。
-    覆盖须给work/parse下文件相对路径及逐字引用，不能用素材格式、猜测或用户写作内容冒充招标要求。
+    覆盖须给相对任务work/的evidence_path（parse/<文件名>/<文件名>.md，不带work/或任务目录）及逐字引用，不能用素材格式、猜测或用户写作内容冒充招标要求。
     footer_text使用{PAGE}和{TOTAL}两个域占位符，默认第 {PAGE}页，共{TOTAL}页。
     分节或页码计数另有特殊规定时先说明，不能把不支持的规则悄悄降为默认。
     read始终返回待核对项，失效规则仍阻止合册。依据变化后逐目标重新设置；

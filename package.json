@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -10,7 +10,8 @@
     "./client": "./dist/client.js",
     "./package.json": "./package.json",
     "./agent": "./server/agent.mjs",
-    "./tools": "./server/native/tools.mjs"
+    "./tools": "./server/native/tools.mjs",
+    "./stage-context": "./server/native/stage-context.mjs"
   },
   "dsh": {
     "bundle": {
@@ -19,7 +20,6 @@
     "client": {
       "platform": "web",
       "inject": [
-        "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-workspace"
@@ -30,9 +30,9 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "check": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test --test-concurrency=4 tests/*.test.mjs",
     "verify": "npm run check && npm run build && npm test && npm run test:business",
-    "start": "dsh web --no-open --host 127.0.0.1 --port 3080",
+    "start": "dsh web --patch cordis.web.patch.yml --no-open --host 127.0.0.1 --port 3080",
     "tools:install": "uv sync --locked --project business/python",
     "test:business": "node scripts/test-business.mjs",
     "directory:prepare": "node scripts/prepare.mjs",
@@ -44,53 +44,49 @@
     "release:package": "node scripts/package-release.mjs"
   },
   "dependencies": {
+    "@floating-ui/dom": "1.7.6",
     "busboy": "1.6.0",
     "docx-preview": "0.4.0",
     "html2canvas": "1.4.1",
     "mermaid": "12.0.0",
+    "micromark-util-decode-string": "2.0.1",
     "pdfjs-dist": "6.3.289",
     "react-markdown": "10.1.0",
     "remark-gfm": "4.0.1",
     "remark-parse": "11.0.0",
     "unified": "11.0.5",
-    "micromark-util-decode-string": "2.0.1",
-    "@deepseek-ai/dsh-fs-local": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-session-projection": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-session": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-system-prompt": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tools": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-agent": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-session-persistence-jsonl": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-agent-preset-registry": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-subagent": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-subagent-spawn-in-process": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-user-questions": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-agent-loop": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-session-checkpoint-policy": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-token-meter": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-compaction-basic": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-persona": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tool-fs": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tool-fs-search": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tool-skill": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-tool-ask-user": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-skill-filesystem": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-agent-preset": "0.2.0-rc.2",
-    "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "semver": "7.8.5"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh": "0.2.0-rc.2",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.6",
+    "@deepseek-ai/dsh": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-persona": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-subagent": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-subagent-spawn-in-process": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tool-fs": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tool-fs-search": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tool-skill": "0.2.1-rc.3",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "esbuild": "0.28.2",
-    "typescript": "5.7.2"
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "typescript": "5.7.2",
+    "@deepseek-ai/dsh-compaction": "0.2.1-rc.3",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.3"
   },
   "engines": {
     "node": ">=24",
-    "dsh": "0.2.0-rc.2"
+    "dsh": ">=0.2.1-rc.3 <0.3.0-0"
   },
   "overrides": {
     "mermaid": {
@@ -99,19 +95,31 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/dsh": "0.2.0-rc.2",
-    "@deepseek-ai/cordis": "4.0.4",
-    "@deepseek-ai/cordis-plugin-loader": "1.0.5",
-    "@deepseek-ai/dsh-llm": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-scope": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-agent-preset": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-client-ui-layout": "0.2.0-rc.2",
-    "@deepseek-ai/dsh-client-locale": "0.2.0-rc.2",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.6",
+    "@deepseek-ai/dsh": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-client-locale": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-client-ui-layout": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-compaction-basic": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-persona": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-scope": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-skill-filesystem": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-subagent": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-subagent-spawn-in-process": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-tool-ask-user": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-tool-fs": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-tool-fs-search": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-tool-skill": ">=0.2.1-rc.3 <0.3.0-0",
     "react": "18.3.1",
-    "react-dom": "18.3.1"
+    "react-dom": "18.3.1",
+    "@deepseek-ai/dsh-compaction": ">=0.2.1-rc.3 <0.3.0-0",
+    "@deepseek-ai/dsh-tools": ">=0.2.1-rc.3 <0.3.0-0"
   },
   "files": [
     "cordis.patch.yml",
+    "cordis.web.patch.yml",
     "dist",
     "server",
     "shared",
@@ -140,6 +148,73 @@
     "docs/evidence/delivery-page-20261013.jpg",
     "docs/evidence/delivery-agent-20261013.jpg",
     "docs/evidence/delivery-agent-document-20261013.jpg",
-    "docs/REVIEW-CURRENT.md"
-  ]
+    "docs/REVIEW-CURRENT.md",
+    "docs/DSH-RC3-ACCEPTANCE-2026-10-27.md",
+    "docs/evidence/dsh-rc3-20261027.jpg"
+  ],
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    },
+    "@deepseek-ai/cordis": {
+      "optional": true
+    },
+    "@deepseek-ai/cordis-plugin-loader": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-llm": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-scope": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-subagent": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-subagent-spawn-in-process": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-compaction-basic": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-persona": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tool-fs": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tool-fs-search": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tool-skill": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tool-ask-user": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-skill-filesystem": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-client-ui-layout": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-client-locale": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-compaction": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  }
 }

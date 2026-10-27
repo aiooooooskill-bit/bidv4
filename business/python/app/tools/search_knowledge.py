@@ -44,7 +44,7 @@ def _kb_image_hint(file_name: str) -> str:
     if not imgs:
         return warning
     first = imgs[0]['name']
-    return warning+f'\n  含图 {len(imgs)} 张——贴证书复印件用 docx_image_insert 插入正文节：knowledge/parse/{file_name}/images/{first}…（PDF 为整页渲染图，文件名即页码（img_007.png=第 7 页，空白页跳过）；docx 为文档内嵌图）'
+    return warning+f'\n  含图 {len(imgs)} 张——贴证书复印件用 docx_image_insert 插入正文节，image 参数：knowledge/parse/{file_name}/images/{first}；普通文件工具查看首图的绝对路径：{store.kb_images_dir(file_name) / first}（PDF 为整页渲染图，文件名即页码（img_007.png=第 7 页，空白页跳过）；docx 为文档内嵌图）'
 
 def _excerpt(item: dict, line_start, line_end, *, section_path=None) -> str:
     if section_path and section_path.startswith('条目信息'):

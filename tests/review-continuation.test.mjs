@@ -9,7 +9,7 @@ else test(name,{timeout:160000},async()=>{
  try{
   for(const mode of ['progress','error']){
   await host.command('reviewEarlyEnd',{mode});
-  const task=await host.command('fullWorkflow');
+  const task=await host.command('fullWorkflow',{include_review:true});
   const final=await host.command('nativeAnswer',{taskId:task.taskId});
   assert.equal(final.workflow.state,'completed',JSON.stringify(final.workflow));assert.equal(final.review.status,'reviewed');
   assert.deepEqual((await host.command('waitWorkflow',{taskId:task.taskId})).fixture_errors,[]);
@@ -25,7 +25,7 @@ else test(name,{timeout:160000},async()=>{
   if(mode==='error')assert.ok(evidence.events.some(e=>e.type==='turn/end'&&e.data.reason.kind==='error'),'A real provider failure is recovered after durable progress');
   }
   await host.command('reviewEarlyEnd',{mode:'none'});
-  const empty=await host.command('fullWorkflow');const failed=await host.command('nativeAnswer',{taskId:empty.taskId});
+  const empty=await host.command('fullWorkflow',{include_review:true});const failed=await host.command('nativeAnswer',{taskId:empty.taskId});
   assert.equal(failed.workflow.state,'failed');assert.equal(failed.execution.error,'本轮未生成有效审查报告');
   const stopped=await host.command('projectEvidence',{taskId:empty.taskId});assert.equal(stopped.records.find(r=>r.kind==='review').continuations,undefined);
   const count=await host.command('modelCount');await host.command('waitWorkflow',{taskId:empty.taskId});assert.equal(await host.command('modelCount'),count,'No empty-turn retry loop');

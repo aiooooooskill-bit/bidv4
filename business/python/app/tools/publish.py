@@ -17,7 +17,8 @@ _DRAFT_MAX_BYTES = 10 * 1024 * 1024
 def _resolve_draft(p: str) -> Path:
     """草稿路径 containment：解析（含符号链接）后必须落在当前任务的 _meta/staging/ 内。
 
-    相对路径按 workspace 根解析（模型给完整任务前缀路径，如 <任务目录>/_meta/staging/x.json）；
+    发布参数使用当前任务暂存文件的绝对路径，如 <当前任务绝对路径>/_meta/staging/x.json；
+    解析器接受的相对路径按 workspace 根解析。
     不猜测或纠正缺失的路径。
     """
     ctx = runctx.current_run()
@@ -41,7 +42,7 @@ def publish_artifact(contract: str, draft_path: str, display_name: str='') -> st
 
     使用方法：
     1. 先用文件工具把符合契约的 JSON 写到当前任务的 _meta/staging/ 目录（任务目录见任务
-       上下文，如 <任务目录>/_meta/staging/toc.json）；
+       上下文的「当前任务绝对路径」，如 <当前任务绝对路径>/_meta/staging/toc.json）；
     2. 再调用本工具登记发布（发布后草稿被移动消费）。发布前会做契约与内容结构校验，
        失败会返回原因。
 

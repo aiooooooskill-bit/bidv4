@@ -50,6 +50,7 @@ def test_assemble_and_publish(env):
     assert '悬空' not in r
     assert '已按最深承载折叠 1 处' in r
     assert '未被任何目录节点引用' in r and '最终回复' in r
+    assert f"JSON 副本：{env['out'] / 'outline/tender-response-docs.json'}" in r
     arts = artifact_store.list_from_disk()
     m = [a for a in arts if a['kind'] == 'tender.directory'][0]
     from app import db

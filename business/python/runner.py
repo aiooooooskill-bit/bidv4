@@ -1,7 +1,7 @@
 """One business operation per process; no server, model client or Agent loop."""
 import asyncio,base64,importlib,inspect,json,os,re,sys,typing
 from pathlib import Path
-from pydantic import BaseModel,TypeAdapter,create_model
+from pydantic import BaseModel,TypeAdapter,create_model,ConfigDict
 request=json.load(sys.stdin);os.environ['DATA_DIR']=request['data_root']
 from app import db,artifact_store,runctx,task_stage
 from app.services.errors import BusinessError,FileDownload,IncomingFile,Response
@@ -12,12 +12,15 @@ from app.work_paths import normalize_work_path
 ROUTES=json.loads((Path(__file__).parent/'app/services/routes.json').read_text())
 TOOL_MAP={f.__name__:f for f in TOOLS}
 
+def tool_model(name):
+    f=TOOL_MAP[name];signature=inspect.signature(f);hints=typing.get_type_hints(f, include_extras=True)
+    fields={k:(hints.get(k,str),... if p.default is inspect.Parameter.empty else p.default) for k,p in signature.parameters.items()}
+    return create_model(name,__config__=ConfigDict(extra='forbid'),**fields)
+
 def schemas():
     result=[]
     for name,f in TOOL_MAP.items():
-        signature=inspect.signature(f);hints=typing.get_type_hints(f)
-        fields={k:(hints.get(k,str),... if p.default is inspect.Parameter.empty else p.default) for k,p in signature.parameters.items()}
-        schema=create_model(name,**fields).model_json_schema()
+        schema=tool_model(name).model_json_schema()
         result.append({'name':name,'description':inspect.getdoc(f) or name,'parameters':schema})
     return result
 
@@ -37,6 +40,9 @@ async def dispatch():
     if op=='record_asset_read':
         from app.services.asset_usage import record_read
         record_read(args['task_id'],args['session_id'],args['asset']);return {'ok':True}
+    if op=='record_source_read':
+        from app.services.source_usage import record_read
+        record_read(args['task_id'],args['session_id'],args['source']);return {'ok':True}
     if op=='schemas':return schemas()
     if op in ('outline_begin','outline_dispatch','outline_check','outline_status'):
         from app.services import outline_contract
@@ -48,12 +54,13 @@ async def dispatch():
     if op=='routes':return ROUTES
     if op=='asset_access':
         from app.company_store import require_asset_path
-        asset=require_asset_path(args['task_id'],args['path']);return {'ok':True,'asset':asset}
+        from app.services.source_usage import access
+        asset=require_asset_path(args['task_id'],args['path']);return {'ok':True,'asset':asset,'source':access(args['task_id'],args['path'])}
     if op=='bidder_snapshot':
         from app.services.bidder import snapshot_for_task
         return snapshot_for_task(args['task_id'])
     if op=='review_prepare':return review.prepare(args['task_id'])
-    if op=='review_documents':return {'documents':review.documents(args['task_id'])}
+    if op=='review_documents':return review.prepared_documents(args['task_id'])
     if op=='review_progress':
         if not review_batches.path(args['task_id'],args['session_id']).is_file():return {'accepted':0,'batches':0,'total_batches':0}
         value,groups=review_batches.read(args['task_id'],args['session_id'])
@@ -114,7 +121,14 @@ async def dispatch():
         return page_flow.set_sources(args['task_id'],args['main_file'],args['supplements'])
     if op=='tool':
         tool_context()
-        parameters = args.get('parameters', {})
+        parameters = tool_model(args['name']).model_validate(args.get('parameters', {}), strict=True).model_dump()
+        consumed_source = None
+        if args['name'] in ('docx_source_inject', 'docx_image_insert'):
+            from app.services import source_usage
+            raw = parameters.get('source') if args['name'] == 'docx_source_inject' else parameters.get('image', '')
+            if raw and (args['name'] == 'docx_source_inject' or raw.startswith('sources/')):
+                path = artifact_store.sources_dir(request['task_id']) / raw.replace('\\', '/').rsplit('/', 1)[-1]
+                consumed_source = source_usage.access(request['task_id'], path)
         writes_section = args['name'] in ('docx_section_create', 'docx_section_revise', 'docx_material_inject', 'docx_source_inject', 'docx_image_insert', 'docx_comment_add', 'docx_diagram_insert', 'docx_html_figure')
         if writes_section:
             key = 'path' if 'path' in parameters else 'dest'
@@ -124,19 +138,28 @@ async def dispatch():
         section_path = parameters.get('path', parameters.get('dest', '')) if writes_section else ''
         if section_path and not section_path.endswith('.docx'):
             section_path += '.docx'
-        target = artifact_store.work_dir(request['task_id']) / section_path if section_path else None
-        before = page_flow.file_hash(target) if target and target.is_file() else None
-        result = TOOL_MAP[args['name']](**parameters)
+        revalidation = None
+        if args['name'] == 'validate_body' and parameters['section'].endswith('.docx'):
+            from app.services import section_revalidation
+            revalidation = section_revalidation.capture(request['task_id'], request.get('session_id', ''), parameters['section'])
+        if writes_section:
+            from app.services.section_write import execute
+            result = execute(request['task_id'], section_path, request.get('session_id'), consumed_source,
+                             args['name']=='docx_section_create', lambda: TOOL_MAP[args['name']](**parameters))
+        else:
+            result = TOOL_MAP[args['name']](**parameters)
         if args['name'] == 'finish_review_report':
             # Publish only after the existing complete-batch/report checks pass,
             # so the same Agent can read its final report before ending its reply.
             review.finish(request['task_id'], request['session_id'])
-        if target and target.is_file() and page_flow.file_hash(target) != before:
-            build_state.record_write(request['task_id'], section_path, request.get('session_id'), replace=args['name']=='docx_section_create')
-        if args['name'] == 'validate_body' and str(result).startswith('[校验通过]'):
-            section = args.get('parameters', {}).get('section', '')
-            if section.endswith('.docx'):
-                build_state.record_validation(request['task_id'], section)
+        if args['name'] == 'validate_body' and parameters['section'].endswith('.docx'):
+            section = parameters['section']
+            if str(result).startswith('[校验通过]'):
+                if section_revalidation.accept(request['task_id'], request.get('session_id', ''), section, revalidation):
+                    result += '\n[核验保留] 当前明确修订范围内已登记本次依据；原DOCX字节保持不变。'
+            elif str(result).startswith(('[校验未通过]', '[校验失败]')):
+                if section_revalidation.reject(request['task_id'], request.get('session_id', ''), section, revalidation):
+                    result += '\n[已退回待校验] 本轮复核未通过，原DOCX与旧合稿文件保留。'
         return result
     if op=='checks':
         tool_context();s=state(request['task_id']);return {'pipeline':TOOL_MAP['check_pipeline_state'](),'body':TOOL_MAP['validate_body'](section='body'),'has_body':bool(s['body_files']),'input_version':s['input_versions']['revise']}
@@ -155,7 +178,7 @@ async def dispatch():
         return {'result':result}
     if op=='dispatch_context':
         from app import dispatch_enrich
-        return dispatch_enrich.build_enriched_description(args['description'],request['task_id'])
+        return dispatch_enrich.body_dispatch(args['description'],request['task_id'])
     if op=='render_pending':
         from app import render_queue
         return {'requests':render_queue.pending()}
@@ -199,7 +222,7 @@ async def dispatch():
             if route['method']!=method or not match:continue
             from urllib.parse import unquote
             params={**args.get('query',{}),**dict(zip(keys,map(unquote,match.groups())))}
-            module=importlib.import_module('app.services.'+route['module']);f=getattr(module,route['function']);hints=typing.get_type_hints(f);kw={}
+            module=importlib.import_module('app.services.'+route['module']);f=getattr(module,route['function']);hints=typing.get_type_hints(f, include_extras=True);kw={}
             for name,param in inspect.signature(f).parameters.items():
                 annotation=hints.get(name,str)
                 if annotation is IncomingFile:

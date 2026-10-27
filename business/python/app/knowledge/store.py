@@ -1,4 +1,4 @@
-"""知识库磁盘布局与操作（workspace/knowledge/，与 skills/archive 同级的全局目录）。
+"""知识库磁盘布局与操作（data/workspace/knowledge/，与 materials/archive 同级的全局目录）。
 
     knowledge/
       files/<原文件名>              # 上传原件（证据形态，投标引用用原件）

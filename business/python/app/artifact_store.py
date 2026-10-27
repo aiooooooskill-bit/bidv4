@@ -12,7 +12,10 @@ workspace 按任务分组（目录即命名空间，目录名只用不可变 id�
       _meta/                      产物级谱系/暂存（UI 永不展示）
     workspace/<task_id>/skills/   当前业务技能的软链接
     workspace/archive/<task_id>/  删任务软归档（整任务目录 mv，可手工找回）
-    workspace/knowledge/          知识库（跨任务共享，唯一共享层）
+    workspace/knowledge/          公司资料（跨任务共享）
+    workspace/materials/          写作素材（跨任务共享）
+
+用户 Word 版式位于数据根目录的 templates/，不在 workspace/ 下。
 
 包结构（内容与身份分离）：
     .../artifacts/<aid>/
@@ -46,7 +49,7 @@ def write_lock():
 
 _AID_RE = re.compile(r"^art_[0-9a-f]{12}$")
 
-# 工作区全局资料目录，不参与任务产物索引。
+# 工作区保留名称，不参与任务产物索引；用户版式实际位于 data/templates/。
 _GLOBAL_DIR_NAMES = {"skills", "archive", "knowledge", "materials", "templates"}
 
 

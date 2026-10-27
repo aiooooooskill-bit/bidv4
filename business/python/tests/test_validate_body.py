@@ -80,7 +80,7 @@ def test_guide_invalid_mode_and_unknown_row(env):
     _write_body(env, 'body/写作指引.md', text)
     r = validate_body(**{'section': 'body/写作指引.md'})
     assert '模式「自由发挥」不合法' in r
-    assert '「9.9 不存在的节」不在目录叶子中' in r
+    assert '「9.9 不存在的节」不在目录正文目标中' in r
 
 def test_guide_stale_block_id(env):
     _seed_directory(env)
@@ -96,7 +96,7 @@ def test_guide_multi_volume_key(env):
     r = validate_body(**{'section': 'body/写作指引.md'})
     assert '指引缺行：「商务部分/6.1 售后服务承诺」' in r
     for t in ('3.1 项目理解与需求分析', '3.2 总体设计方案', '3.3 项目团队配置'):
-        assert f'「{t}」不在目录叶子中' in r
+        assert f'「{t}」不在目录正文目标中' in r
 
 def test_guide_without_directory_warns(env):
     """无目录产物：叶子对账降级为 warning，模式/块校验仍执行。"""
@@ -235,7 +235,7 @@ def test_guide_note_anaphora_warns(env):
     _seed_directory(env)
     _write_body(env, 'body/3.1 项目理解与需求分析.docx', '正文内容。\n')
     r = validate_body(**{'section': 'body/3.1 项目理解与需求分析.docx'})
-    assert '未传 block_ids' in r
+    assert '未传 block_ids' not in r
 
 def test_section_empty_file_is_issue(env):
     _seed_directory(env)
@@ -373,7 +373,7 @@ def test_section_docx_accepted_view_census(env):
     import json
     from app.tools.docx_ops import docx_section_revise
     _make_docx_section(env, 'body/3.1 项目理解与需求分析.docx', '3.1', '第一段。\n【待补：要删的占位】')
-    edits = json.dumps([{'para': 3, 'action': 'delete'}, {'para': 2, 'action': 'insert_after', 'text': '【待澄清：插入的占位】'}])
+    edits = [{'para': 3, 'action': 'delete'}, {'para': 2, 'action': 'insert_after', 'text': '【待澄清：插入的占位】'}]
     assert docx_section_revise(**{'path': 'body/3.1 项目理解与需求分析.docx', 'edits': edits}).startswith('[已修订]')
     r = validate_body(**{'section': 'body/3.1 项目理解与需求分析.docx', 'block_ids': []})
     assert r.startswith('[校验未通过]') and '共 1 处问题' in r

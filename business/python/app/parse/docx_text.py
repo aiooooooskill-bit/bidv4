@@ -12,6 +12,7 @@ from docx.opc.constants import CONTENT_TYPE as CT, RELATIONSHIP_TYPE as RT
 from docx.opc.packuri import PackURI
 from docx.package import Package
 from docx.parts.document import DocumentPart
+from docx.parts.settings import SettingsPart
 from docx.parts.styles import StylesPart
 from docx.parts.comments import CommentsPart
 from docx.oxml.ns import qn
@@ -69,6 +70,9 @@ def load_text_document(path):
             if kind == RT.STYLES:
                 styles = StylesPart.load(PackURI('/' + target), CT.WML_STYLES, archive.read(target), part.package)
                 part.relate_to(styles, RT.STYLES)
+            elif kind == RT.SETTINGS:
+                settings = SettingsPart.load(PackURI('/' + target), CT.WML_SETTINGS, archive.read(target), part.package)
+                part.relate_to(settings, RT.SETTINGS)
             elif kind == RT.COMMENTS:
                 comments = CommentsPart.load(PackURI('/' + target), CT.WML_COMMENTS, archive.read(target), part.package)
                 part.relate_to(comments, RT.COMMENTS)

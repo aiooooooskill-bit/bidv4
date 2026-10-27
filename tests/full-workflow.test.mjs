@@ -3,11 +3,19 @@ import assert from 'node:assert/strict';
 import {analysisFixture} from './helpers/analysis-session-fixture.mjs';
 import {runIsolatedTest} from './helpers/isolated-app.mjs';
 const name='页面自动全流程：自动创建成果、解读目录制作审查、缺值暂停与同会话继续';
-if(process.env.BIDV4_FULL_FIXTURE!=='1')test(name,{timeout:180000},()=>runIsolatedTest('full-workflow.test.mjs','BIDV4_FULL_FIXTURE',new RegExp(name),170000));
-else test(name,{timeout:160000},async()=>{
+if(process.env.BIDV4_FULL_FIXTURE!=='1')test(name,{timeout:360000},()=>runIsolatedTest('full-workflow.test.mjs','BIDV4_FULL_FIXTURE',new RegExp(name),350000));
+else test(name,{timeout:330000},async()=>{
  const host=await analysisFixture();
  try{
-  const {taskId,state}=await host.command('fullWorkflow');
+  const defaultTask=await host.command('fullWorkflow');
+  const defaultFinal=await host.command('nativeAnswer',{taskId:defaultTask.taskId});
+  assert.equal(defaultFinal.workflow.state,'completed');
+  assert.equal(defaultFinal.workflow.options.include_review,false);
+  assert.deepEqual(defaultFinal.workflow.completed,['analyse','outline','build']);
+  const defaultEvidence=await host.command('projectEvidence',{taskId:defaultTask.taskId});
+  assert.ok(defaultEvidence.records.every(r=>r.kind!=='review'),'Default workflow must never start review');
+  assert.ok(!defaultEvidence.events.some(e=>e.type==='tool/call'&&e.data.name==='finish_review_report'));
+  const {taskId,state}=await host.command('fullWorkflow',{include_review:true});
   assert.equal(state.workflow.state,'needs_input',JSON.stringify(state.workflow));assert.equal(state.execution.kind,'build');assert.deepEqual(state.workflow.completed,['analyse','outline']);
   const session=state.execution.session_id,question=state.execution.questions[0];
   const reply=await host.api('/page-flow/'+taskId+'/answer',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:session,call_ids:[question.callId],batches:[{call_id:question.callId,answers:[{id:'term',selected:['三年']}]}]})});assert.equal(reply.status,200,await reply.text());
@@ -18,7 +26,7 @@ else test(name,{timeout:160000},async()=>{
   assert.deepEqual(evidence.presets.filter(p=>p.id.startsWith('ooo-bidpliot')).map(p=>p.id),['ooo-bidpliot']);assert.ok(evidence.children.length>=2,'Original OCR and writing children remain native discoverable tasks');
   assert.ok(evidence.events.some(e=>e.type==='tool/call'&&e.data.name==='task'));assert.ok(evidence.events.some(e=>e.type==='tool/call'&&e.data.name==='finish_review_report'));
   const staleStop=await host.api('/page-flow/'+taskId+'/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:session,action_id:evidence.records.find(r=>r.kind==='analyse').action_id})});assert.equal(staleStop.status,409,'An old page cannot stop a different action in the same session');
-  const count=await host.command('modelCount');const reused=await host.api('/page-flow/'+taskId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(reused.status,202);assert.equal((await host.command('waitWorkflow',{taskId})).workflow.state,'completed');assert.equal(await host.command('modelCount'),count,'Valid completed work is reused without extra model requests');
+  const count=await host.command('modelCount');const reused=await host.api('/page-flow/'+taskId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input_versions:(await(await host.api('/page-flow/'+taskId+'/workflow-plan')).json()).input_versions})});assert.equal(reused.status,202);assert.equal((await host.command('waitWorkflow',{taskId})).workflow.state,'completed');assert.equal(await host.command('modelCount'),count,'Valid completed work is reused without extra model requests');
   const completedChat=await host.command('projectTool',{taskId,name:'ooo_bidpliot_run',parameters:{kind:'full'}});
   assert.equal(completedChat.workflow.state,'completed');assert.equal('instructions' in completedChat,false,'A completed workflow must not return an old review prompt');assert.equal(await host.command('modelCount'),count);
   assert.equal(final.review.status,'reviewed');assert.ok(final.review.report.report.requirements.length>0);assert.ok(final.volume_states.every(v=>v.status==='ready'));
@@ -34,11 +42,11 @@ else test(name,{timeout:160000},async()=>{
   const beforeModel=await(await host.api('/page-flow/'+taskId)).json();
   const changedModel=await host.api('/page-flow/'+taskId+'/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'analyse',request_id:crypto.randomUUID(),input_version:beforeModel.input_versions.analyse,main_file:beforeModel.source_selection.main,supplements:[]})});assert.equal(changedModel.status,202);
   const actualModel=await host.command('settleProject',{taskId});assert.equal(actualModel.state.execution.state,'completed');assert.equal(actualModel.state.session_id,session);assert.equal(actualModel.state.execution.model.model,'fixture-second');assert.equal(actualModel.lastRequest.model,'fixture-second','Recorded model and the actual provider request must match the native session selection');
-  const nativeTask=await host.command('fullWorkflow');assert.equal(nativeTask.state.workflow.state,'needs_input');const nativeSession=nativeTask.state.session_id;
+  const nativeTask=await host.command('fullWorkflow',{include_review:true});assert.equal(nativeTask.state.workflow.state,'needs_input');const nativeSession=nativeTask.state.session_id;
   const nativeCompleted=await host.command('nativeAnswer',{taskId:nativeTask.taskId});assert.equal(nativeCompleted.workflow.state,'completed',JSON.stringify(nativeCompleted.workflow));assert.equal(nativeCompleted.session_id,nativeSession,'Native question-card answers continue the same main conversation');
   const stoppedTask=await host.command('analysisStart',{workflow:true});
   while(!(await host.command('analysisState')).streaming)await new Promise(resolve=>setTimeout(resolve,80));
-  const duplicate=await(await host.api('/page-flow/'+stoppedTask.taskId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).json();
+  const duplicate=await(await host.api('/page-flow/'+stoppedTask.taskId+'/workflow',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({input_versions:(await(await host.api('/page-flow/'+stoppedTask.taskId+'/workflow-plan')).json()).input_versions})})).json();
   const live=await(await host.api('/page-flow/'+stoppedTask.taskId)).json();assert.equal(duplicate.id,live.workflow.id);
   const obsolete=await host.api('/page-flow/'+stoppedTask.taskId+'/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:live.session_id,action_id:'obsolete-action-id'})});assert.equal(obsolete.status,409);
   const oldWorkflow=await host.api('/page-flow/'+stoppedTask.taskId+'/workflow',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({workflow_id:'obsolete-workflow-id'})});assert.equal(oldWorkflow.status,409);

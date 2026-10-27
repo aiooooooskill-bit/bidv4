@@ -16,12 +16,12 @@ for(const arg of args.filter(a=>a.startsWith('--')))assert.ok(['--keep-open','--
 const workspace=option('--workdir')?resolve(option('--workdir')):await mkdtemp(join(tmpdir(),'ooo-bidpliot-delivery-'));
 await mkdir(workspace,{recursive:true});assert.deepEqual(await readdir(workspace),[],'Delivery verifier requires an empty workspace');
 const installation=join(workspace,'fixed-install'),source=join(workspace,'clean-source'),home=join(workspace,'dsh-home');
-const reportPath=resolve(option('--report')??join(project,'docs/evidence/plugin-delivery-validation-20261013.json'));
+const reportPath=resolve(option('--report')??join(project,'docs/evidence/deepseek-021-delivery-validation-20261019.json'));
 const environment={...process.env,DSH_HOME:home,DSH_TELEMETRY_DISABLED:'1',BID_DELIVERY_INSTALL:installation};
 delete environment.DSH_TOOLS_MODE;delete environment.NODE_TEST_CONTEXT;
 const releaseVersion=JSON.parse(await readFile(join(project,'package.json'),'utf8')).version;
 assert.match(releaseVersion,/^\d+\.\d+\.\d+$/);
-const report={name:'ooo-bidpliot',releaseVersion,startedAt:new Date().toISOString(),workspace,installation,hostHome:home,system:{platform:process.platform,arch:process.arch,node:process.version,dsh:'0.2.0-rc.2'},stages:[],passed:false};
+const report={name:'ooo-bidpliot',releaseVersion,startedAt:new Date().toISOString(),workspace,installation,hostHome:home,system:{platform:process.platform,arch:process.arch,node:process.version,dsh:JSON.parse(await readFile(join(project,'node_modules/@deepseek-ai/dsh/package.json'),'utf8')).version},stages:[],passed:false};
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const redact=text=>String(text).replace(/([?&]token=)[^\s)"']+/g,'$1[redacted]');
 let active;

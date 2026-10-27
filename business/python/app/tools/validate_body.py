@@ -33,7 +33,7 @@ from ..artifact_store import work_dir
 from ..knowledge import materials_lib
 from . import body_contract
 from .check_residue import re_split_name, scan_residue
-from .docx_ops import _accepted_text, _heading_style_ids, section_comments_labeled, section_lines_labeled, section_text_lines
+from .docx_ops import material_usage, _accepted_text, _heading_style_ids, section_comments_labeled, section_lines_labeled, section_text_lines
 from ..markdown import iter_tables, markdown_text
 _BLOCK_ID_RE = re.compile('blk_[0-9a-f]{12}')
 _PLACEHOLDER_MARKS = body_contract.PLACEHOLDER_MARKS
@@ -166,7 +166,7 @@ def _validate_guide(content_text: str, task_id: str) -> tuple[list[str], list[st
         mode = cells[idx['模式']].strip() if idx.get('模式', 1) < len(cells) else ''
         material = cells[idx['素材']].strip() if idx.get('素材', 3) < len(cells) else ''
         if content and key not in leaf_keys:
-            issues.append(f'写作指引.md:{lineno} 行「{key}」不在目录叶子中——节名须与目录逐字一致（多册写「册名/标题」），目录改版后须重对指引')
+            issues.append(f'写作指引.md:{lineno} 行「{key}」不在目录正文目标中——节名须与目录逐字一致（含有自有正文的父节点，多册写「册名/标题」），目录改版后须重对指引')
         tokens = [t.strip() for t in mode.split('+') if t.strip()]
         if tokens == ['—']:
             if key in prose_keys:
@@ -225,7 +225,8 @@ def _validate_guide(content_text: str, task_id: str) -> tuple[list[str], list[st
                     continue
                 warnings.append(f"素材块《{ba.get('title') or bids[i]}》与《{bb.get('title') or bids[j]}》同属素材文件 {fname} 且勾选区间重叠，分别派给「{row_blocks[bids[i]][0]}」「{row_blocks[bids[j]][0]}」——内容大面积相同，两节正文可能重复：确认是否重复建块（保留其一），或改拆成不重叠区间")
     if content:
-        for key in sorted(prose_keys - row_keys):
+        required_keys = {key for key in leaf_keys if delivery[key] != '目录容器'}
+        for key in sorted(required_keys - row_keys):
             issues.append(f"指引缺行：「{key}」（交付形态={delivery.get(key) or '未标注'}）——需正文的每节都要一行")
     return (issues, warnings, [])
 
@@ -398,8 +399,10 @@ def validate_body(section: str, block_ids: list[str] | None=None) -> str:
     整本收尾传 section="body"（目录）跑全局承诺比对与节间查重——承诺清单每个值
     未在任何正文出现、两节内容大面积重叠（同一素材进多节/原文照搬）都会被点名。
     [校验通过] 才算该节完成；[校验未通过] 逐条给出
-    「文件:行号 现状→修复」。校验是纪律不是门禁，不阻塞流程——但收尾汇报前
-    必须全部通过。只读、幂等。
+    「文件:行号 现状→修复」。本轮写作范围内的就绪稿件复核失败会退回待校验，
+    已有正文与旧合稿保留；所需章节全部通过才算阶段完成。内容检查不重写DOCX。
+    明确选定的局部修订范围内，核对当前依据后通过校验可登记核验保留，
+    无需为完成状态虚构文字修改；普通检查不刷新过期依据。
     Args:
         section: work/ 下的相对路径（如 body/写作指引.md、body/技术部分/3.1
                  项目理解.docx）；传 "body" 触发全局承诺比对
@@ -429,6 +432,10 @@ def validate_body(section: str, block_ids: list[str] | None=None) -> str:
         head = f'[校验通过] {raw}' if not issues else f'[校验未通过] {raw} 共 {len(issues)} 处问题（按提示修复后重新运行 validate_body，全部通过才算完成）：'
         parts = [head]
         parts.extend((f'- {i}' for i in issues))
+        if issues and p.suffix == '.docx':
+            point = next((match[1] for issue in issues if (match := re.match(r'^P(\d+)：', issue))), None)
+            if point:
+                parts.append(f'[定点回读] docx_section_read(path="{raw}", para={point})取得该P段完整原文；其他问题按实际P段号回读，不猜段号或表格位置。')
         parts.append(f'[待办批注/占位] 共 {len(notes)} 处（收尾汇报逐条点名，不得只字不提）：' if notes else '[待办批注/占位] 无')
         parts.extend((f'- {n}' for n in notes))
         parts.extend((f'⚠️ {w}' for w in warnings))
@@ -442,7 +449,11 @@ def validate_docx_file(p: Path, block_ids: list[str] | None = None, body_root: P
     from ..parse.docx_text import load_text_document
     doc, _ = load_text_document(p)
     labeled = section_lines_labeled(doc)
-    issues, warnings, notes = _validate_section([t for _, t in labeled], block_ids, labels=[lbl for lbl, _ in labeled])
+    effective_blocks = list(dict.fromkeys(material_usage(doc) + (block_ids or [])))
+    issues, warnings, notes = _validate_section([t for _, t in labeled], effective_blocks, labels=[lbl for lbl, _ in labeled])
+    if (labeled and not any(t.strip() and t.strip() != p.stem for _, t in labeled)
+            and not doc.tables and not list(doc.element.iter(qn('w:drawing')))):
+        issues.append('正文仅有节标题，不能代替声明/函件全文；按本节原格式补齐正文，未知字段保留批注')
     # Joined native cell text contains synthetic pipes. Inspect actual cell
     # paragraphs when detecting literal Markdown tables instead.
     for ti, table in enumerate(doc.tables, 1):

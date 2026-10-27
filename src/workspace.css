@@ -19,12 +19,6 @@
 .bp-root .preparation-panel .run-options fieldset>label{align-items:flex-start;flex-wrap:wrap;overflow-wrap:anywhere}
 .bp-root .preparation-panel .run-options fieldset>label>small{width:100%;padding-left:22px;box-sizing:border-box;color:var(--bid-color-text-muted)}
 .bp-root .preparation-panel .run-options>button{justify-self:stretch}
-.bp-root .preparation-review{font-size:13px;line-height:1.7;overflow-wrap:anywhere}
-.bp-root .preparation-review h2{font-size:14px;margin:0 0 16px}
-.bp-root .preparation-review h3{font-size:13px;margin:0 0 8px}
-.bp-root .preparation-review>section{margin-bottom:20px}
-.bp-root .preparation-review ul{padding-left:20px;margin:0 0 12px;color:var(--bid-color-text-muted)}
-.bp-root .preparation-review p{font-size:12px;color:var(--bid-color-text-muted);margin:0}
 @media(max-width:980px){.bp-root .build-workspace[data-panel-open="true"]{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(280px,1fr) minmax(180px,.75fr);flex-basis:500px}.bp-root .preparation-panel{border-left:0;border-top:1px solid var(--bid-color-border)}}
 .bp-root .project-workbench .bp-detail-bar{ flex-wrap:wrap; gap:10px; }
 .bp-root .project-workbench .bp-file{ min-width:0; flex:1; max-width:32%; }
@@ -103,6 +97,13 @@
 .bp-root .directory-file-state{font-size:11px;color:var(--bid-color-text-muted)}
 .bp-root .directory-file-state[data-state="stale"],.bp-root .directory-file-state[data-state="unverified"]{font-weight:600;color:var(--bid-color-warning-text)}
 .bp-root .chapter-notice{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;background:var(--bid-color-selected);font-size:12px;border-bottom:1px solid var(--bid-color-border)}
+.bp-root .chapter-preparation{flex:none;padding:8px 16px;background:var(--bid-color-surface);border-bottom:1px solid var(--bid-color-border);font-size:12px;line-height:1.5}
+.bp-root .chapter-preparation p{margin:0;color:var(--bid-color-text-muted)}
+.bp-root .chapter-preparation-item{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:6px 0}
+.bp-root .chapter-preparation-item>div{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;min-width:0}
+.bp-root .chapter-preparation-item span,.bp-root .chapter-preparation-item small{color:var(--bid-color-text-muted)}
+.bp-root .chapter-preparation-item small{font-size:12px}
+.bp-root .chapter-preparation-item>button{flex:none}
 .bp-root .retained-files{padding:10px 16px;border-top:1px solid var(--bid-color-border);font-size:12px;max-height:140px;overflow:auto}
 .bp-root .retained-files button{margin:8px 8px 0 0}
 .bp-root .outline-options{padding:24px;display:grid;gap:20px}
@@ -167,6 +168,7 @@
 .bp-root .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 .bp-root .bidder-summary{display:flex;align-items:center;gap:10px;min-width:0}
+.bp-root .project-workbench>.bidder-summary{padding-inline:20px}
 .bp-root .bidder-summary>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;min-width:0}
 .bp-root .bidder-summary span{color:var(--bid-color-text-muted)}
 .bp-root input:not([type=checkbox]):not([type=radio]),.bp-root select,.bp-root textarea{border:1px solid var(--bid-color-control-border);border-radius:var(--bid-radius-control);color:var(--bid-color-text);background:var(--bid-color-surface);font-size:var(--bid-font-control)}
@@ -174,3 +176,63 @@
 .bp-root textarea{padding:10px 12px;line-height:1.7}
 .bp-root input:focus-visible,.bp-root textarea:focus-visible,.bp-root select:focus-visible{outline:2px solid var(--bid-color-focus);outline-offset:2px}
 @media(max-width:760px){.bp-root .run-options{grid-template-columns:1fr;margin:12px;padding:14px}.bp-root .run-options-title{align-items:flex-start;flex-direction:column}.bp-root .bidder-summary{flex-wrap:wrap}}
+
+/* Automatic workflow confirmation uses the shared dialog and design tokens. */
+.bp-root .workflow-options{padding:24px}
+.bp-root .workflow-heading{display:flex;align-items:center;justify-content:space-between}
+.bp-root .workflow-heading h2{font-size:18px;font-weight:600;margin:0}
+.bp-root .workflow-close{border:0;background:transparent;color:var(--bid-color-text-muted);border-radius:6px;width:30px;height:30px;padding:0;font:inherit;font-size:22px;cursor:pointer}
+.bp-root .workflow-close:hover{background:var(--bid-color-hover)}
+.bp-root .workflow-intro{color:var(--bid-color-text-muted);margin:8px 0 22px}
+.bp-root .workflow-caption{font-size:13px;font-weight:600;margin-bottom:10px}
+.bp-root .workflow-steps{display:flex;flex-wrap:wrap;align-items:center;background:var(--bid-color-surface-soft);border:1px solid var(--bid-color-border);border-radius:8px;padding:18px 16px;gap:12px}
+.bp-root .workflow-step{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px}
+.bp-root .workflow-number{border-radius:50%;width:24px;height:24px;display:grid;place-items:center;background:var(--bid-color-selected);color:var(--bid-color-primary);font-size:12px;font-weight:600}
+.bp-root .workflow-arrow{color:var(--bid-color-text-disabled);margin-right:4px}
+.bp-root .workflow-optional{margin-top:22px}
+.bp-root .workflow-review{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid var(--bid-color-border);border-radius:8px;cursor:pointer}
+.bp-root .workflow-review[data-selected="true"]{border-color:var(--bid-color-primary);background:var(--bid-color-selected)}
+.bp-root .workflow-review input{accent-color:var(--bid-color-primary);width:17px;height:17px;margin:3px 0 0;flex:none;cursor:pointer}
+.bp-root .workflow-review-title{font-weight:600}
+.bp-root .workflow-tag{font-size:11px;color:var(--bid-color-text-muted);background:var(--bid-color-page);border-radius:4px;padding:2px 6px;margin-left:8px;font-weight:400}
+.bp-root .workflow-review p{margin:4px 0 0;color:var(--bid-color-text-muted);font-size:13px}
+.bp-root .workflow-warning{margin-top:12px;padding:10px 12px;color:var(--bid-color-warning-text);background:var(--bid-color-warning-bg);border:1px solid var(--bid-color-warning-border);border-radius:6px;font-size:13px;display:flex;gap:8px}
+.bp-root .workflow-summary{font-size:12px;color:var(--bid-color-text-muted);margin:16px 0 0}
+.bp-root .workflow-actions{border-top:1px solid var(--bid-color-border);padding:16px 24px;display:flex;justify-content:flex-end;gap:10px}
+
+/* Project sources: management stays in a dialog; original viewers keep their layout. */
+.bp-root .source-toolbar>select{flex:1;width:auto;min-width:100px}
+.bp-root .source-toolbar>.bp-btn{flex:none;white-space:nowrap}
+.bp-root .project-files-content{padding:18px;font-size:13px}
+.bp-root .project-main-choice{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.bp-root .project-main-choice>select{flex:1;min-width:0}
+.bp-root .project-file-row{display:flex;align-items:flex-start;gap:10px;padding:14px 0;border-top:1px solid var(--bid-color-border)}
+.bp-root .project-file-row>input{margin-top:5px;flex:none}
+.bp-root .project-file-info{flex:1;min-width:0}
+.bp-root .project-file-info>div{display:flex;gap:9px;align-items:center;flex-wrap:wrap;color:var(--bid-color-text-muted);font-size:12px;margin-top:5px}
+.bp-root .project-file-name{font:inherit;color:var(--bid-color-text);border:0;background:none;text-align:left;padding:0;overflow-wrap:anywhere;cursor:pointer}
+.bp-root .project-file-actions{display:flex;gap:6px;flex:none}
+.bp-root .project-file-error{color:var(--bid-color-error-text)}
+.bp-root .excel-preview{display:flex;flex-direction:column;min-width:0;min-height:0;flex:1}
+.bp-root .excel-toolbar{padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--bid-color-border);font-size:12px}
+.bp-root .excel-toolbar>strong{min-width:0;overflow-wrap:anywhere}
+.bp-root .excel-table{overflow:auto;padding:12px;min-height:0;flex:1}
+.bp-root .excel-table table{border-collapse:collapse;font-size:12px;width:max-content;min-width:100%}
+.bp-root .excel-table th,.bp-root .excel-table td{border:1px solid var(--bid-color-border);padding:8px 10px;text-align:left;min-width:48px;max-width:420px;white-space:pre-wrap;overflow-wrap:anywhere;vertical-align:top}
+.bp-root .excel-table th{background:var(--bid-color-page);font-weight:500}
+.bp-root .excel-table td[data-warning=true]{background:var(--bid-color-warning-bg);color:var(--bid-color-warning-text)}
+.bp-root .excel-notes{padding:10px 12px;font-size:12px;color:var(--bid-color-text-muted);border-top:1px solid var(--bid-color-border);max-height:160px;overflow:auto}
+.bp-root .excel-notes p{color:var(--bid-color-warning-text);margin:6px 0}
+.bp-root .workflow-bidder-notice{margin:16px 20px 0;padding:10px 12px;background:var(--bid-color-warning-bg);color:var(--bid-color-warning-text);font-size:13px}
+.bp-root .workflow-plan-step{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--bid-color-border)}
+.bp-root .workflow-plan-step>div{flex:1}
+.bp-root .workflow-plan-step p{font-size:12px;color:var(--bid-color-text-muted);margin:4px 0 0}
+.bp-root .workflow-plan-step[data-current=true]>.workflow-number{background:var(--bid-color-primary);color:var(--bid-color-on-primary)}
+.bp-root .project-title-editor{position:relative;display:flex;align-items:flex-start;gap:6px;min-width:0}
+.bp-root .project-title-editor>.bp-tile-title{flex:1;min-width:0}
+.bp-root .project-title-edit{position:relative;z-index:1;flex:none;background:none;border:0;padding:5px;color:var(--bid-color-text-muted);font:inherit;cursor:pointer;min-width:28px}
+.bp-root .project-title-editor:has(>input){display:block}
+.bp-root .project-title-editor>input{width:100%;box-sizing:border-box;font:inherit;border:1px solid var(--bid-color-primary);padding:7px;border-radius:6px}
+.bp-root .project-title-actions{display:flex;gap:6px;margin-top:8px}
+.bp-root .project-title-editor>p{font-size:12px;color:var(--bid-color-error-text)}
+@media(max-width:620px){.bp-root .source-toolbar{flex-wrap:wrap}.bp-root .project-file-row{flex-wrap:wrap}.bp-root .project-file-actions{margin-left:24px}.bp-root .workflow-plan-step{flex-wrap:wrap}.bp-root .workflow-plan-step>.bp-badge{margin-left:40px}}

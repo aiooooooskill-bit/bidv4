@@ -1,0 +1,136 @@
+{
+  "installedAt": "2026-10-19T11:21:07.521329+08:00",
+  "passed": true,
+  "installationCompleted": true,
+  "sourceVersion": "0.1.5",
+  "version": "0.1.6",
+  "host": "0.2.1-rc.2",
+  "installation": "/Users/ooo/.dsh/profiles/desktop/node_modules/ooo-bidpliot",
+  "artifact": "/Users/ooo/Documents/AIwork/bidv4/deliveries/ooo-bidpliot-0.1.6.tgz",
+  "artifactSha256": "7cbbf207ad4262b1ccaac24bc7a908ab8db1cce2dc64eec66b21035232a7096d",
+  "backup": "/Users/ooo/Documents/AIwork/backups/DeepSeek-正式更新前-20261019-111602",
+  "preservedDataByteForByte": true,
+  "preservedFileCounts": {
+    "data": 561,
+    "sessions": 769,
+    "attachments": 96,
+    "storages": 331
+  },
+  "profileContainsDuplicateCore": false,
+  "packagePostinstallPreparedPython": true,
+  "dependencySpec": "file:/Users/ooo/Documents/AIwork/bidv4/deliveries/ooo-bidpliot-0.1.6.tgz",
+  "enabled": true,
+  "allowBuildsLocator": "ooo-bidpliot@file:../../../Documents/AIwork/bidv4/deliveries/ooo-bidpliot-0.1.6.tgz",
+  "preservationRecord": "/Users/ooo/.dsh/update-preservation/20261019-112104",
+  "oldDependencyQuarantine": "/Users/ooo/.dsh/recovery-quarantine/desktop-before-016-20261019-112104",
+  "runtimeVerification": {
+    "nativeAppStartup": true,
+    "welcomeRpcSucceeded": true,
+    "pluginWorkbenchOpened": true,
+    "originalProjectsDisplayed": 2,
+    "companyDocumentsDisplayed": 14,
+    "originalSessionHistoryOpened": true,
+    "originalInterruptedTaskStillStopped": true,
+    "automaticBusinessResumeTriggered": false,
+    "activeFormalPluginVersion": "0.1.6"
+  },
+  "databaseAfterStartup": {
+    "integrity": "ok",
+    "tables": {
+      "tasks": {
+        "rows": 2,
+        "sha256": "154b5e799e6512217da6aaf224f3dd649fcce05fafef4ed208295499abbbb34f"
+      },
+      "app_settings": {
+        "rows": 79,
+        "sha256": "6dd2e1c50a878812b483cc72ccd87a0a0cbb2f1f65d95167aeb87411085a3564"
+      },
+      "artifact_index": {
+        "rows": 3,
+        "sha256": "77a54afb24ff2a73404387a87e0da8ad79be59d927df90caf2947073e3b61822"
+      },
+      "kb_items": {
+        "rows": 14,
+        "sha256": "82a73e095df3508d65d9490edfc9bb9f00335546500e90f9386f88fcf9db78e9"
+      },
+      "companies": {
+        "rows": 1,
+        "sha256": "7e59d68e5300eb5a499a928359dd9dadb1d1821399cbf3f94317e951aa0d66be"
+      },
+      "company_assets": {
+        "rows": 14,
+        "sha256": "d4f551f8f0f843d4df8df5a5e784725c350ecbba7bed4aee824e3e77ed42f7df"
+      },
+      "project_bidder": {
+        "rows": 1,
+        "sha256": "f3b3c593491c48a3f7993bbdc923fb80d818c84d60dcc99e54b7064f157101b8"
+      },
+      "kb_segments": {
+        "rows": 128,
+        "sha256": "332ce14d98e99e5a401944e9fd76bd5c3a5164524dcf2757f24c64a227689d6f"
+      },
+      "kb_segments_data": {
+        "rows": 76,
+        "sha256": "4a3c44638893240498ebecc78fd831f9814d018d63c80fadae32de00ddd1427d"
+      },
+      "kb_segments_idx": {
+        "rows": 74,
+        "sha256": "bf3e4ed4f6bd328aeb7d0985e2d3b64e9a8cc2b3fc715f203590aab3afec6f29"
+      },
+      "kb_segments_content": {
+        "rows": 128,
+        "sha256": "523494533503cc581a0cd053c8c43b7e76f4b867f6451fd883577499b738ea3e"
+      },
+      "kb_segments_docsize": {
+        "rows": 128,
+        "sha256": "41186939cf506b7a8fc0576d73c4fa57a78a18e7313d83d63bf8bbc2d06982b5"
+      },
+      "kb_segments_config": {
+        "rows": 1,
+        "sha256": "afaee2b1562b04a97bf25315b158b426795a3b6f88b13fd85d546090fb141946"
+      },
+      "mt_files": {
+        "rows": 11,
+        "sha256": "67de89a62825edab3606832b326867ab460ff1007bce3727e5d201ceb93add47"
+      },
+      "mt_blocks": {
+        "rows": 11,
+        "sha256": "7f59e4d0491c70483965c3342a18eb3e3963f0d8f267908dce703ec9c0e4e234"
+      },
+      "representatives": {
+        "rows": 1,
+        "sha256": "830c03b5bf0b7841115344a9a9eb4f37146a18b0a609061ce2f82c5ec4a463e3"
+      }
+    },
+    "allTableContentsEqualBackup": true,
+    "changedTables": []
+  },
+  "originalFilesAfterStartup": {
+    "sessions": {
+      "sameFiles": 769,
+      "originalPrefixWithNewTail": 0,
+      "hostProjectionCacheRefreshed": 0,
+      "allOriginalFilesRetained": true
+    },
+    "attachments": {
+      "sameFiles": 96,
+      "originalPrefixWithNewTail": 0,
+      "hostProjectionCacheRefreshed": 0,
+      "allOriginalFilesRetained": true
+    },
+    "storages": {
+      "sameFiles": 330,
+      "originalPrefixWithNewTail": 0,
+      "hostProjectionCacheRefreshed": 1,
+      "allOriginalFilesRetained": true
+    }
+  },
+  "separateLocalWebRestored": {
+    "port": 3080,
+    "hostVersion": "0.2.1-rc.2",
+    "pluginVersion": "0.1.6",
+    "projects": 4,
+    "noModelDispatch": true
+  },
+  "verifiedAt": "2026-10-19T11:25:17.549404+08:00"
+}

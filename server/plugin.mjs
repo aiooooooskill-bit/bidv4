@@ -34,10 +34,14 @@ export async function apply(ctx){
  ctx.reflect.provide('bidBusiness',runtime);
  const requests=new Set();let closing=false;
  ctx.effect(function*(){
+  // Collect the exact scope disposer into this ordered transaction. Cordis
+  // otherwise disposes sibling effects concurrently with the session drain.
+  yield releaseHost;
+  yield scope.dispose;
   yield async()=>{
    closing=true;
    try{for(const request of requests){request.controller.abort();if(!request.req.complete)request.req.destroy()}await Promise.all([...requests].map(request=>request.done.promise))}
-   finally{try{await runtime.close()}finally{try{await scope.close()}finally{await releaseHost()}}}
+   finally{await runtime.close()}
   };
   yield ctx.webServer.register({kind:'prefix',path:'/api/bidv4',async handler(req,res){
   if(closing){send(res,{detail:'ooo-bidpliot 正在关闭，请重新启用后继续'},503);return}
@@ -47,14 +51,16 @@ export async function apply(ctx){
   try{
    const url=new URL((req.url??'/').slice('/api/bidv4'.length)||'/', 'http://localhost');const path=url.pathname,method=req.method??'GET',query=Object.fromEntries(url.searchParams);
    if(path.startsWith('/assets/')){if(!['GET','HEAD'].includes(method))throw new BusinessError(405,'操作不支持');const dir=resolve(root,'dist'),asset=resolve(dir,decodeURIComponent(path.slice('/assets/'.length)));if(!asset.startsWith(dir+sep))throw new BusinessError(404,'文件不存在');const mime={'.js':'text/javascript','.mjs':'text/javascript','.wasm':'application/wasm'};await file(res,asset,null,mime[extname(asset)],method==='HEAD');return}
-   parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req,method==='POST'&&(path==='/materials/files'||(path==='/files'&&query.purpose==='bid'))):{body:{},cleanup:async()=>{}};
+   parsed=['POST','PUT','PATCH','DELETE'].includes(method)?await input(req,method==='POST'&&(path==='/materials/files'||/^\/materials\/files\/[^/]+\/replace$/.test(path)||(path==='/files'&&query.purpose==='bid'))):{body:{},cleanup:async()=>{}};
    const body=parsed.body;
    if(path==='/tasks'&&method==='GET'){send(res,await runtime.tasks());return}
    if(path==='/tasks'&&method==='POST'){send(res,await business(scope.ctx,'create_task',body),201);return}
    let match;
    if((match=path.match(/^\/tasks\/([^/]+)$/))&&method==='DELETE'){await runtime.assertIdle(match[1]);send(res,await business(scope.ctx,'archive_task',{task_id:match[1]}));return}
-   if((match=path.match(/^\/page-flow\/([^/]+)(?:\/(action|sources|checks|export|stop|answer|workflow|accept-section|review-input|review-decision))?$/))){
+   if((match=path.match(/^\/tasks\/([^/]+)$/))&&method==='PATCH'){const tid=match[1];runtime.admit(tid,'当前项目正在提交');try{await runtime.idleState(tid);send(res,await business(scope.ctx,'route',{method,path,body}))}finally{runtime.release(tid)}return}
+   if((match=path.match(/^\/page-flow\/([^/]+)(?:\/(action|sources|checks|export|stop|answer|workflow|workflow-plan|accept-section|review-input|review-decision))?$/))){
     const [,tid,operation]=match;
+    if(operation==='workflow-plan'&&method==='GET'){send(res,await runtime.workflows.plan(tid));return}
     if(!operation&&method==='GET'){send(res,await runtime.state(tid));return}
     if(operation==='workflow'&&method==='POST'){send(res,await runtime.workflows.start(tid,body),202);return}
     if(operation==='workflow'&&method==='DELETE'){send(res,await runtime.workflows.stop(tid,{workflow_id:body.workflow_id}));return}
@@ -63,7 +69,7 @@ export async function apply(ctx){
     if(operation==='review-decision'&&method==='PUT'){send(res,await runtime.reviewDecision(tid,body));return}
     if(operation==='sources'&&method==='PUT'){send(res,await runtime.saveSources(tid,body));return}
     if(operation==='stop'&&method==='POST'){if(typeof body.session_id!=='string'||typeof body.action_id!=='string')throw new BusinessError(409,'当前执行已变化');send(res,runtime.workflows.active(tid)?await runtime.workflows.stop(tid,{session_id:body.session_id,action_id:body.action_id}):await runtime.stop(tid,body.session_id,body.action_id));return}
-    if(operation==='answer'&&method==='POST'){const result=await runtime.answer(tid,body.session_id,body);const workflow=await runtime.workflows.snapshot(tid);if(workflow?.state==='needs_input')void runtime.workflows.start(tid,{resume:true}).catch(e=>console.error(e.message));send(res,result);return}
+    if(operation==='answer'&&method==='POST'){const result=await runtime.answer(tid,body.session_id,body);const workflow=await runtime.workflows.snapshot(tid);if(workflow?.state==='needs_input')void runtime.workflows.continueAfterAnswer(tid).catch(e=>console.error(e.message));send(res,result);return}
     if(operation==='checks'&&method==='GET'){send(res,await business(scope.ctx,'checks',{}, {taskId:tid,signal:controller.signal}));return}
     if(operation==='accept-section'&&method==='POST'){const state=await runtime.assertIdle(tid);if(body.input_version!==state.input_versions.revise)throw new BusinessError(409,'章节依据已变化，请读取最新内容');send(res,await business(scope.ctx,'accept_section',{task_id:tid,volume:body.volume,title:body.title}));return}
     if(operation==='export'&&method==='POST'){const state=await runtime.assertIdle(tid);if(body.input_version!==state.input_versions.revise)throw new BusinessError(409,'合册依据已变化，请刷新页面后继续');send(res,await business(scope.ctx,'export',{}, {taskId:tid,signal:controller.signal}));return}
@@ -72,14 +78,16 @@ export async function apply(ctx){
    if(path==='/render/pending'&&method==='GET'){send(res,await business(scope.ctx,'render_pending'));return}
    if(path==='/render/figure'&&method==='POST'){send(res,await business(scope.ctx,'render_fulfill',{request_id:body.request_id,file:parsed.upload?.path}));return}
    if(method==='PUT'&&(match=path.match(/^\/projects\/([^/]+)\/bidder$/))){send(res,await runtime.saveBidder(match[1],body));return}
+   if(query.task_id&&((path==='/files'&&method==='POST')||(/^\/files\/[^/]+$/.test(path)&&method==='DELETE'))){send(res,await runtime.sourceFile(method,path,query,parsed.upload,controller.signal),method==='POST'?201:200);return}
    if(query.task_id&&method!=='GET')await runtime.assertIdle(query.task_id);
    const route=routes.find(r=>r.method===method&&new RegExp('^'+r.path.replace(/\{\w+\}/g,'[^/]+')+'$').test(path));if(!route)throw new BusinessError(404,'操作不存在');
+   if((match=path.match(/^\/kb\/items\/([^/]+)(?:\/(replace|retrigger))?$/))&&method!=='GET'&&runtime.knowledge.has(match[1]))throw new BusinessError(409,'该资料正在识别，请处理结束后再操作');
    const value=await business(scope.ctx,'route',{method,path,query,body,upload:parsed.upload},{signal:controller.signal});
    if(value?.file_path){await file(res,value.file_path,value.file_name,value.media_type);return}
    if(value?.bytes){res.writeHead(200,{'Content-Type':value.media_type,'X-Content-Type-Options':'nosniff'});res.end(Buffer.from(value.bytes,'base64'));return}
    send(res,value,route.status);
    if(path==='/kb/files'&&method==='POST'&&value.id)void runtime.ingestKnowledge(value.id).catch(e=>console.error('ooo-bidpliot knowledge:',e.message));
-   if((match=path.match(/^\/kb\/items\/([^/]+)\/retrigger$/))&&method==='POST')void runtime.ingestKnowledge(match[1]).catch(e=>console.error('ooo-bidpliot knowledge:',e.message));
+   if((match=path.match(/^\/kb\/items\/([^/]+)\/(?:retrigger|replace)$/))&&method==='POST')void runtime.ingestKnowledge(match[1]).catch(e=>console.error('ooo-bidpliot knowledge:',e.message));
   }catch(error){if(!res.headersSent)send(res,{detail:error.message},error.status??500);else res.destroy()}
   finally{try{await parsed?.cleanup()}finally{requests.delete(request);request.done.resolve()}}
   }})

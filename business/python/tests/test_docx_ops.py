@@ -410,7 +410,7 @@ def test_revise_replace_across_runs(env):
     view = docx_section_read(**{'path': section})
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))
     edits = [{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}, {'para': para_no, 'action': 'replace', 'find': '服务期三年', 'text': '服务期两年'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]') and '2 处' in r, r
     chk = Document(str(_abs(env, section)))
     para = chk.paragraphs[para_no - 1]
@@ -428,7 +428,7 @@ def test_revise_insert_and_delete(env):
     head_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if '运维服务方案' in ln))
     tail_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if '服务期三年' in ln))
     edits = [{'para': tail_no, 'action': 'insert_after', 'text': '本章按本次招标文件要求编制。'}, {'para': head_no, 'action': 'delete'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]') and '2 处' in r, r
     chk = Document(str(_abs(env, section)))
     assert len(chk.paragraphs) == n_before + 1
@@ -449,7 +449,7 @@ def test_revise_return_lists_edits_and_appends_view(env):
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))
     tail_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if '服务期三年' in ln))
     edits = [{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}, {'para': tail_no, 'action': 'delete'}, {'para': tail_no, 'action': 'insert_after', 'text': '本章按本次招标文件要求编制。'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]') and '3 处' in r, r
     assert f'P{para_no} 替换「' in r and '上海中信科技' in r
     assert f'P{tail_no} 删除（原位保留删除标记' in r
@@ -467,7 +467,7 @@ def test_revise_return_pure_replace_carries_no_view(env):
     view = docx_section_read(**{'path': section})
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))
     edits = [{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]') and f'P{para_no} 替换「' in r
     assert '最新读视图如下' not in r
     assert '不改变段落序号' in r
@@ -476,18 +476,22 @@ def test_revise_find_mismatch_keeps_file(env):
     section, _ = _injected_section(env)
     before = _abs(env, section).read_bytes()
     edits = [{'para': 2, 'action': 'replace', 'find': '根本不存在的文本', 'text': 'x'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[修订失败]') and '未找到期望文本' in r
     assert _abs(env, section).read_bytes() == before
 
 def test_revise_bad_payload(env):
-    section = _make_section()
-    assert '不是合法 JSON' in docx_section_revise(**{'path': section, 'edits': '{oops'})
-    assert '非空 JSON 数组' in docx_section_revise(**{'path': section, 'edits': '[]'})
-    assert 'replace 需 find 与 text' in docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': 1, 'action': 'replace', 'text': 'x'}])})
-    assert '超出范围' in docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': 99, 'action': 'delete'}])})
-    assert '不可同时传' in docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': 1, 'table': 1, 'row': 1, 'col': 1, 'action': 'fill', 'text': 'x'}])})
-    assert '三件套' in docx_section_revise(**{'path': section, 'edits': json.dumps([{'action': 'fill', 'text': 'x'}])})
+    section = 'body/新节.docx'
+    docx_section_create(section, '新节', '正文')
+    before = _abs(env, section).read_bytes()
+    for bad in ['{oops', '[]', [], [{'para': 1, 'action': 'replace', 'text': 'x'}],
+                [{'para': 1, 'table': 1, 'row': 1, 'col': 1, 'action': 'fill', 'text': 'x'}],
+                [{'action': 'fill', 'text': 'x'}]]:
+        result = docx_section_revise(section, bad)
+        assert result.startswith('[修订失败]') and '本批未保存' in result
+        assert _abs(env, section).read_bytes() == before
+    assert '超出范围' in docx_section_revise(section, [{'para': 99, 'action': 'delete'}])
+
 
 def _format_section(env) -> str:
     """拷好招标格式件的节（格式件填空的测试载体）。"""
@@ -517,7 +521,7 @@ def test_revise_cell_fill_and_replace(env):
     from app.tools.docx_ops import _accepted_text
     section = _format_section(env)
     edits = [{'table': 1, 'row': 1, 'col': 2, 'action': 'fill', 'text': '智慧园区运维项目'}, {'table': 1, 'row': 2, 'col': 3, 'action': 'fill', 'text': '【待补：报价】'}, {'table': 1, 'row': 2, 'col': 2, 'action': 'replace', 'find': '报价大写', 'text': '报价大写金额'}, {'para': 2, 'action': 'insert_after', 'text': '函件正文补充行。'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]') and '4 处' in r, r
     chk = Document(str(_abs(env, section)))
     c12 = chk.tables[0].cell(0, 1)
@@ -535,7 +539,7 @@ def test_revise_merged_cell_via_continuation_coordinate(env):
     """合并格的续坐标（R3C1）与原点坐标指向同一格：任一坐标都能改到内容。"""
     from app.tools.docx_ops import _accepted_text
     section, _ = _injected_section(env)
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps([{'table': 1, 'row': 3, 'col': 1, 'action': 'replace', 'find': '项目经理', 'text': '项目总监'}])})
+    r = docx_section_revise(**{'path': section, 'edits': [{'table': 1, 'row': 3, 'col': 1, 'action': 'replace', 'find': '项目经理', 'text': '项目总监'}]})
     assert r.startswith('[已修订]'), r
     chk = Document(str(_abs(env, section)))
     assert _accepted_text(chk.tables[0].cell(1, 0).paragraphs[0]._p) == '项目总监'
@@ -543,14 +547,14 @@ def test_revise_merged_cell_via_continuation_coordinate(env):
 def test_revise_cell_fill_nonempty_rejected(env):
     section = _format_section(env)
     before = _abs(env, section).read_bytes()
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps([{'table': 1, 'row': 1, 'col': 1, 'action': 'fill', 'text': 'x'}])})
+    r = docx_section_revise(**{'path': section, 'edits': [{'table': 1, 'row': 1, 'col': 1, 'action': 'fill', 'text': 'x'}]})
     assert r.startswith('[修订失败]') and '非空格子' in r
     assert _abs(env, section).read_bytes() == before
 
 def test_revise_cell_out_of_range_and_find_miss(env):
     section = _format_section(env)
-    assert '超出范围' in docx_section_revise(**{'path': section, 'edits': json.dumps([{'table': 1, 'row': 9, 'col': 1, 'action': 'fill', 'text': 'x'}])})
-    assert '未找到期望文本' in docx_section_revise(**{'path': section, 'edits': json.dumps([{'table': 1, 'row': 1, 'col': 1, 'action': 'replace', 'find': '根本不存在', 'text': 'x'}])})
+    assert '超出范围' in docx_section_revise(**{'path': section, 'edits': [{'table': 1, 'row': 9, 'col': 1, 'action': 'fill', 'text': 'x'}]})
+    assert '未找到期望文本' in docx_section_revise(**{'path': section, 'edits': [{'table': 1, 'row': 1, 'col': 1, 'action': 'replace', 'find': '根本不存在', 'text': 'x'}]})
 
 def test_flatten_rejected_covers_table_cells(env):
     """自校验视角覆盖格内段落——表格修订写坏（拒绝视角文本变化）可被拦截。"""
@@ -904,7 +908,7 @@ def test_revise_insert_with_style(env):
     """insert_after 可带 style 字段挂指定版式（封面行）；样式不存在回落正文
     样式且返回注记——用户自定义版式缺封面样式名不失败。"""
     section = _make_section()
-    edits = json.dumps([{'para': 1, 'action': 'insert_after', 'text': 'XX 项目投标文件', 'style': 'Tender Cover'}, {'para': 1, 'action': 'insert_after', 'text': '投标人：XX 有限公司', 'style': 'Tender Cover Sub'}, {'para': 1, 'action': 'insert_after', 'text': '未知样式行', 'style': '不存在的样式'}], ensure_ascii=False)
+    edits = [{'para': 1, 'action': 'insert_after', 'text': 'XX 项目投标文件', 'style': 'Tender Cover'}, {'para': 1, 'action': 'insert_after', 'text': '投标人：XX 有限公司', 'style': 'Tender Cover Sub'}, {'para': 1, 'action': 'insert_after', 'text': '未知样式行', 'style': '不存在的样式'}]
     r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]')
     assert '不存在的样式' in r and '正文样式' in r
@@ -920,7 +924,7 @@ def test_assemble_cover_node(env):
     「首页不同」（封面页无页眉页脚）、第一章分页让封面独占一页。"""
     _seed_dir_artifact(env, _DIR_COVER)
     docx_section_create(**{'path': 'body/封面', 'title': '封面'})
-    docx_section_revise(**{'path': 'body/封面', 'edits': json.dumps([{'para': 1, 'action': 'insert_after', 'text': 'XX 项目投标文件（技术部分）', 'style': 'Tender Cover'}, {'para': 1, 'action': 'insert_after', 'text': '投标人：XX 有限公司', 'style': 'Tender Cover Sub'}], ensure_ascii=False)})
+    docx_section_revise(**{'path': 'body/封面', 'edits': [{'para': 1, 'action': 'insert_after', 'text': 'XX 项目投标文件（技术部分）', 'style': 'Tender Cover'}, {'para': 1, 'action': 'insert_after', 'text': '投标人：XX 有限公司', 'style': 'Tender Cover Sub'}]})
     docx_section_create(**{'path': 'body/项目理解与需求分析', 'title': '项目理解与需求分析', 'paragraphs': '项目理解正文第一段。'})
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]') and '缺失' not in r and ('未产出' not in r)
@@ -985,11 +989,11 @@ def test_assemble_accepts_revisions_and_keeps_images(env):
     assert docx_material_inject(**{'block_id': env['block']['id'], 'dest': section}).startswith('[已注入]')
     view = docx_section_read(**{'path': section})
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))
-    assert docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}])}).startswith('[已修订]')
-    assert docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': 1, 'action': 'insert_after', 'text': '删除演示段'}])}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': section, 'edits': [{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}]}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': section, 'edits': [{'para': 1, 'action': 'insert_after', 'text': '删除演示段'}]}).startswith('[已修订]')
     view = docx_section_read(**{'path': section})
     del_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if '删除演示段' in ln))
-    assert docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': del_no, 'action': 'delete'}])}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': section, 'edits': [{'para': del_no, 'action': 'delete'}]}).startswith('[已修订]')
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]') and '含图片 1 张' in r, r
     chk = Document(str(_abs(env, 'body/整本-技术部分.docx')))
@@ -1025,7 +1029,7 @@ def test_assemble_demotes_off_tree_headings(env):
     （样式自带层级，骨架完整）。"""
     _seed_dir_artifact(env, {'response_documents': [{'name': '技术部分', 'scope': '', 'directory': [{'目录名称': '运维实施方案', 'level': 1, 'children': [], '交付形态': '正文编写', '来源位置': []}]}]})
     assert docx_section_create(**{'path': 'body/运维实施方案', 'title': '运维实施方案'}).startswith('[已创建]')
-    assert docx_section_revise(**{'path': 'body/运维实施方案', 'edits': json.dumps([{'para': 1, 'action': 'insert_after', 'text': '沟通与报告机制', 'style': 'Heading 2'}], ensure_ascii=False)}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': 'body/运维实施方案', 'edits': [{'para': 1, 'action': 'insert_after', 'text': '沟通与报告机制', 'style': 'Heading 2'}]}).startswith('[已修订]')
     assert docx_material_inject(**{'block_id': env['block']['id'], 'dest': 'body/运维实施方案.docx'}).startswith('[已注入]')
     r = docx_assemble_volume(**{})
     assert r.startswith('[已合册]'), r
@@ -1293,11 +1297,11 @@ def test_section_text_lines_accepted_view(env):
     """校验对象=接受全部修订后的终稿：插入修订计入、删除修订不计。"""
     from app.tools.docx_ops import section_text_lines
     section = _make_section()
-    assert docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': 1, 'action': 'insert_after', 'text': '插入的新段落'}])}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': section, 'edits': [{'para': 1, 'action': 'insert_after', 'text': '插入的新段落'}]}).startswith('[已修订]')
     assert '插入的新段落' in section_text_lines(Document(str(_abs(env, section))))
     section2 = 'body/删除演示.docx'
     assert docx_section_create(**{'path': section2, 'title': 'X', 'paragraphs': '保留段\n删除段'}).startswith('[已创建]')
-    assert docx_section_revise(**{'path': section2, 'edits': json.dumps([{'para': 3, 'action': 'delete'}])}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': section2, 'edits': [{'para': 3, 'action': 'delete'}]}).startswith('[已修订]')
     assert section_text_lines(Document(str(_abs(env, section2)))) == ['X', '保留段', '']
 
 def test_revise_replace_across_revision_boundary(env):
@@ -1308,10 +1312,10 @@ def test_revise_replace_across_revision_boundary(env):
     section, _ = _injected_section(env)
     view = docx_section_read(**{'path': section})
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))
-    r1 = docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}])})
+    r1 = docx_section_revise(**{'path': section, 'edits': [{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}]})
     assert r1.startswith('[已修订]'), r1
     rejected_before = _flatten_rejected(Document(str(_abs(env, section))))
-    r2 = docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': para_no, 'action': 'replace', 'find': '上海中信科技有限公司承建', 'text': '我司承建'}])})
+    r2 = docx_section_revise(**{'path': section, 'edits': [{'para': para_no, 'action': 'replace', 'find': '上海中信科技有限公司承建', 'text': '我司承建'}]})
     assert r2.startswith('[已修订]'), r2
     chk = Document(str(_abs(env, section)))
     para = chk.paragraphs[para_no - 1]
@@ -1324,7 +1328,7 @@ def test_tools_survive_corrupt_docx(env):
     section = _make_section()
     _abs(env, section).write_bytes(b'not a zip file')
     assert docx_section_read(**{'path': section}).startswith('[读取失败]')
-    assert docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': 1, 'action': 'delete'}])}).startswith('[修订失败]')
+    assert docx_section_revise(**{'path': section, 'edits': [{'para': 1, 'action': 'delete'}]}).startswith('[修订失败]')
     src = mlib.mt_files_dir() / env['file']['file_name']
     src.write_bytes(b'PK broken zip')
     section2 = _make_section('技术部分/3.2 另一节.docx')
@@ -1343,7 +1347,7 @@ def test_revise_insert_after_keeps_submission_order(env):
     否则 addnext 紧跟定位段导致整批倒序）。"""
     section = _make_section()
     edits = [{'para': 1, 'action': 'insert_after', 'text': '第一条'}, {'para': 1, 'action': 'insert_after', 'text': '第二条'}, {'para': 1, 'action': 'insert_after', 'text': '第三条'}]
-    r = docx_section_revise(**{'path': section, 'edits': json.dumps(edits)})
+    r = docx_section_revise(**{'path': section, 'edits': edits})
     assert r.startswith('[已修订]') and '3 处' in r, r
     from app.tools.docx_ops import _accepted_text
     reopened = Document(str(_abs(env, section)))
@@ -1479,7 +1483,7 @@ def test_image_insert_rejects(env):
 def test_image_insert_into_revised_section(env):
     """已有修订标记的节里插图：rev_id 续号、自校验（拒绝视角不变）依旧通过。"""
     rel = _make_section('技术部分/3.3 业绩.docx')
-    r = docx_section_revise(**{'path': rel, 'edits': json.dumps([{'para': 1, 'action': 'insert_after', 'text': '公司近三年业绩一览。'}])})
+    r = docx_section_revise(**{'path': rel, 'edits': [{'para': 1, 'action': 'insert_after', 'text': '公司近三年业绩一览。'}]})
     assert r.startswith('[已修订]'), r
     r = docx_image_insert(**{'dest': rel, 'image': _kb_image(), 'after': '2'})
     assert r.startswith('[已插图]'), r
@@ -1495,10 +1499,10 @@ def test_comment_add_anchor_view_and_errors(env):
     assert r2.startswith('[已加批注]') and 'P3' in r2 and ('共 2 条' in r2), r2
     view = docx_section_read(**{'path': rel})
     assert '待办批注 2 条' in view
-    assert '〔批注：项目经理证书编号缺失，需向用户确认后回填〕' in view
+    assert '[批注@P2] 项目经理证书编号缺失，需向用户确认后回填' in view
     doc = Document(str(_abs(env, rel)))
     assert not any(('证书编号缺失' in t or '待澄清' in t for t in section_text_lines(doc)))
-    assert docx_section_revise(**{'path': rel, 'edits': json.dumps([{'para': 2, 'action': 'insert_after', 'text': '证书编号见附件。'}])}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': rel, 'edits': [{'para': 2, 'action': 'insert_after', 'text': '证书编号见附件。'}]}).startswith('[已修订]')
     assert '待办批注 2 条' in docx_section_read(**{'path': rel})
     assert docx_comment_add(**{'path': rel, 'text': ''}).startswith('[批注失败]')
     assert '段落号超范围' in docx_comment_add(**{'path': rel, 'after': '99', 'text': 'x'})
@@ -1512,7 +1516,7 @@ def test_revision_and_comment_authors_are_branded(env):
     section, _ = _injected_section(env)
     view = docx_section_read(**{'path': section})
     para_no = next((int(ln.split(']')[0][2:]) for ln in view.splitlines() if COMPANY in ln))
-    assert docx_section_revise(**{'path': section, 'edits': json.dumps([{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}])}).startswith('[已修订]')
+    assert docx_section_revise(**{'path': section, 'edits': [{'para': para_no, 'action': 'replace', 'find': COMPANY, 'text': '上海中信科技有限公司'}]}).startswith('[已修订]')
     assert docx_comment_add(**{'path': section, 'after': str(para_no), 'text': '署名核对'}).startswith('[已加批注]')
     doc = Document(str(_abs(env, section)))
     assert {el.get(qn('w:author')) for el in doc.paragraphs[para_no - 1]._p.iter() if el.tag in (qn('w:ins'), qn('w:del'))} == {_AUTHOR}
@@ -2153,7 +2157,7 @@ def test_revise_returns_now_text_without_reread(env):
     回读动机消除（2026-09-14 回读再收敛）；删除段标已删除；插段批维持全视图。"""
     import json as _json
     docx_section_create(**{'path': 'body/现文节', 'title': '现文节', 'paragraphs': '第一段原文甲。\n第二段原文乙。\n第三段原文丙。'})
-    edits = _json.dumps([{'para': 2, 'action': 'replace', 'find': '原文甲', 'text': '改后之甲'}, {'para': 3, 'action': 'delete'}], ensure_ascii=False)
+    edits = [{'para': 2, 'action': 'replace', 'find': '原文甲', 'text': '改后之甲'}, {'para': 3, 'action': 'delete'}]
     r = docx_section_revise(**{'path': 'body/现文节', 'edits': edits})
     assert '[已修订]' in r and '改动后现文（接受修订视角，无需回读确认）' in r
     assert 'P2 现文：第一段改后之甲。' in r
@@ -2161,12 +2165,12 @@ def test_revise_returns_now_text_without_reread(env):
     assert '最新读视图如下' not in r
     body = _json.dumps([{'type': 'table', 'header': ['项', '值'], 'rows': [['工期', ''], ['人员', '5']]}], ensure_ascii=False)
     docx_section_create(**{'path': 'body/现文表', 'title': '现文表', 'body': body})
-    edits2 = _json.dumps([{'table': 1, 'row': 2, 'col': 2, 'action': 'fill', 'text': '3 个月'}])
+    edits2 = [{'table': 1, 'row': 2, 'col': 2, 'action': 'fill', 'text': '3 个月'}]
     r2 = docx_section_revise(**{'path': 'body/现文表', 'edits': edits2})
     assert 'T1R2C2 现文：3 个月' in r2
     tail = '铺垫' * 130 + '结尾改这里'
     docx_section_create(**{'path': 'body/现文长段', 'title': '现文长段', 'paragraphs': tail + '原文。'})
-    r3 = docx_section_revise(**{'path': 'body/现文长段', 'edits': _json.dumps([{'para': 2, 'action': 'replace', 'find': '原文', 'text': '改后'}], ensure_ascii=False)})
+    r3 = docx_section_revise(**{'path': 'body/现文长段', 'edits': [{'para': 2, 'action': 'replace', 'find': '原文', 'text': '改后'}]})
     assert '结尾改这里改后。' in r3
 
 def test_sanitize_name_leading_dot():
@@ -2178,3 +2182,98 @@ def test_sanitize_name_leading_dot():
     assert sanitize_name('///') == '未命名'
     assert sanitize_name('A/B:方案') == 'A B 方案'
     assert sanitize_name('技术部分') == '技术部分'
+
+
+def test_comment_metadata_is_not_paragraph_replace_text(env):
+    rel = 'body/批注与正文边界.docx'
+    assert docx_section_create(rel, '边界验证', '保留这段真实正文。').startswith('[已创建]')
+    assert docx_comment_add(rel, '工程复核批注：须保持独立元数据', after='P2').startswith('[已加批注]')
+    view = docx_section_read(rel)
+    body = next(line for line in view.splitlines() if line.startswith('[P2]'))
+    assert '保留这段真实正文。' in body and '工程复核批注' not in body
+    assert '[批注@P2] 工程复核批注' in view and '非正文' in view
+    before = _abs(env, rel).read_bytes()
+    failure = docx_section_revise(rel, [{'para': 2, 'action': 'replace', 'find': '工程复核批注', 'text': ''}])
+    assert failure.startswith('[修订失败]') and _abs(env, rel).read_bytes() == before
+
+
+
+def test_audit_actual_material_provenance_cannot_be_omitted(env, monkeypatch):
+    from app.tools.docx_ops import material_usage
+    import importlib
+    vb = importlib.import_module("app.tools.validate_body")
+    from app.artifact_store import work_dir
+    section = _make_section()
+    result = docx_material_inject(block_id=env['block']['id'], dest=section)
+    assert result.startswith('[已注入]'), result
+    path = work_dir(env['task']['id']) / section
+    assert material_usage(Document(path)) == [env['block']['id']]
+    actual = vb._validate_section
+    seen = []
+    def capture(lines, block_ids, labels=None):
+        seen.append(block_ids)
+        return actual(lines, block_ids, labels)
+    monkeypatch.setattr(vb, '_validate_section', capture)
+    before = path.read_bytes()
+    vb.validate_docx_file(path)
+    vb.validate_docx_file(path, [])
+    assert seen == [[env['block']['id']], [env['block']['id']]]
+    assert path.read_bytes() == before
+    result = docx_material_inject(block_id=env['block']['id'], dest=section)
+    assert result.startswith('[注入失败]')
+    assert path.read_bytes() == before
+    assert docx_section_create(path=section, title='重建', replace=True).startswith('[已重建]')
+    assert material_usage(Document(path)) == []
+
+
+def test_audit_material_metadata_corruption_fails_closed(env):
+    from app.tools.docx_ops import _set_material_usage
+    from app.tools.validate_body import validate_docx_file
+    from app.artifact_store import work_dir
+    path = work_dir(env['task']['id']) / _make_section()
+    doc = Document(path)
+    _set_material_usage(doc, ['blk_123456789abc'])
+    var = doc.settings.element.find(qn('w:docVars')).find(qn('w:docVar'))
+    var.set(qn('w:val'), '{invalid')
+    doc.save(path)
+    with pytest.raises(ValueError):
+        validate_docx_file(path)
+
+
+def test_audit_material_range_and_failed_save_are_atomic(env, monkeypatch):
+    import importlib
+    ops = importlib.import_module('app.tools.docx_ops')
+    from app.artifact_store import work_dir
+    section = _make_section()
+    path = work_dir(env['task']['id']) / section
+    before = path.read_bytes()
+    original = ops._atomic_save
+    def fail(*args):
+        raise OSError('audit simulated disk failure')
+    monkeypatch.setattr(ops, '_atomic_save', fail)
+    result = docx_material_inject(block_id=env['block']['id'], dest=section, lines='L1-L3')
+    assert result.startswith('[注入失败]'), result
+    assert path.read_bytes() == before
+    assert ops.material_usage(Document(path)) == []
+    monkeypatch.setattr(ops, '_atomic_save', original)
+    result = docx_material_inject(block_id=env['block']['id'], dest=section, lines='L1-L3')
+    assert result.startswith('[已注入]'), result
+    assert ops.material_usage(Document(path)) == [env['block']['id'] + ':L1-L3']
+
+
+def test_audit_omitted_material_ids_must_check_actual_injection(env, monkeypatch):
+    import importlib
+    vb = importlib.import_module('app.tools.validate_body')
+    from app.artifact_store import work_dir
+    section = _make_section()
+    assert docx_material_inject(block_id=env['block']['id'], dest=section).startswith('[已注入]')
+    calls = []
+    original = vb._validate_section
+    def capture(lines, block_ids, labels=None):
+        calls.append(block_ids)
+        return original(lines, block_ids, labels)
+    monkeypatch.setattr(vb, '_validate_section', capture)
+    path = work_dir(env['task']['id']) / section
+    vb.validate_docx_file(path)
+    vb.validate_docx_file(path, [])
+    assert calls == [[env['block']['id']], [env['block']['id']]]

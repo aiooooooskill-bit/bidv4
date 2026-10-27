@@ -1,3 +1,4 @@
+import {validateJsonSchemaValue,ToolArgsError} from '@deepseek-ai/dsh-tools';
 import {createWriteStream} from 'node:fs';
 import {mkdir,mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {join,basename,extname} from 'node:path';
@@ -13,7 +14,7 @@ export async function chatAttachments(ctx,agent){
 }
 export async function projectStatus(ctx,tid,link){
  const state=await ctx.bidBusiness.state(tid),{artifacts}=await ctx.bidBusiness.artifacts(tid);
- return {task_id:tid,title:state.task.title,stage:state.task.stage,execution:state.execution,workflow:state.workflow,bidder:state.bidder,sources:state.source_selection,review:reviewSummary(state.review),
+ return {task_id:tid,title:state.task.title,stage:state.task.stage,execution:state.execution,workflow:state.workflow,bidder:state.bidder,sources:state.source_selection,body_sections:state.body_sections,review:reviewSummary(state.review),
   outputs:artifacts.filter(a=>a.kind==='tender.volume'&&state.volume_states.some(v=>v.status==='ready'&&v.artifact_id===a.artifact_id)).map(a=>({name:a.display_name,link:link('/api/bidv4/artifacts/'+a.artifact_id+'/file')})),
   documents:[...new Set([...state.files.map(f=>f.path),...(state.body_files??[])])].map(path=>({name:path.split('/').pop(),path,link:link('/api/bidv4/workbench/raw?'+new URLSearchParams({task_id:tid,path}))}))};
 }
@@ -26,7 +27,7 @@ export function reviewSummary(review){
 }
 export function registerChatTools(ctx,link){
  const runtime=ctx.bidBusiness,names=[];
- const register=(name,description,properties,required,execute)=>{names.push(name);ctx.tools.register({name,description,parameters:{type:'object',properties,required,additionalProperties:false},output,async execute(args,exec){return text(await execute(args,exec))}})};
+ const register=(name,description,properties,required,execute)=>{names.push(name);const parameters={type:'object',properties,required,additionalProperties:false};ctx.tools.register({name,description,parameters,output,async execute(args,exec){const violations=validateJsonSchemaValue(parameters,args,'');if(violations.length)throw new ToolArgsError(violations);return text(await execute(args,exec))}})};
  register('ooo_bidpliot_project','创建或配置与工作台共用的招投标项目。create需title；attachments列本会话原生上传附件；import只接受真实attachment_id与用途source/bid；company/representative保存用户明确提供的公司或代表资料；sources保存招标主文件与补充文件；bidder保存用户指定主体、签字代表和日期；review_files选择受审投标文件；library读取可选公司和代表。不要编造附件或公司编号。',{
   operation:{type:'string',enum:['create','attachments','import','sources','bidder','review_files','library','company','representative']},task_id:{type:'string'},title:{type:'string'},
   files:{type:'array',items:{type:'object',properties:{attachment_id:{type:'string'},purpose:{type:'string',enum:['source','bid']},name:{type:'string'}},required:['attachment_id'],additionalProperties:false}},
@@ -44,11 +45,11 @@ export function registerChatTools(ctx,link){
    for(const item of args.files){
     const ref=attachments.find(a=>a.attachmentId===item.attachment_id);if(!ref)throw new BusinessError(422,'附件不属于本次对话');
     const name=basename(item.name??ref.name??('附件-'+ref.attachmentId.slice(0,8)+'.'+(ref.mediaType?.split('/')[1]??'png')));
-    if(!['.docx','.pdf','.png','.jpg','.jpeg','.gif','.webp'].includes(extname(name).toLowerCase()))throw new BusinessError(415,'附件格式不支持');
+    if(!['.docx','.pdf','.xls','.xlsx','.png','.jpg','.jpeg','.gif','.webp'].includes(extname(name).toLowerCase()))throw new BusinessError(415,'附件格式不支持');
     if(item.purpose!=='bid'&&ref.bytes>100*1024*1024)throw new BusinessError(413,'招标来源文件超过100MB上限');
     await mkdir(join(dataRoot,'uploads'),{recursive:true});const directory=await mkdtemp(join(dataRoot,'uploads/chat-'));
     try{const path=join(directory,'file');if(ref.type==='image')await writeFile(path,(await ctx.attachments.readImage(ref)).data);else await pipeline(ctx.attachments.readFileStream(ref,exec.signal),createWriteStream(path));
-     await business(ctx,'route',{method:'POST',path:'/files',query:{task_id:tid,...(item.purpose==='bid'?{purpose:'bid'}:{})},upload:{path,filename:name}},{signal:exec.signal});imported.push(name);
+     await runtime.sourceFile('POST','/files',{task_id:tid,...(item.purpose==='bid'?{purpose:'bid'}:{})},{path,filename:name},exec.signal);imported.push(name);
     }finally{await rm(directory,{recursive:true,force:true})}
    }
    return {task_id:tid,imported};
@@ -59,13 +60,14 @@ export function registerChatTools(ctx,link){
   if(args.operation==='review_files')return runtime.saveReviewInput(tid,{bids:args.bids,input_version:state.input_versions.review});
   throw new BusinessError(422,'项目操作无效');
  });
- register('ooo_bidpliot_run','执行同一项目的解析解读、目录、制作、修订、审查或完整流程。analyse包含解析和八份解读；build含写作准备、正文和合册；full依次复用有效成果并完成解读、目录、制作、审查。返回阶段指令后由当前Agent直接执行，不创建其他Agent或会话。resume用于修复缺项或答复后继续原自动流程。不得把failed/needs_input宣称完成。',{
-  task_id:{type:'string'},kind:{type:'string',enum:['analyse','outline','guide','promises','build','body','revise','review','full','stop']},resume:{type:'boolean'},main_file:{type:'string'},supplements:{type:'array',items:{type:'string'}},page_target:{type:['integer','null']},numbering:{type:'string',enum:['decimal','chapter','gov','none']},sections:{type:'array',items:{type:'object',properties:{volume:{type:'string'},title:{type:'string'}},required:['volume','title'],additionalProperties:false}},instruction:{type:'string'},
+ register('ooo_bidpliot_run','执行同一项目的解析解读、目录、制作、修订、审查或完整流程。analyse包含解析和八份解读；build含写作准备、正文和合册；full依次复用有效成果并完成解读、目录、制作；仅用户明确选择标书审核时传include_review=true，审核会消耗大量Token，默认不审核。章节只读核验也先以revise并显式read_only=true启动阶段，取得权限及本轮完成记账，不能用零散读取/校验代替。返回阶段指令后由当前Agent直接执行，不创建其他Agent或会话。resume用于修复缺项或答复后继续原自动流程。不得把failed/needs_input宣称完成。',{
+  task_id:{type:'string'},kind:{type:'string',enum:['analyse','outline','guide','promises','build','body','revise','review','full']},resume:{type:'boolean'},include_review:{type:'boolean',description:'仅用于full。用户明确选择标书审核时为true，默认false；恢复流程保留原选择。'},main_file:{type:'string'},supplements:{type:'array',items:{type:'string'}},page_target:{type:['integer','null']},numbering:{type:'string',enum:['decimal','chapter','gov','none']},sections:{type:'array',description:'仅用status返回的body_sections条目的volume和title原值选择有独立正文的章节，不猜册名、不拆祖先路径为额外章节。',items:{type:'object',properties:{volume:{type:'string'},title:{type:'string'}},required:['volume','title'],additionalProperties:false}},instruction:{type:'string'},read_only:{type:'boolean',description:'revise仅做读取核验、保留原稿时显式传true；此权限同时约束主线程和写手。普通定向修改不传或false。'},
  },['task_id','kind'],async(args,exec)=>{
   const tid=args.task_id;await runtime.bindConversation(tid,exec.agent);
-  if(args.kind==='stop')throw new BusinessError(409,'请使用原生停止按钮停止当前执行');
   if(args.kind==='full'){
-   const workflow=await runtime.workflows.start(tid,{...args,agent:exec.agent});
+   if(args.read_only)throw new BusinessError(422,'只读核验使用revise阶段，不能启动完整制作');
+   const state=await runtime.state(tid);
+   const workflow=await runtime.workflows.start(tid,{...args,input_versions:state.input_versions,agent:exec.agent});
    const record=workflow.state==='running'?(await runtime.latestRecord(tid,workflow.stage))?.record:null;
    return {...await projectStatus(ctx,tid,link),...(record&&record.action_id===workflow.action_id?{instructions:record.prompt}:{})};
   }

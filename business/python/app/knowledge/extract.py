@@ -1,9 +1,8 @@
 """工序③：类型判定 + 时间/身份字段 + 内容说明（一次 LLM 调用三合一，v3）。
 
 设计要点：
-- 不预设内容字段。机器消费的最小集保持结构化——时间锚点（freshness 计算）+
-  身份锚点 project_name/client（来源标注/关联核对/残留扫描）；其余关键内容由
-  LLM 自由提取进「内容说明 statement」，每条事实带出处锚点（第N页/LN）。
+- 固定字段用于时间锚点（freshness 计算）和项目身份锚点；其他具名关键属性
+  提取为 extra，字段值和内容说明均带出处锚点（第N页/LN）。
 - 说明进检索索引（§statement 段）——事实类文件的正文常为表格/扫描，说明段是
   语义密度最高的可检索单元；命中标「AI 整理·数字须回原文核对」。
 - 检索问题（questions）进独立 §questions 段——用「用户会怎么问」的口吻补字面检索的
@@ -15,13 +14,13 @@ from __future__ import annotations
 import json
 import re
 from .types import FIELD_LABELS, TYPES, guess_type_by_filename, normalize_field_keys
-EXTRACT_SYSTEM = '你是投标资料管理员，负责判断资料类型、抽取时间与项目信息、整理内容说明。只输出 JSON。'
+EXTRACT_SYSTEM = '你是投标资料管理员，负责判断资料类型、抽取资料中的关键属性字段、整理内容说明。只输出 JSON。'
 _MIN_STATEMENT_CHARS = 20
 _MAX_QUESTIONS = 8
 _MAX_QUESTION_CHARS = 30
 _FENCE_RE = re.compile('```(?:json)?\\s*(.*?)```', re.S)
 _JSON_RE = re.compile('\\{.*\\}', re.S)
-_EXTRACT_TMPL = '请阅读以下资料文本，完成三件事：判断类型、抽取锚点字段、整理内容说明。\n\n## 预置类型（doc_type 必须从中选一个 code，禁止编造）\n{type_list}\n\n## 锚点字段（fields；认不出的不输出，每个带 source 出处如 "第1页"/"L12"）\n- 时间锚点按所选类型抽：{time_fields}\n- 若文档含项目名称/客户单位，输出 project_name / client（供来源标注与核对）\n\n## 内容说明（statement）\n- 若判定为写法类（past_proposal / reference_doc / technical_doc）：写 2–3 句结构概览\n  （共几章、主要主题是什么），不逐条罗列\n- 其他类型：**逐条列出关键内容**（数字/金额/编号/范围/等级/意见/人数等），每条事实后\n  跟（第N页）或（LN）出处；300–800 字；禁止评论、推测、编造——认不出或文中没有的不写\n\n## 检索问题（questions）\n- 若判定为写法类：questions 输出空数组，跳过本节\n- 其他类型：列 3–6 个「用户检索公司资料时会问的问题」短问句（每个 ≤20 字，如\n  「公司规模多大？」「持有哪些软件著作权？」「做过哪些医疗行业项目？」）——\n  覆盖这份资料能回答的主要维度；问句里的行业/规模/能力等归类词必须与文中内容\n  真实对应（项目是医院的才许写「医疗行业」），文中没有的不写；问句本身不带出处\n\n## 规则\n1. 只依据文本真实出现的内容；文件名提示：{filename_hint}\n2. fields 键用英文 code；模板外有固定名称的关键属性放 extra（中文键，如「认证范围」）\n3. 只输出一个 JSON 对象，不要 markdown 代码块包裹，格式：\n{{"doc_type": "<code>", "confidence": <0~1>, "statement": "…", "questions": ["…", …],\n  "fields": {{"<code>": {{"value": "…", "source": "…"}}}},\n  "extra": {{"<中文键>": {{"value": "…", "source": "…"}}}}}}\n\n## 资料文本（文件名：{filename}）\n{body}'
+_EXTRACT_TMPL = '请阅读以下资料文本，完成三件事：判断类型、抽取关键属性字段、整理内容说明。\n\n## 预置类型（doc_type 必须从中选一个 code，禁止编造）\n{type_list}\n\n## 锚点字段（fields；认不出的不输出，每个带 source 出处如 "第1页"/"L12"）\n- 时间锚点按所选类型抽：{time_fields}\n- 若文档含项目名称/客户单位，输出 project_name / client（供来源标注与核对）\n\n## 关键属性（extra；与 fields 一起作为页面“识别字段”展示）\n- 对事实类资料，逐项提取正文、表格中明确写出的关键属性；不局限于时间和项目锚点。\n- 如开户证明：账户名称、账号、开户银行、法定代表人、基本存款账户编号；如证照：单位名称、证书编号、许可范围、等级；如财务资料：报表期间、金额与单位。只提取原文存在的项目。\n- fields 未定义的属性使用 extra 中文键，value 必须是字符串，source 必须指向第N页或 LN；账号、编号保持原文，禁止转成数值。\n- 关键属性不能只写进 statement 或留在全文中；原文有具名属性时，必须同步输出到 fields 或 extra。\n- 资料没有明确属性才允许 fields 与 extra 同时为空，禁止猜测、拼凑。\n\n## 内容说明（statement）\n- 若判定为写法类（past_proposal / reference_doc / technical_doc）：写 2–3 句结构概览\n  （共几章、主要主题是什么），不逐条罗列\n- 其他类型：**逐条列出关键内容**（数字/金额/编号/范围/等级/意见/人数等），每条事实后\n  跟（第N页）或（LN）出处；300–800 字；禁止评论、推测、编造——认不出或文中没有的不写\n\n## 检索问题（questions）\n- 若判定为写法类：questions 输出空数组，跳过本节\n- 其他类型：列 3–6 个「用户检索公司资料时会问的问题」短问句（每个 ≤20 字，如\n  「公司规模多大？」「持有哪些软件著作权？」「做过哪些医疗行业项目？」）——\n  覆盖这份资料能回答的主要维度；问句里的行业/规模/能力等归类词必须与文中内容\n  真实对应（项目是医院的才许写「医疗行业」），文中没有的不写；问句本身不带出处\n\n## 规则\n1. 只依据文本真实出现的内容；文件名提示：{filename_hint}\n2. fields 键用英文 code；模板外有固定名称的关键属性放 extra（中文键，如「认证范围」）\n3. 只输出一个 JSON 对象，不要 markdown 代码块包裹，格式：\n{{"doc_type": "<code>", "confidence": <0~1>, "statement": "…", "questions": ["…", …],\n  "fields": {{"<code>": {{"value": "…", "source": "…"}}}},\n  "extra": {{"<中文键>": {{"value": "…", "source": "…"}}}}}}\n\n## 资料文本（文件名：{filename}）\n{body}'
 
 def build_extract_prompt(filename: str, md_text: str, *, max_chars: int=16000) -> str:
     """组装 prompt；长文头 70% + 尾 30% 截断（证照关键信息多在头尾）。"""

@@ -7,13 +7,15 @@ from .parse import convert,outline_with_lines,count_nodes,sha256_file,write_atom
 from .parse.pdf import render_page_png,insert_page_text
 from .parse.image import IMAGE_EXTS,_TRANSCRIBE_PROMPT
 from .parse.docx_text import TEXT_VIEW
+from .parse.excel import TEXT_VIEW as EXCEL_TEXT_VIEW
 
 def prepare(src,out):
     src=Path(src);out=Path(out);out.mkdir(parents=True,exist_ok=True)
     digest=sha256_file(src);paths=[out/(src.name+s) for s in ['.md','.outline.json','.meta.json']]
     if all(p.is_file() for p in paths):
         meta=json.loads(paths[2].read_text())
-        if meta.get('sha256')==digest and (src.suffix.lower()!='.docx' or meta.get('text_view')==TEXT_VIEW):
+        text_view={'.docx':TEXT_VIEW,'.xls':EXCEL_TEXT_VIEW,'.xlsx':EXCEL_TEXT_VIEW}.get(src.suffix.lower())
+        if meta.get('sha256')==digest and (text_view is None or meta.get('text_view')==text_view):
             return {'cached':True,'paths':[str(p) for p in paths],'meta':meta}
     pages=[]
     if src.suffix.lower() in IMAGE_EXTS:
@@ -57,7 +59,7 @@ def finish(plan,outputs):
     if outputs:info={**info,'conversion':'pdf-mixed' if src.suffix.lower()=='.pdf' else 'vision','ocr_pages':expected}
     # Native Word chapters may legitimately be a short cover or declaration.
     # OCR and PDF conversions still require enough content to detect failed extraction.
-    if not md.strip() or (not info.get('conversion','').startswith('docx-') and len(md.strip())<100):
+    if not md.strip() or (not info.get('conversion','').startswith(('docx-', 'excel-')) and len(md.strip())<100):
         raise ValueError('解析内容为空或识别内容不足100字符，无法继续；请检查文件是否完整')
     outline=outline_with_lines(md)
     meta={'source':src.name,'sha256':plan['sha256'],'bytes':src.stat().st_size,'chars':len(md),'headings':count_nodes(outline),'generated_at':datetime.now(timezone.utc).isoformat(timespec='seconds'),**info}

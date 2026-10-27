@@ -30,22 +30,25 @@ def _source_node(tid, relative):
     matches = []
     for doc in content.get('response_documents', []):
         vol = body_contract.document_name(doc)
-        prefix = 'body/' + (body_contract.sanitize_name(vol) + '/' if body_contract.multi_volume(content) else '')
-        for node in body_contract._iter_nodes(doc.get('directory', [])):
-            if prefix + body_contract.sanitize_name(node['目录名称']) + '.docx' == relative:
-                matches.append((prefix, node))
+        prefix = 'body/' + (body_contract.volume_key(vol) + '/' if body_contract.multi_volume(content) else '')
+        def visit(nodes, ancestors=()):
+            for node in nodes:
+                if prefix + body_contract.sanitize_name(node['目录名称']) + '.docx' == relative:
+                    matches.append((prefix, node, ancestors))
+                visit(node.get('children', []), (*ancestors, node))
+        visit(doc.get('directory', []))
     if len(matches) != 1:
         raise ValueError('原正文路径须唯一对应当前目录节点，不能猜测同名章节')
     return matches[0]
 
 
 def docx_section_repartition(path: str, assignments_json: str = '', expected_sha256: str = '') -> str:
-    """将既有父章节完整分配到本节点和子孙章节，保全原文字、表格、图片、样式及关系。
+    """将既有正文完整归集到本节点、子孙或有独立正文的祖先，保全原文字、表格、图片、样式及关系。
 
     先只传path读取B1起的正文块顺序、标题和sha256。标题段也在块编号中，
     所有块必须恰好分配一次，不能遗漏/重复；无法确认归属的块留在父节点。
     assignments_json是JSON字符串：[{"title":"当前目录中的完整标题","ranges":[[1,3],[8,9]]},...]。
-    写入必须传读到的expected_sha256。只允许同册原节点及子孙节点，不覆盖已有子节。
+    写入必须传读到的expected_sha256。允许将错放子节的声明归回本册祖先；仅限read返回的allowed_titles，不开放兄弟节或跨册，不覆盖已有目标。
     不把原文件整段重复粘入每个子节，不生成新正文或新标题，不因拆分自动标成已校验。
     返回的每个输出须validate_body；之后合册按当前树序并入父节点正文及子节。
     """
@@ -56,7 +59,10 @@ def docx_section_repartition(path: str, assignments_json: str = '', expected_sha
         raise ValueError('当前会话未归属任务')
     tid = current.task_id
     source, relative = _dest_path(tid, path, must_exist=True)
-    prefix, node = _source_node(tid, relative)
+    prefix, node, ancestors = _source_node(tid, relative)
+    required = {s['path'] for s in build_state.sections(tid)}
+    allowed_nodes = [n for n in [*ancestors, *body_contract._iter_nodes([node])]
+                     if prefix + body_contract.sanitize_name(n['目录名称']) + '.docx' in required]
     original = source.read_bytes()
     digest = hashlib.sha256(original).hexdigest()
     src = Document(BytesIO(original))
@@ -65,7 +71,7 @@ def docx_section_repartition(path: str, assignments_json: str = '', expected_sha
         view = [{'block': i, 'kind': e.tag.rsplit('}', 1)[-1],
                  'text': ''.join(t.text or '' for t in e.iter(qn('w:t')))[:240]} for i, e in enumerate(blocks, 1)]
         return json.dumps({'source': relative, 'sha256': digest, 'block_count': len(blocks),
-                           'allowed_titles': [n['目录名称'] for n in body_contract._iter_nodes([node])], 'blocks': view}, ensure_ascii=False)
+                           'allowed_titles': [n['目录名称'] for n in allowed_nodes], 'blocks': view}, ensure_ascii=False)
     if not expected_sha256 or expected_sha256 != digest:
         raise ValueError('原正文已变化或缺少expected_sha256，请重读块视图后再归集；未改动文件')
     try:
@@ -74,14 +80,14 @@ def docx_section_repartition(path: str, assignments_json: str = '', expected_sha
         raise ValueError('assignments_json须为合法JSON数组') from e
     if not isinstance(assignments, list) or not assignments:
         raise ValueError('须明确每个正文块的归属，不能空分配')
-    allowed = Counter(n['目录名称'] for n in body_contract._iter_nodes([node]))
+    allowed = Counter(n['目录名称'] for n in allowed_nodes)
     routed, coverage = {}, []
     for item in assignments:
         if not isinstance(item, dict) or set(item) != {'title', 'ranges'}:
             raise ValueError('每项只含title与ranges')
         title = item['title']
         if not isinstance(title, str) or allowed[title] != 1:
-            raise ValueError('目标必须唯一对应原章节或其子孙节点：' + str(title))
+            raise ValueError('目标必须唯一对应同册原章节、子孙或有独立正文的祖先，不能转入兄弟节或其他册：' + str(title))
         target, target_rel = _dest_path(tid, prefix + body_contract.sanitize_name(title) + '.docx', must_exist=False)
         if target_rel in routed or (target != source and target.exists()):
             raise ValueError('目标已有正文或清洗后重名，不能覆盖或重复分配：' + target_rel)
@@ -155,12 +161,13 @@ def docx_section_repartition(path: str, assignments_json: str = '', expected_sha
                 value.get('sections', {}).pop(relative, None)
                 value.get('pending_sections', {}).pop(relative, None)
                 build_state.save(tid, value)
-            dependencies = before_state.get('asset_dependencies', {}).get(relative)
-            if dependencies:
-                value = build_state.read(tid)
-                for rel in staged:
-                    value.setdefault('asset_dependencies', {})[rel] = deepcopy(dependencies)
-                build_state.save(tid, value)
+            value = build_state.read(tid)
+            for key in ('asset_dependencies', 'source_dependencies'):
+                dependencies = before_state.get(key, {}).get(relative)
+                if dependencies:
+                    for rel in staged:
+                        value.setdefault(key, {})[rel] = deepcopy(dependencies)
+            build_state.save(tid, value)
             for rel in staged:
                 section = next(s for s in build_state.sections(tid) if s['path'] == rel)
                 build_state._record_write_locked(tid, section, build_state.read(tid), current.conversation_id)

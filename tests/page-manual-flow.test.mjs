@@ -33,7 +33,7 @@ else test(name,{timeout:160000},async()=>{
   const refresh=async()=>{await find(page,n=>n.props?.flow&&typeof n.props.onChanged==='function').props.onChanged();await page.settle()};
   const actionCount=()=>requests.filter(r=>r.url.endsWith('/action')).length;
   const run=async(view,label)=>{const control=button(view,label);assert.equal(!!control.props.disabled,false,label);const before=actionCount();control.props.onClick();await eventually(()=>actionCount()>before,label+' must submit');const result=await host.command('settleProject',{taskId:tid});await refresh();return result.state};
-  let state=await run(page,'开始解读');assert.equal(state.execution.state,'completed');assert.equal(state.workflow,null);assert.equal(state.files.filter(file=>file.path.startsWith('analysis/')).length,8);
+  let state=await run(page,'开始解读');assert.equal(state.execution.state,'completed',JSON.stringify(state.execution));assert.equal(state.workflow,null);assert.equal(state.files.filter(file=>file.path.startsWith('analysis/')).length,8);
   const sessionId=state.session_id;
   const queried=await host.command('queryProject',{taskId:tid});assert.equal(queried.lastRequest.model,'fixture','Native Agent can query this manually started project');
   button(page,'制作标书').props.onClick();await page.settle();await refresh();
@@ -41,16 +41,16 @@ else test(name,{timeout:160000},async()=>{
   const syncBuild=()=>{Object.assign(buildProps,find(page,n=>n.props?.flow&&typeof n.props.execute==='function').props);build.render()};
   button(build,'智能生成目录').props.onClick();
   const outline=find(build,n=>typeof n.props?.onSubmit==='function');assert.equal(await outline.props.onSubmit({page_target:null,numbering:'decimal'}),true);
-  state=(await host.command('settleProject',{taskId:tid})).state;await refresh();syncBuild();assert.equal(state.execution.kind,'outline');assert.equal(state.execution.state,'completed');assert.ok(state.directory);
+  state=(await host.command('settleProject',{taskId:tid})).state;await refresh();syncBuild();assert.equal(state.execution.kind,'outline');assert.equal(state.execution.state,'completed',JSON.stringify(state.execution));assert.ok(state.directory);
   state=await run(build,'开始制作标书');syncBuild();assert.equal(state.execution.state,'needs_input');assert.equal(state.execution.kind,'build');assert.equal(state.session_id,sessionId);
   find(build,n=>n.type==='input'&&n.props.type==='radio').props.onChange({target:{checked:true}});page.render();syncBuild();
   const beforeAnswer=requests.filter(r=>r.url.endsWith('/answer')).length;
   find(build,n=>n.type==='form').props.onSubmit({preventDefault(){}});
   await eventually(()=>requests.filter(r=>r.url.endsWith('/answer')).length>beforeAnswer,'The original page question form must submit');
-  state=(await host.command('settleProject',{taskId:tid})).state;await refresh();syncBuild();assert.equal(state.execution.state,'completed');assert.ok(state.volume_states.every(v=>v.status==='ready'));
+  state=(await host.command('settleProject',{taskId:tid})).state;await refresh();syncBuild();assert.equal(state.execution.state,'completed',JSON.stringify(state.execution));assert.ok(state.volume_states.every(v=>v.status==='ready'));
   const beforeExport=requests.filter(r=>r.url.endsWith('/export')).length;
   button(build,'合册导出').props.onClick();await eventually(()=>requests.filter(r=>r.url.endsWith('/export')).length>beforeExport,'Manual export must submit');await refresh();syncBuild();
-  const link=find(build,n=>n.type==='a'&&n.props.children==='下载标书');
+  const link=find(build,n=>n.type==='a'&&n.props.children==='下载 Word');
   const download=await realFetch(new URL(link.props.href,host.state.base),{headers:{Cookie:cookie}});assert.equal(download.status,200);const bytes=Buffer.from(await download.arrayBuffer());assert.equal(bytes.subarray(0,2).toString(),'PK');assert.ok(bytes.length>1000);
   state=await run(page,'发起审核');assert.equal(props.mode,'review');assert.equal(state.review.status,'reviewed');assert.ok(state.review.report.report.requirements.length>0);assert.equal(state.session_id,sessionId);
   const evidence=await host.command('projectEvidence',{taskId:tid});assert.deepEqual([...new Set(evidence.records.map(r=>r.session_id))],[sessionId]);assert.deepEqual(evidence.records.map(r=>r.kind).sort(),['analyse','build','outline','review']);assert.ok(evidence.records.every(r=>r.projection.state==='completed'));

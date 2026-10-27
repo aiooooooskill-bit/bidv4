@@ -108,3 +108,4 @@ def count_nodes(tree: list[dict]) -> int:
 from . import docx as _docx  # noqa: E402,F401
 from . import pdf as _pdf  # noqa: E402,F401
 from . import text as _text  # noqa: E402,F401
+from . import excel as _excel  # noqa: E402,F401

@@ -4,5 +4,5 @@ export async function createBusinessScope(parent){
  const ready=Promise.withResolvers();
  const fiber=parent.plugin({name:'ooo-bidpliot-business-scope',apply(ctx){ready.resolve(ctx)}});
  const ctx=await ready.promise;
- return {ctx,close:async()=>{await fiber.dispose();while(fiber.inertia)await fiber.inertia}};
+ return {ctx,dispose:fiber.dispose,close:async()=>{await fiber.dispose();while(fiber.inertia)await fiber.inertia}};
 }

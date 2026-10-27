@@ -62,7 +62,7 @@ print(json.dumps({'tid':tid,'sha':hashlib.sha256((r/'body/实施方案.docx').re
   scope=await createBusinessScope(host,join(dataRoot,'runtime'));runtime=new BusinessRuntime(scope.ctx);await runtime.init();scope.ctx.reflect.provide('bidBusiness',runtime);scope.ctx.reflect.provide('webServer',{port:0});await runtime.skillsLink(cwd);
   handle=await scope.ctx.agents.create({sessionId:id,meta:{cwd,agentPreset:'ooo-bidpliot'},agentOptions:{provider:'fixture',model:'fixture'},setup:async c=>{await scope.ctx.agentPresets.mount(c,'ooo-bidpliot')}});
   const folder=join(dataRoot,'actions',tid);await mkdir(folder,{recursive:true});
-  const record={kind:'body',session_id:id,section_paths:['body/接口对接.docx','body/故障处置.docx']};await writeFile(join(folder,'latest.json'),JSON.stringify(record));
+  const record={action_id:'repartition-fixture-action',kind:'body',session_id:id,section_paths:['body/接口对接.docx','body/故障处置.docx']};await writeFile(join(folder,'latest.json'),JSON.stringify(record));
   handle.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'单章阶段归集限制验证'}]}));await handle.agent.whenIdle();assert.ok(blocked);assert.ok((await readFile(source)).equals(original));
   await writeFile(join(folder,'latest.json'),JSON.stringify({...record,kind:'build'}));
   handle.agent.followup(createUserMessage({source:{kind:'human'},content:[{type:'text',text:'完整制作归集并逐节校验与合册'}]}));await handle.agent.whenIdle();

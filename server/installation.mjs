@@ -10,7 +10,7 @@ const assetDirectories=['dist/pdfjs/cmaps','dist/pdfjs/standard_fonts','dist/pdf
 const skills=['document-parse','tender-analysis','tender-outline','tender-body','tender-qa','humanizer-zh','tender-review'];
 export async function probePython(directory){
  const python=pythonExecutable(directory);
- const code="import sys,json,docx,pydantic,httpx,trafilatura,jieba,pypdfium2,PIL,markdown_it,filelock; assert sys.version_info >= (3,12); print(json.dumps({'version':sys.version.split()[0],'prefix':sys.prefix}))";
+ const code="import sys,json,docx,pydantic,httpx,trafilatura,jieba,pypdfium2,PIL,markdown_it,filelock,openpyxl,xlrd; assert sys.version_info >= (3,12); print(json.dumps({'version':sys.version.split()[0],'prefix':sys.prefix}))";
  return await new Promise((resolve,reject)=>{
   const child=spawn(python,['-X','utf8','-c',code],{cwd:directory,stdio:['ignore','pipe','pipe']});let output='',error='';
   const timer=setTimeout(()=>{child.kill('SIGKILL');reject(new Error('Python 环境检查超时'))},15000);
@@ -28,8 +28,10 @@ export async function checkInstallation(directory,{probePython:checkPython=true,
  for(const relative of assetDirectories)await check(relative,async()=>{if(!(await readdir(join(directory,relative))).length)throw new Error('资源目录为空：'+relative)});
  if(manifest){
   const require=createRequire(join(directory,'package.json'));
-  for(const name of Object.keys({...manifest.dependencies,...manifest.peerDependencies}))await check('Node依赖 '+name,()=>{try{require.resolve(name==='@deepseek-ai/dsh'?name+'/lib/bin.js':name)}catch{throw new Error('缺少 Node 依赖 '+name+'；请执行目录准备（npm run directory:prepare）')}});
-  await check('dsh版本',async()=>{const required=manifest.peerDependencies?.['@deepseek-ai/dsh'];let actual=dshVersion;if(!actual){const entry=require.resolve('@deepseek-ai/dsh-app-boot');actual=JSON.parse(await readFile(resolve(entry,'../../package.json'),'utf8')).version}if(!required||actual!==required)throw new Error('dsh 版本不匹配：本目录要求 '+required+'，当前为 '+actual+'；请使用已验证的宿主版本');});
+  const clientPeers=new Set(['react','react-dom',...(manifest.dsh?.client?.inject??[])]);
+  for(const name of Object.keys({...manifest.dependencies,...manifest.peerDependencies}).filter(name=>!clientPeers.has(name)))await check('Node依赖 '+name,()=>{try{require.resolve(name==='@deepseek-ai/dsh'?name+'/package.json':name)}catch{throw new Error('缺少 Node 依赖 '+name+'；请执行目录准备（npm run directory:prepare）')}});
+  await check('dsh版本',async()=>{const required=manifest.engines?.dsh;const actual=dshVersion??JSON.parse(await readFile(require.resolve('@deepseek-ai/dsh/package.json'),'utf8')).version;const {satisfies}=require('semver');if(!required||!satisfies(actual,required,{includePrerelease:true}))throw new Error('dsh 版本不匹配：本目录支持 '+required+'，当前为 '+actual+'；请使用支持范围内的宿主版本');});
+  for(const name of ['@deepseek-ai/cordis','@deepseek-ai/cordis-plugin-loader'])await check(name+'版本',async()=>{const required=manifest.peerDependencies?.[name],actual=JSON.parse(await readFile(require.resolve(name+'/package.json'),'utf8')).version;if(!required||actual!==required)throw new Error(name+' 版本不匹配：本目录要求 '+required+'，当前为 '+actual);});
  }
  await check('Python环境',async()=>{await access(pythonExecutable(directory),constants.X_OK);if(checkPython)python=await probePython(directory)});
  return {ok:errors.length===0,directory,name:manifest?.name,version:manifest?.version??null,node:process.versions.node,python,checks,errors};
