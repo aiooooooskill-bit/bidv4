@@ -12,7 +12,7 @@ async function command(script,args=[]){return new Promise((resolve,reject)=>{con
 async function fixture(fn){const dir=await mkdtemp(join(tmpdir(),'ooo-bidpliot-delivery-unit-'));try{await fn(dir)}finally{await rm(dir,{recursive:true,force:true})}}
 async function sourceFixture(dir){
  const source=join(dir,'source');await mkdir(join(source,'scripts'),{recursive:true});await mkdir(join(source,'server'),{recursive:true});await mkdir(join(source,'dist'),{recursive:true});
- await cp(join(root,'scripts/delivery.mjs'),join(source,'scripts/delivery.mjs'));await cp(join(root,'server/installation.mjs'),join(source,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(source,'server/platform.mjs'));
+ await cp(join(root,'scripts/delivery.mjs'),join(source,'scripts/delivery.mjs'));await cp(join(root,'server/installation.mjs'),join(source,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(source,'server/platform.mjs'));await cp(join(root,'server/data-location.mjs'),join(source,'server/data-location.mjs'));
  await writeFile(join(source,'package.json'),JSON.stringify({name:'ooo-bidpliot',type:'module',files:['scripts','server','dist']}));await writeFile(join(source,'package-lock.json'),'{}');await writeFile(join(source,'dist/client.js'),'complete client');return source;
 }
 test('交付白名单包含运行资源，排除用户数据、环境、备份和缓存',()=>fixture(async dir=>{
@@ -28,7 +28,7 @@ test('错误交付白名单被拒绝，不能将 data 当运行文件发布',()=
 }));
 test('构建后段失败不破坏原 client 和 renderer，临时半成品清理',()=>fixture(async dir=>{
  await mkdir(join(dir,'scripts'));await mkdir(join(dir,'server'));await mkdir(join(dir,'src/lib'),{recursive:true});await mkdir(join(dir,'dist/renderer'),{recursive:true});
- await cp(join(root,'scripts/build.mjs'),join(dir,'scripts/build.mjs'));await cp(join(root,'server/installation.mjs'),join(dir,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(dir,'server/platform.mjs'));await symlink(join(root,'node_modules'),join(dir,'node_modules'),process.platform==='win32'?'junction':'dir');
+ await cp(join(root,'scripts/build.mjs'),join(dir,'scripts/build.mjs'));await cp(join(root,'server/installation.mjs'),join(dir,'server/installation.mjs'));await cp(join(root,'server/platform.mjs'),join(dir,'server/platform.mjs'));await cp(join(root,'server/data-location.mjs'),join(dir,'server/data-location.mjs'));await symlink(join(root,'node_modules'),join(dir,'node_modules'),process.platform==='win32'?'junction':'dir');
  await writeFile(join(dir,'package.json'),' {"name":"ooo-bidpliot","type":"module"}');await writeFile(join(dir,'src/plugin.tsx'),'export const apply=()=>{}');await writeFile(join(dir,'src/lib/figureRenderer.ts'),'export const broken = ;');
  await writeFile(join(dir,'dist/client.js'),'original client');await writeFile(join(dir,'dist/renderer/figureRenderer.js'),'original renderer');
  const result=await command(join(dir,'scripts/build.mjs'));assert.equal(result.code,1);assert.equal(await readFile(join(dir,'dist/client.js'),'utf8'),'original client');assert.equal(await readFile(join(dir,'dist/renderer/figureRenderer.js'),'utf8'),'original renderer');assert.ok((await readdir(dir)).every(name=>!name.startsWith('.dist-build-')));

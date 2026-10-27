@@ -1,0 +1,621 @@
+{
+  "releaseVersion": "0.1.7",
+  "installMode": "package",
+  "packagePath": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7.tgz",
+  "startedAt": "2026-10-19T03:45:57.011Z",
+  "workspace": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r",
+  "installation": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r/dsh-home/profiles/desktop/node_modules/ooo-bidpliot",
+  "home": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r/dsh-home",
+  "app": "/Applications/DeepSeek Harness.app",
+  "hostEntry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/index.js",
+  "stages": [
+    {
+      "name": "已安装客户端版本与真实启动入口",
+      "passed": true,
+      "milliseconds": 415,
+      "evidence": {
+        "dsh": "0.2.1-rc.2",
+        "cordis": "4.0.5",
+        "loader": "1.0.6",
+        "node": "24.21.0",
+        "electron": "44.7.0"
+      }
+    },
+    {
+      "name": "干净发行包不含用户数据及旧核心",
+      "passed": true,
+      "milliseconds": 66,
+      "evidence": {
+        "packagePath": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7.tgz",
+        "bytes": 5599312,
+        "sha256": "9ea502437b94e5a3c37c26dda3f9e2ed3801faf0bcfb1e6c3f79b0b28467438a",
+        "files": 688,
+        "version": "0.1.7",
+        "containsUserData": false,
+        "containsLocalOfficialPackages": false
+      }
+    },
+    {
+      "name": "App官方CLI安装到独立桌面profile",
+      "passed": true,
+      "milliseconds": 6096,
+      "evidence": {
+        "output": "Progress: resolved 0, reused 1, downloaded 0, added 0\n[WARN] Issues with peer dependencies found. Run \"pnpm peers check\" to list them.\nPackages: +245\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\nPackages are cloned from the content-addressable store to the virtual store.\n  Content-addressable store is at: /Users/ooo/Library/pnpm/store/v11\n  Virtual store is at:             node_modules/.pnpm\nProgress: resolved 255, reused 245, downloaded 0, added 51\nProgress: resolved 255, reused 245, downloaded 0, added 243\nProgress: resolved 255, reused 245, downloaded 0, added 245, done\nnode_modules/ooo-bidpliot postinstall$ uv sync --locked --project business/python\nnode_modules/ooo-bidpliot postinstall: Using CPython 3.13.13\nnode_modules/ooo-bidpliot postinstall: Creating virtual environment at: business/python/.venv\nnode_modules/ooo-bidpliot postinstall: Resolved 43 packages in 1ms\nnode_modules/ooo-bidpliot postinstall: Installed 40 packages in 65ms\nnode_modules/ooo-bidpliot postinstall:  + annotated-types==0.8.0\nnode_modules/ooo-bidpliot postinstall:  + anyio==4.15.1\nnode_modules/ooo-bidpliot postinstall:  + babel==2.18.0\nnode_modules/ooo-bidpliot postinstall:  + certifi==2026.7.22\nnode_modules/ooo-bidpliot postinstall:  + charset-normalizer==3.5.2\nnode_modules/ooo-bidpliot postinstall:  + courlan==1.4.0\nnode_modules/ooo-bidpliot postinstall:  + dateparser==1.4.3\nnode_modules/ooo-bidpliot postinstall:  + filelock==3.32.7\nnode_modules/ooo-bidpliot postinstall:  + h11==0.16.0\nnode_modules/ooo-bidpliot postinstall:  + htmldate==1.11.0\nnode_modules/ooo-bidpliot postinstall:  + httpcore==1.0.9\nnode_modules/ooo-bidpliot postinstall:  + httpx==0.28.1\nnode_modules/ooo-bidpliot postinstall:  + idna==3.20\nnode_modules/ooo-bidpliot postinstall:  + iniconfig==2.3.1\nnode_modules/ooo-bidpliot postinstall:  + jieba==0.42.1\nnode_modules/ooo-bidpliot postinstall:  + justext==3.0.2\nnode_modules/ooo-bidpliot postinstall:  + lxml==6.1.3\nnode_modules/ooo-bidpliot postinstall:  + lxml-html-clean==0.4.5\nnode_modules/ooo-bidpliot postinstall:  + markdown-it-py==4.2.0\nnode_modules/ooo-bidpliot postinstall:  + mdurl==0.1.2\nnode_modules/ooo-bidpliot postinstall:  + packaging==26.3\nnode_modules/ooo-bidpliot postinstall:  + pillow==12.3.0\nnode_modules/ooo-bidpliot postinstall:  + pluggy==1.6.0\nnode_modules/ooo-bidpliot postinstall:  + pydantic==2.14.0\nnode_modules/ooo-bidpliot postinstall:  + pydantic-core==2.50.0\nnode_modules/ooo-bidpliot postinstall:  + pygments==2.21.0\nnode_modules/ooo-bidpliot postinstall:  + pypdfium2==4.30.0\nnode_modules/ooo-bidpliot postinstall:  + pytest==9.1.1\nnode_modules/ooo-bidpliot postinstall:  + python-dateutil==2.9.0.post0\nnode_modules/ooo-bidpliot postinstall:  + python-docx==1.2.0\nnode_modules/ooo-bidpliot postinstall:  + pytz==2026.5\nnode_modules/ooo-bidpliot postinstall:  + regex==2026.9.29\nnode_modules/ooo-bidpliot postinstall:  + reportlab==5.0.1\nnode_modules/ooo-bidpliot postinstall:  + six==1.17.0\nnode_modules/ooo-bidpliot postinstall:  + tld==0.13.2\nnode_modules/ooo-bidpliot postinstall:  + trafilatura==2.3.1\nnode_modules/ooo-bidpliot postinstall:  + typing-extensions==4.16.0\nnode_modules/ooo-bidpliot postinstall:  + typing-inspection==0.4.4\nnode_modules/ooo-bidpliot postinstall:  + tzlocal==5.4.4\nnode_modules/ooo-bidpliot postinstall:  + urllib3==2.8.0\nnode_modules/ooo-bidpliot postinstall: Done\n\ndependencies:\n+ ooo-bidpliot 0.1.7\n\nDone in 5.6s using pnpm v11.28.5\n",
+        "dependencies": {
+          "ooo-bidpliot": "file:/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7.tgz"
+        },
+        "bundles": [
+          "@deepseek-ai/dsh-base",
+          "@deepseek-ai/dsh-web-app",
+          "ooo-bidpliot"
+        ],
+        "installation": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r/dsh-home/profiles/desktop/node_modules/ooo-bidpliot",
+        "profileOfficialPackages": [],
+        "allowBuilds": {
+          "ooo-bidpliot@file:../../../../ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7.tgz": true
+        },
+        "pythonPreparedBy": "package postinstall"
+      }
+    },
+    {
+      "name": "仅隔离profile附加只读运行观测",
+      "passed": true,
+      "milliseconds": 1,
+      "evidence": {
+        "observer": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r/dsh-home/profiles/desktop/desktop-observer.mjs",
+        "externalModelConfigured": false,
+        "credentialsInherited": false
+      }
+    },
+    {
+      "name": "真正desktop-host启动及Web鉴权",
+      "passed": true,
+      "milliseconds": 4728,
+      "evidence": {
+        "authenticatedUrl": "http://127.0.0.1:55239/?token=[redacted]",
+        "loginStatus": 303,
+        "ipcReady": true,
+        "release": {
+          "version": "0.2.1-rc.2",
+          "commit": "332895e"
+        },
+        "pluginClientModule": {
+          "id": "ooo-bidpliot",
+          "url": "plugins/??ooo-bidpliot/client.js&rev=bee0f70605df",
+          "rev": "bee0f70605df",
+          "inject": [
+            "@deepseek-ai/dsh-client-ui-layout",
+            "@deepseek-ai/dsh-client-locale",
+            "@deepseek-ai/dsh-client-ui-workspace"
+          ]
+        }
+      }
+    },
+    {
+      "name": "欢迎页account/getState与真实业务列表",
+      "passed": true,
+      "milliseconds": 391,
+      "evidence": {
+        "accountState": {
+          "status": "signed-out",
+          "attempt": null,
+          "links": {
+            "usageUrl": "https://platform.deepseek.com/usage",
+            "topUpUrl": "https://platform.deepseek.com/top_up"
+          }
+        },
+        "tasks": {
+          "tasks": []
+        },
+        "accountRpcSucceeded": true
+      }
+    },
+    {
+      "name": "唯一插件公开预设及全部动态组件启动",
+      "passed": true,
+      "milliseconds": 309,
+      "evidence": {
+        "publicPresets": [
+          {
+            "id": "standard",
+            "order": 1,
+            "isDefault": true
+          },
+          {
+            "id": "ptc",
+            "order": 2,
+            "isDefault": false
+          },
+          {
+            "id": "minimal",
+            "order": 3,
+            "isDefault": false
+          },
+          {
+            "id": "cordis",
+            "order": 4,
+            "isDefault": false
+          },
+          {
+            "id": "ooo-bidpliot",
+            "name": "ooo-bidpliot",
+            "description": "页面操作，dsh运行业务，Agent展示真实进度与文档",
+            "isDefault": false
+          }
+        ],
+        "doctor": {
+          "ok": true,
+          "directory": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r/dsh-home/profiles/desktop/node_modules/ooo-bidpliot",
+          "name": "ooo-bidpliot",
+          "version": "0.1.7",
+          "node": "24.21.0",
+          "python": {
+            "version": "3.13.13",
+            "prefix": "/private/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-desktop-vkJG5r/dsh-home/profiles/desktop/node_modules/ooo-bidpliot/business/python/.venv"
+          },
+          "checks": [
+            {
+              "name": "Node.js",
+              "ok": true
+            },
+            {
+              "name": "操作系统",
+              "ok": true
+            },
+            {
+              "name": "插件清单",
+              "ok": true
+            },
+            {
+              "name": "package.json",
+              "ok": true
+            },
+            {
+              "name": "package-lock.json",
+              "ok": true
+            },
+            {
+              "name": "cordis.patch.yml",
+              "ok": true
+            },
+            {
+              "name": "server/agent.mjs",
+              "ok": true
+            },
+            {
+              "name": "server/native/roles.json",
+              "ok": true
+            },
+            {
+              "name": "business/python/runner.py",
+              "ok": true
+            },
+            {
+              "name": "business/python/pyproject.toml",
+              "ok": true
+            },
+            {
+              "name": "business/python/uv.lock",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/resources/tender_base_template.docx",
+              "ok": true
+            },
+            {
+              "name": "dist/client.js",
+              "ok": true
+            },
+            {
+              "name": "dist/renderer/figureRenderer.js",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/pdf.worker.min.mjs",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/document-parse/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-analysis/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-outline/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-body/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-qa/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/humanizer-zh/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "business/python/app/skills/tender-review/SKILL.md",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/cmaps",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/standard_fonts",
+              "ok": true
+            },
+            {
+              "name": "dist/pdfjs/wasm",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 busboy",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 docx-preview",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 html2canvas",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 mermaid",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 pdfjs-dist",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 react-markdown",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 remark-gfm",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 remark-parse",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 unified",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 micromark-util-decode-string",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/cordis",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/cordis-plugin-loader",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-llm",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-scope",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-subagent",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-subagent-spawn-in-process",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-compaction-tool-result-pruner",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-compaction-basic",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-persona",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-fs",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-fs-search",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-skill",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-tool-ask-user",
+              "ok": true
+            },
+            {
+              "name": "Node依赖 @deepseek-ai/dsh-skill-filesystem",
+              "ok": true
+            },
+            {
+              "name": "dsh版本",
+              "ok": true
+            },
+            {
+              "name": "@deepseek-ai/cordis版本",
+              "ok": true
+            },
+            {
+              "name": "@deepseek-ai/cordis-plugin-loader版本",
+              "ok": true
+            },
+            {
+              "name": "Python环境",
+              "ok": true
+            }
+          ],
+          "errors": []
+        },
+        "composition": {
+          "id": "ooo-bidpliot",
+          "name": "ooo-bidpliot",
+          "description": "页面操作，dsh运行业务，Agent展示真实进度与文档",
+          "isDefault": false,
+          "rows": [
+            {
+              "entryId": "959482d2",
+              "moduleName": "@deepseek-ai/dsh-persona",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "7d210802",
+              "moduleName": "@deepseek-ai/dsh-tool-fs",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "80464acb",
+              "moduleName": "@deepseek-ai/dsh-tool-fs-search",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "028de539",
+              "moduleName": "@deepseek-ai/dsh-tool-skill",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "1d93693f",
+              "moduleName": "@deepseek-ai/dsh-tool-ask-user",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "b7235bbd",
+              "moduleName": "@deepseek-ai/dsh-skill-filesystem",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "f93de706",
+              "moduleName": "ooo-bidpliot/tools",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "7085f186",
+              "moduleName": "ooo-bidpliot/agent",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "tool-result-pruner",
+              "moduleName": "@deepseek-ai/dsh-compaction-tool-result-pruner",
+              "enabled": true,
+              "fiberState": 2
+            },
+            {
+              "entryId": "compaction-basic",
+              "moduleName": "@deepseek-ai/dsh-compaction-basic",
+              "enabled": true,
+              "fiberState": 2
+            }
+          ]
+        },
+        "officialPackageSources": {
+          "@deepseek-ai/dsh": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh/package.json"
+          },
+          "@deepseek-ai/cordis": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/cordis/lib/index.js"
+          },
+          "@deepseek-ai/cordis-plugin-loader": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/cordis-plugin-loader/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/cordis-plugin-loader/lib/index.js"
+          },
+          "@deepseek-ai/dsh-llm": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-llm/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-llm/lib/index.js"
+          },
+          "@deepseek-ai/dsh-scope": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-scope/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-scope/lib/index.js"
+          },
+          "@deepseek-ai/dsh-subagent": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-subagent/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-subagent/lib/index.js"
+          },
+          "@deepseek-ai/dsh-subagent-spawn-in-process": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-subagent-spawn-in-process/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-subagent-spawn-in-process/lib/index.js"
+          },
+          "@deepseek-ai/dsh-compaction-tool-result-pruner": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-compaction-tool-result-pruner/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-compaction-tool-result-pruner/lib/index.js"
+          },
+          "@deepseek-ai/dsh-compaction-basic": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-compaction-basic/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-compaction-basic/lib/index.js"
+          },
+          "@deepseek-ai/dsh-persona": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-persona/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-persona/lib/index.js"
+          },
+          "@deepseek-ai/dsh-tool-fs": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-fs/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-fs/lib/index.js"
+          },
+          "@deepseek-ai/dsh-tool-fs-search": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-fs-search/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-fs-search/lib/index.js"
+          },
+          "@deepseek-ai/dsh-tool-skill": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-skill/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-skill/lib/index.js"
+          },
+          "@deepseek-ai/dsh-tool-ask-user": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-ask-user/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-tool-ask-user/lib/index.js"
+          },
+          "@deepseek-ai/dsh-skill-filesystem": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-skill-filesystem/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-skill-filesystem/lib/index.js"
+          },
+          "@deepseek-ai/dsh-client-ui-layout": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-client-ui-layout/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-client-ui-layout/lib/index.js"
+          },
+          "@deepseek-ai/dsh-client-locale": {
+            "package": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-client-locale/package.json",
+            "entry": "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar/dsh/node_modules/@deepseek-ai/dsh-client-locale/lib/index.js"
+          }
+        },
+        "node": "24.21.0",
+        "electron": "44.7.0"
+      }
+    },
+    {
+      "name": "关键前端资源实际可访问",
+      "passed": true,
+      "milliseconds": 63,
+      "evidence": [
+        {
+          "path": "/",
+          "status": 200,
+          "bytes": 38525,
+          "sha256": "26773c50b3aae59bd65d44070d33a760bc2aef29f345b325e13ee4961395b5ff"
+        },
+        {
+          "path": "/plugins/??ooo-bidpliot/client.js&rev=bee0f70605df",
+          "status": 200,
+          "bytes": 1970742,
+          "sha256": "c805b7181f6656235c36eae612adee070ad20541b27c936e7b4acf7274dc1fea"
+        },
+        {
+          "path": "/api/bidv4/assets/client.js",
+          "status": 200,
+          "bytes": 1970672,
+          "sha256": "69a1b5c1265412a0aeac9d8893dea5d2f3a911c361354576956d239e9cf73d8c"
+        },
+        {
+          "path": "/api/bidv4/assets/renderer/figureRenderer.js",
+          "status": 200,
+          "bytes": 3473,
+          "sha256": "4aa6d351f32369ba6da5d8b13f28c5d65d81ee0b7ea4cbcc06f95525518bcb00"
+        },
+        {
+          "path": "/api/bidv4/assets/pdfjs/pdf.worker.min.mjs",
+          "status": 200,
+          "bytes": 1265413,
+          "sha256": "8ab0e5e30031b4a06ecfddd5ae9562f0227f830ee7ec9ed1a968b134243d2386"
+        }
+      ]
+    },
+    {
+      "name": "真实桌面宿主完整关闭",
+      "passed": true,
+      "milliseconds": 57,
+      "evidence": {
+        "shutdownComplete": true,
+        "diagnostics": "dsh web: http://127.0.0.1:55239/?token=[redacted]\n"
+      }
+    }
+  ],
+  "passed": true,
+  "versions": {
+    "dsh": "0.2.1-rc.2",
+    "cordis": "4.0.5",
+    "loader": "1.0.6",
+    "node": "24.21.0",
+    "electron": "44.7.0"
+  },
+  "completedAt": "2026-10-19T03:46:09.143Z",
+  "sourceVerification": {
+    "sourceDirectory": "/Users/ooo/.codex/worktrees/deepseek-021-adaptation/bidv4",
+    "deliveryDirectory": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7",
+    "files": 641,
+    "sourceAndInstalledMatch": true,
+    "manifestSha256": "c5ef88cf645dcdc9847c3113d247d97f7d3d44fa87497e140a8453a314140424",
+    "criticalFiles": [
+      {
+        "file": "package-lock.json",
+        "sha256": "4c4727b2605fa9f8235e08399c1648b20eb5de930314ba3bac66e17ac5e62aa9"
+      },
+      {
+        "file": "package.json",
+        "sha256": "8507c22d78c360347ff7d29a40bd0e1f0890b0fa0a103b263ba51fb5f43c71c6"
+      },
+      {
+        "file": "server/native/runtime.mjs",
+        "sha256": "32d7e1f5a80242572bb056e009d1eaafdb3b80cdd8db0859f9c9b0831de89cef"
+      },
+      {
+        "file": "server/native/scope.mjs",
+        "sha256": "e0f90de0ef9bb4da942027695f1ac4723c7edf81a360fa195e65183f668418ce"
+      },
+      {
+        "file": "server/plugin.mjs",
+        "sha256": "07d333055343f683fadef126fd4daaa44f6e557aaa3eded8be7896321f164d40"
+      },
+      {
+        "file": "tests/plugin-unload-failure.test.mjs",
+        "sha256": "77e4f21610c796eebb7f79c39c4aa6169a89419e9792ddd80c292a6af4405c78"
+      }
+    ],
+    "artifacts": [
+      {
+        "format": "tgz",
+        "path": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7.tgz",
+        "bytes": 5599312,
+        "sha256": "9ea502437b94e5a3c37c26dda3f9e2ed3801faf0bcfb1e6c3f79b0b28467438a"
+      },
+      {
+        "format": "zip",
+        "path": "/var/folders/9w/wcfhxhtd5nbdtn8v542m_x5w0000gn/T/ooo-bidpliot-017-package-final-QsBM5h/ooo-bidpliot-0.1.7.zip",
+        "bytes": 5945346,
+        "sha256": "64a463bd39d5d70bc3b88ffaae8dbabda59221ef6b66c9ce0166fc81559f5e19"
+      }
+    ]
+  }
+}

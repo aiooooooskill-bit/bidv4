@@ -102,19 +102,21 @@ async def replace_file(fid: str, file_hash: str, file: IncomingFile):
     with mutation_lock('mt', fid):
         _editable_file(fid, file_hash)
         async with replacement_upload(file, mlib.mt_files_dir(), MT_ALLOWED_EXTENSIONS, None) as (temp, name, digest):
-            target = mlib.unique_file_path(name)
+            target = None
             try:
                 from ..company_store import transaction
                 with transaction() as conn:
                     old = _editable_file(fid, file_hash)
                     if conn.execute('SELECT id FROM mt_files WHERE file_hash=? AND id<>?', (digest, fid)).fetchone():
                         raise BusinessError(409, '相同内容已在写作素材库中，请使用已有文件')
+                    target = mlib.unique_file_path(name)
                     os.replace(temp, target)
                     conn.execute("UPDATE mt_files SET file_name=?,file_hash=?,parse_status='pending',error=NULL,updated_at=? WHERE id=?", (target.name, digest, db._now(), fid))
                     conn.execute('DELETE FROM mt_blocks WHERE file_id=?', (fid,))
                     conn.execute('DELETE FROM kb_segments WHERE item_id=?', (fid,))
             except BaseException:
-                target.unlink(missing_ok=True)
+                if target is not None:
+                    target.unlink(missing_ok=True)
                 raise
             mlib.delete_file_disk(old['file_name'])
     mlib.schedule_parse(fid)

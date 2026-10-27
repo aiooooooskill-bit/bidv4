@@ -1,8 +1,9 @@
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {pythonExecutable} from '../platform.mjs';
+import {resolveDataDirectory} from '../data-location.mjs';
 export const root=fileURLToPath(new URL('../..',import.meta.url));
-export const dataRoot=resolve(root,'data');
+export const dataRoot=await resolveDataDirectory(root);
 export function taskPathContext(taskId){
  return ['当前任务绝对路径：'+resolve(dataRoot,'workspace',taskId),
   '数据根目录：'+dataRoot,

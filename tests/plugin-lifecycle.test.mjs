@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,readdir,writeFile,symlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createServer} from 'node:http';
+import {json as readJson} from 'node:stream/consumers';
 import {randomUUID,createHash} from 'node:crypto';
 import {createUserMessage} from '@deepseek-ai/dsh-llm';
 import {loadLayeredEnv} from '@deepseek-ai/dsh-app-boot';
@@ -26,8 +27,7 @@ else test(testName,{timeout:180000},async()=>{
  const call=(name,args)=>({name,args});
  const endpoint=createServer(async(req,res)=>{
   try{
-   let raw='';for await(const chunk of req)raw+=chunk;
-   const request=JSON.parse(raw);requests.push(request);
+   const request=await readJson(req);requests.push(request);
    const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
    res.writeHead(200,{'Content-Type':'text/event-stream'});
    if(text.includes('web-cancel-child-fixture')){

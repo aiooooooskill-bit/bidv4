@@ -9,7 +9,7 @@
 - 业务执行现在参与宿主官方事件策略与落盘屏障，不再建立独立事件总线。插件卸载停止自己发起的工作并释放所持句柄，宿主保留原生历史与会话生命周期。
 - 文件预设显式依赖`attachments`与`llm`，保证官方`read_image`注册；OCR只允许该工具，使用父级provider/model。原图片转写提示、PDF分页和转换文件契约保留。
 - 主会话与原有子任务均位于宿主当前配置的官方会话存储；聊天附件复用宿主配置的`DSH_HOME/attachments/v1`，不建立第二个私有附件库；业务输出位于各项目`work`。fs默认完整访问，业务工具落盘仍按项目/章节契约。
-- 业务数据根目录固定为实际插件安装目录的 `data/`，Node 通过 `data_root` 传给 Python `DATA_DIR`。项目文件在 `data/workspace/<task_id>/`，共享公司资料与素材在 `workspace/knowledge/`、`workspace/materials/`，用户 Word 版式在 `data/templates/`，内置版式及技能位于安装目录的 `business/python/app/`。主会话、页面动作与目录／正文子任务共用 `taskPathContext` 生成的任务、全局工作区和技能绝对路径；普通文件工具使用绝对路径，DOCX 等业务参数按各自相对路径契约传入，详见 [文件路径约定](../business/python/app/skills/_shared/path-conventions.md)。
+- 业务数据根目录为安装树旁的独立 `ooo-bidpliot-data/`，插件内 `data/` 只是符号链接或 junction 入口，Node 通过 `data_root` 传给 Python `DATA_DIR`。项目文件在 `data/workspace/<task_id>/`，共享公司资料与素材在 `workspace/knowledge/`、`workspace/materials/`，用户 Word 版式在 `data/templates/`，内置版式及技能位于安装目录的 `business/python/app/`。主会话、页面动作与目录／正文子任务共用 `taskPathContext` 生成的任务、全局工作区和技能绝对路径；普通文件工具使用绝对路径，DOCX 等业务参数按各自相对路径契约传入，详见 [文件路径约定](../business/python/app/skills/_shared/path-conventions.md)。
 - 目录 `task` 完成后返回 JSON 文本 `{response_file, fragment_path, summary}`；`fragment_path` 直接沿用 Python `outline_dispatch` 的派发路径，主线程按原册序读取并合并。文件名清洗与哈希仍只由现有 `outline_contract.fragment_path` 计算，主线程不按册名重建路径，正文子任务继续返回正文摘要。
 - 本地子Agent失败时，插件读取公开`localAgent`终态日志补足结果中缺失的诊断；目录/正文、OCR及知识整理均保留具体原因。
 - 页面状态投影为`running/needs_input/completed/failed/stopped`。具体选项按session_id、call_ids与结构化batches对账；单阶段停止请求同时校验 session_id/action_id，全流程停止校验 workflow_id，整批验证后提交官方`userQuestions.answer`。结束轮次却缺少阶段必需文件按失败展示。

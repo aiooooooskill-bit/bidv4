@@ -10,13 +10,13 @@ const file=tid=>join(dataRoot,'workflows',tid+'.json');
 async function read(tid){try{return JSON.parse(await readFile(file(tid),'utf8'))}catch(e){if(e.code==='ENOENT')return null;throw e}}
 async function save(tid,value){await mkdir(join(dataRoot,'workflows'),{recursive:true});const temporary=file(tid)+'.'+randomUUID()+'.tmp';await writeFile(temporary,JSON.stringify(value));await rename(temporary,file(tid))}
 export class Workflows{
- constructor(runtime){this.runtime=runtime;this.jobs=new Map();this.records=new Map();this.starts=new Map()}
+ constructor(runtime){this.runtime=runtime;this.jobs=new Map();this.records=new Map();this.starts=new Map();this.resumptions=new Map()}
  active(tid){return this.jobs.has(tid)}
  validateInputs(state){if(!state.source_selection.main)throw new BusinessError(409,'请先选择或上传本项目的招标主文件');if(!state.bidder?.confirmed)throw new BusinessError(409,'请先确认本项目投标主体、签字代表和签署日期');if(state.bidder.stale)throw new BusinessError(409,'主体资料已变化，请重新核对制作信息')}
  async plan(tid){const state=await this.runtime.state(tid),steps=[];for(const kind of stages){let reusable=false;if(['analyse','outline'].includes(kind)){try{await this.runtime.requireCurrent(tid,kind,state);reusable=true}catch(e){if(e.status!==409)throw e}}else reusable=kind==='build'?deliveryReady(state):state.review.status==='reviewed';steps.push({kind,reusable})}return {steps,input_versions:state.input_versions}}
  async snapshot(tid){const record=await read(tid);if(record?.state==='running'&&!this.active(tid))return {...record,state:'interrupted',error:'自动流程已中断，已有成果保留，可继续流程。'};return record}
- start(tid,options={}){if(!options.input_versions||typeof options.input_versions!=='object'||Array.isArray(options.input_versions))throw new BusinessError(422,'请先读取并确认自动完成计划');if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,options).finally(()=>this.starts.delete(tid));this.starts.set(tid,pending);return pending}
- continueAfterAnswer(tid){if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,{resume:true}).finally(()=>this.starts.delete(tid));this.starts.set(tid,pending);return pending}
+ start(tid,options={}){if(!options.input_versions||typeof options.input_versions!=='object'||Array.isArray(options.input_versions))throw new BusinessError(422,'请先读取并确认自动完成计划');if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,options).finally(()=>{if(this.starts.get(tid)===pending)this.starts.delete(tid)});this.starts.set(tid,pending);return pending}
+ continueAfterAnswer(tid){if(this.starts.has(tid))return this.starts.get(tid);const pending=this.startOnce(tid,{resume:true}).finally(()=>{if(this.starts.get(tid)===pending)this.starts.delete(tid)});this.starts.set(tid,pending);return pending}
  async startOnce(tid,options={}){
   this.runtime.assertOpen();
   if(this.active(tid))return this.snapshot(tid);
@@ -44,14 +44,31 @@ export class Workflows{
   await ready.promise;return {...record};
  }
  resumeAfter(tid,agent){
-  if(this.starts.has(tid))return this.starts.get(tid);
-  const pending=agent.whenIdle().then(()=>this.runtime.settling.get(tid)).then(()=>this.startOnce(tid,{resume:true})).finally(()=>{if(this.starts.get(tid)===pending)this.starts.delete(tid)});this.starts.set(tid,pending);void pending.catch(e=>console.error(e.message));return pending;
+  const settlement=this.runtime.settling.get(tid),current=this.resumptions.get(tid);
+  if(current&&current.settlement===settlement)return current.promise;
+  const previousStart=this.starts.get(tid),previousJob=this.jobs.get(tid);
+  const pending=Promise.all([settlement,previousStart,previousJob]).then(async([settled])=>{
+   const record=await read(tid);
+   if(!record||['completed','stopped'].includes(record.state)||settled&&record.action_id!==settled.action_id)return record;
+   if(!settled||settled.state!=='completed'){
+    record.state=settled?.state==='stopped'?'stopped':settled?.state==='needs_input'?'needs_input':'failed';
+    record.error=settled?.error??(record.state==='failed'?'本阶段保存失败，已有成果保留，请查看宿主日志后重新发起。':record.state==='needs_input'?'请填写本次执行的具体问题后继续':undefined);
+    await save(tid,record);return record;
+   }
+   return this.startOnce(tid,{resume:true});
+  }).finally(()=>{
+   if(this.starts.get(tid)===pending)this.starts.delete(tid);
+   if(this.resumptions.get(tid)?.promise===pending)this.resumptions.delete(tid);
+  });
+  this.resumptions.set(tid,{settlement,promise:pending});this.starts.set(tid,pending);
+  void pending.catch(e=>console.error(e.message));return pending;
  }
+
  async wait(tid){await this.starts.get(tid);await this.jobs.get(tid);return this.snapshot(tid)}
  async run(tid,record,agent,ready){
   try{
    while(record.index<(record.options.include_review?stages.length:stages.length-1)&&record.state==='running'){
-    const kind=stages[record.index];record.stage=kind;await save(tid,record);
+    const kind=stages[record.index];let settlement=this.runtime.settling.get(tid);record.stage=kind;await save(tid,record);
     let state=await this.runtime.state(tid);
     if(!record.session_id){
      // Reuse only currently valid, complete upstream work.
@@ -62,11 +79,12 @@ export class Workflows{
      if(reusable){record.completed.push(kind);record.index++;record.payload=null;continue}
      record.payload??={kind,request_id:record.id+':'+record.index+':'+record.attempt,input_version:state.input_versions[kind],...(kind==='analyse'?{main_file:state.source_selection.main,supplements:state.source_selection.supplements.map(s=>s.file)}:{}),...(kind==='outline'?{page_target:record.options.page_target,numbering:record.options.numbering}:{}),...(kind==='build'?{sections:[]}:{} )};
      await save(tid,record);
-     const action=await this.runtime.action(tid,record.payload,{workflowId:record.id,...(agent?{agent}:{})});agent=null;record.session_id=action.session_id;record.action_id=action.action_id;await save(tid,record);ready.resolve();if(record.state==='stopped'){await this.runtime.stop(tid,record.session_id,record.action_id);break}
+     const action=await this.runtime.action(tid,record.payload,{workflowId:record.id,...(agent?{agent}:{})});settlement=this.runtime.settling.get(tid);agent=null;record.session_id=action.session_id;record.action_id=action.action_id;await save(tid,record);ready.resolve();if(record.state==='stopped'){await this.runtime.stop(tid,record.session_id,record.action_id);break}
     }
-    const handle=await this.runtime.handle({...(await this.runtime.latestRecord(tid,kind)).record});
-    await handle.agent.whenIdle();await this.runtime.settling.get(tid);
+    const settled=await settlement;
+    if(settlement&&!settled)throw new BusinessError(500,'本阶段保存失败，已有成果保留，请查看宿主日志后重新发起。');
     state=await this.runtime.state(tid);
+    if(settled?.action_id===record.action_id&&state.execution?.action_id===record.action_id)state={...state,execution:settled};
     if(record.state==='stopped')break;
     if(state.execution?.action_id!==record.action_id)throw new BusinessError(409,'当前执行已变化，自动流程已停止');
     if(state.execution.state==='stopped'){record.state='stopped';break}

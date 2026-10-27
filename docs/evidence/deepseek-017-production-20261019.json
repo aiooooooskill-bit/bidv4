@@ -1,0 +1,33 @@
+{
+  "passed": false,
+  "status": "production-update-prohibited-by-latest-user-instruction",
+  "sourceVersion": "0.1.6",
+  "targetVersion": "0.1.7",
+  "host": "0.2.1-rc.2",
+  "installationCompleted": false,
+  "formalDataModifiedByThisFix": false,
+  "userChoice": "Wait for current real task to complete; do not interrupt it",
+  "preparedInstaller": "/tmp/bidv4-017-install-production.py",
+  "preparedVerifier": "/tmp/bidv4-017-verify-production.py",
+  "lastWaitCheck": {
+    "at": "2026-10-19T13:32:13.427843+08:00",
+    "source": "native client automation",
+    "currentRealTaskStillRunning": null,
+    "macLocked": true,
+    "uiStateUnavailable": true,
+    "manualUnlockAlreadyRequested": true,
+    "userChoiceHonored": true,
+    "taskInterruptedByThisFix": false,
+    "followUpAutomationId": "deepseek-0-1-7"
+  },
+  "unlockRequestPending": false,
+  "productionUpdateAuthorized": false,
+  "latestUserConstraint": {
+    "at": "2026-10-19T13:40:43.538617+08:00",
+    "instruction": "Do not touch production. Test and verify only in an isolated dsh web page.",
+    "automation": "deepseek-0-1-7",
+    "automationStatus": "PAUSED",
+    "formalPluginVersion": "0.1.6",
+    "productionChangesPerformed": false
+  }
+}

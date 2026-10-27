@@ -12,6 +12,7 @@ else test(title,async()=>{
  const id='reentry-case',dir=join(dataRoot,'actions',id);await mkdir(dir,{recursive:true});
  const live={id:'real-parent',status:'running'},runtime=new BusinessRuntime({agents:new Map([[live.id,live]])});
  const record={task_id:id,session_id:live.id,action_id:'active-action',kind:'revise',start_seq:0};
+ runtime.executionOwners.set(id,{actionId:record.action_id,agent:live,waitingForIdle:true});
  await writeFile(join(dir,'latest.json'),JSON.stringify(record));
  let awaited=false;runtime.settling.set(id,{then(){awaited=true;return new Promise(()=>{})}});
  const payload={kind:'revise',request_id:'different-new-request',input_version:'old-version',sections:[],instruction:'continue'};

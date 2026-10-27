@@ -15,7 +15,7 @@ export async function analysisFixture(home){
  const readyPromise=new Promise((resolve,reject)=>{ready={resolve,reject}});
  child.on('message',message=>{if(message.ready){ready.resolve(message.result);return}const pending=requests.get(message.id);if(pending){requests.delete(message.id);clearTimeout(pending.timer);message.error?pending.reject(Error(message.error.stack)):pending.resolve(message.result)}});
  child.on('exit',code=>{stopped=true;const error=Error('Isolated analysis host exited '+code+'\n'+output);ready.reject(error);for(const pending of requests.values()){clearTimeout(pending.timer);pending.reject(error)}});
- const command=(command,args)=>new Promise((resolve,reject)=>{const id=randomUUID(),timer=setTimeout(()=>{requests.delete(id);reject(Error(command+' timed out\n'+output))},['chatFull','fullWorkflow','waitWorkflow','nativeAnswer'].includes(command)?120000:45000);requests.set(id,{resolve,reject,timer});child.send({id,command,args})});
+ const command=(command,args)=>new Promise((resolve,reject)=>{const id=randomUUID(),timer=setTimeout(()=>{requests.delete(id);reject(Error(command+' timed out\n'+output))},['chatFull','fullWorkflow','waitWorkflow','nativeAnswer','fullQuestionFlushRace','fullQuestionRepeat','fullQuestionStop'].includes(command)?120000:45000);requests.set(id,{resolve,reject,timer});child.send({id,command,args})});
  const state=await readyPromise;
  const login=await fetch(state.loginUrl,{redirect:'manual'}),authenticated=await fetch(login.headers.get('location'),{redirect:'manual'});
  const cookie=authenticated.headers.getSetCookie().map(c=>c.split(';')[0]).join(';');

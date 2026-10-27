@@ -4,8 +4,9 @@ import {join,resolve} from 'node:path';
 import {createRequire} from 'node:module';
 import {spawn} from 'node:child_process';
 import {pythonExecutable} from './platform.mjs';
+import {resolveDataDirectory} from './data-location.mjs';
 
-const requiredFiles=['package.json','package-lock.json','cordis.patch.yml','server/agent.mjs','server/native/roles.json','business/python/runner.py','business/python/pyproject.toml','business/python/uv.lock','business/python/app/resources/tender_base_template.docx','dist/client.js','dist/renderer/figureRenderer.js','dist/pdfjs/pdf.worker.min.mjs'];
+const requiredFiles=['package.json','package-lock.json','cordis.patch.yml','server/agent.mjs','server/data-location.mjs','server/native/roles.json','business/python/runner.py','business/python/pyproject.toml','business/python/uv.lock','business/python/app/resources/tender_base_template.docx','dist/client.js','dist/renderer/figureRenderer.js','dist/pdfjs/pdf.worker.min.mjs'];
 const assetDirectories=['dist/pdfjs/cmaps','dist/pdfjs/standard_fonts','dist/pdfjs/wasm'];
 const skills=['document-parse','tender-analysis','tender-outline','tender-body','tender-qa','humanizer-zh','tender-review'];
 export async function probePython(directory){
@@ -39,12 +40,13 @@ export async function checkInstallation(directory,{probePython:checkPython=true,
 export async function assertInstallation(directory){const report=await checkInstallation(directory);if(!report.ok)throw new Error('插件目录未准备完成：\n'+report.errors.join('\n'));return report}
 function alive(pid){try{process.kill(pid,0);return true}catch(error){return error.code!=='ESRCH'}}
 export async function assertStopped(directory){
- for(const relative of ['data/.hosts','data/locks']){
-  let names;try{names=await readdir(join(directory,relative))}catch(error){if(error.code==='ENOENT')continue;throw error}
-  for(const name of names){const path=join(directory,relative,name),text=await readFile(path,'utf8');let pid;if(relative==='data/.hosts'){pid=JSON.parse(text).pid}else pid=Number(text);if(!Number.isSafeInteger(pid)||pid<=0)throw new Error('无法确认目录运行状态：'+path);if(alive(pid))throw new Error('目录仍由宿主或业务进程 '+pid+' 使用；请先关闭宿主或禁用插件再准备/更新');await unlink(path)}
+ const dataDirectory=await resolveDataDirectory(directory);
+ for(const relative of [join(dataDirectory,'.hosts'),join(dataDirectory,'locks'),join(directory,'data/.hosts'),join(directory,'data/locks')]){
+  let names;try{names=await readdir(relative)}catch(error){if(error.code==='ENOENT')continue;throw error}
+  for(const name of names){const path=join(relative,name),text=await readFile(path,'utf8');let pid;if(relative.endsWith('.hosts')){pid=JSON.parse(text).pid}else pid=Number(text);if(!Number.isSafeInteger(pid)||pid<=0)throw new Error('无法确认目录运行状态：'+path);if(alive(pid))throw new Error('目录仍由宿主或业务进程 '+pid+' 使用；请先关闭宿主或禁用插件再准备/更新');await unlink(path)}
  }
 }
 export async function claimHost(directory){
- const dir=join(directory,'data/.hosts');await mkdir(dir,{recursive:true});const path=join(dir,process.pid+'.json');await writeFile(path,JSON.stringify({pid:process.pid,startedAt:new Date().toISOString()}));
+ const dir=join(await resolveDataDirectory(directory),'.hosts');await mkdir(dir,{recursive:true});const path=join(dir,process.pid+'.json');await writeFile(path,JSON.stringify({pid:process.pid,startedAt:new Date().toISOString()}));
  return async()=>{await unlink(path).catch(error=>{if(error.code!=='ENOENT')throw error})};
 }
