@@ -22,3 +22,13 @@ __pycache__/
 
 # Local verification runs and raw business artifacts
 /outputs/
+
+# Test suites, fixtures and test runners stay local
+tests/
+__tests__/
+*.test.*
+*.spec.*
+test_*.py
+*_test.py
+conftest.py
+/scripts/test-*.mjs
