@@ -344,6 +344,17 @@ def freeze_plan(tid, volumes: list[VolumePlan], exclusions: list[Exclusion], dec
     unresolved = [r for r in source_review if r['still_planned']]
     if complete and old_plan is None and unresolved:
         raise ValueError('子稿原来源移除尚未复核，不能先冻结错误映射。核对registry：旧错标用replace_source重建全部正确路径；旧有效来源则重派原册恢复。不能盲目照抄子稿或删来源消除报错：' + json.dumps(unresolved, ensure_ascii=False))
+    if complete and old_plan is None:
+        for vol in volumes:
+            file = (artifact_store.work_dir(tid) / 'outline/tender-response-docs.md'
+                    if len(volumes) == 1 else fragment_path(tid, vol.name))
+            if not file.is_file():
+                raise ValueError(f'目录文件不存在，计划未冻结：{file}')
+            docs = _docs(file.read_text())
+            errors = ([f'实际目录分册不符：{vol.name}'] if len(docs) != 1 or docs[0]['name'] != vol.name
+                      else _check_doc(value, vol.model_dump(), docs[0]))
+            if errors:
+                raise ValueError('实际目录未通过，计划未冻结：\n' + '\n'.join(errors))
     if old_plan is not None:
         additions = [dict(volume=after['name'],**b) for before,after in zip(old_plan['volumes'],plan['volumes']) for b in after['bindings'] if b not in before['bindings']]
         value.setdefault('binding_additions_audit',[]).extend(additions)
@@ -532,6 +543,23 @@ def check(tid, volume='', *, child_completed=False):
     return {'ok': True, 'phase': 'classification_frozen' if classification_frozen else 'structure_only', 'volume': volume or '全部', 'action_id': value['action_id']}
 
 
+def _first_fragment_difference(merged, fragment, field=()):
+    if isinstance(merged, dict) and isinstance(fragment, dict):
+        for key in dict.fromkeys([*merged, *fragment]):
+            if key not in merged or key not in fragment:
+                return {'field': [*field, key], 'merged': merged.get(key), 'fragment': fragment.get(key),
+                        'merged_present': key in merged, 'fragment_present': key in fragment}
+            if merged[key] != fragment[key]:
+                return _first_fragment_difference(merged[key], fragment[key], (*field, key))
+    elif isinstance(merged, list) and isinstance(fragment, list):
+        for index, (left, right) in enumerate(zip(merged, fragment)):
+            if left != right:
+                return _first_fragment_difference(left, right, (*field, index))
+        if len(merged) != len(fragment):
+            return {'field': [*field, 'length'], 'merged': len(merged), 'fragment': len(fragment)}
+    return {'field': list(field), 'merged': merged, 'fragment': fragment}
+
+
 def require_publish(tid, content):
     from ..tools.assemble_tender import _fold_lineage
     if not path(tid).is_file():
@@ -554,8 +582,13 @@ def require_publish(tid, content):
             raise ValueError('\n'.join(errors))
         if len(planned) > 1 or vol['name'] in value['aligned_volumes']:
             fragment = fragment_path(tid, vol['name'])
-            if doc != _docs(fragment.read_text())[0]:
-                raise ValueError(vol['name'] + '：汇总结果与已检查的fragment不一致')
+            fragment_doc = _docs(fragment.read_text())[0]
+            if doc != fragment_doc:
+                difference = _first_fragment_difference(doc, fragment_doc)
+                raise ValueError(vol['name'] + '：汇总结果与已检查的fragment不一致。首个差异（field为字段路径，数组下标从0开始）：'
+                                 + json.dumps(difference, ensure_ascii=False)
+                                 + '。请回读 ' + str(fragment.relative_to(artifact_store.work_dir(tid)))
+                                 + '，原样回收已检查的分册到汇总，再发布；分册确需调整时重派该册并重新检查，不能跳过一致性校验。')
     folded = [{**d, 'directory': _fold_lineage(d['directory'])[0]} for d in docs]
     if content['response_documents'] != folded or content['registry'] != value['registry']:
         raise ValueError('发布内容与本轮实际目录或完整来源登记表不一致')

@@ -14,7 +14,7 @@ try{
  await run(process.execPath,[join(target,'scripts/prepare.mjs')]);
  const {checkInstallation}=await import(new URL('../server/installation.mjs',import.meta.url));
  const doctor=await checkInstallation(target);assert.equal(doctor.ok,true,JSON.stringify(doctor.errors));
- const request={operation:'create_task',data_root:join(target,'data'),args:{title:'Windows 中文路径安装验收',request_id:'f5d621ca-1d86-438e-91b1-82c22c4925f8'}};
+ const request={operation:'create_task',data_root:join(temporary,'ooo-bidpliot-data'),args:{title:'中文与空格路径安装验收',request_id:'f5d621ca-1d86-438e-91b1-82c22c4925f8'}};
  const invoke=async value=>JSON.parse(await run(pythonExecutable(target),['-X','utf8',join(target,'business/python/runner.py')],{cwd:target,input:JSON.stringify(value)}));
  const created=await invoke(request);assert.equal(created.result.task.title,request.args.title);
  const schemas=await invoke({...request,operation:'schemas',args:{}});assert.ok(schemas.result.some(s=>s.name==='docx_section_create'));

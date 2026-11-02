@@ -26,7 +26,7 @@ export async function createBusinessScope(parent,dataRoot){
   ['@deepseek-ai/dsh-session-query-sqlite',{path:':memory:',openAt:'never'}],
   ['@deepseek-ai/dsh-system-prompt',{includeHarnessIdentity:false,includeRuntimeContext:false}],
   ['@deepseek-ai/dsh-working-directory',{defaultDirectory:dataRoot}],
-  ['@deepseek-ai/dsh-tools',{}],['@deepseek-ai/dsh-skill',{}],['@deepseek-ai/dsh-agent',{}],
+  ['@deepseek-ai/dsh-tools',{}],['@deepseek-ai/dsh-tool-executor-native',{}],['@deepseek-ai/dsh-skill',{}],['@deepseek-ai/dsh-agent',{}],
   ['@deepseek-ai/dsh-session-persistence-jsonl',{root:join(dataRoot,'sessions'),compression:'none'}],
   ['@deepseek-ai/dsh-agent-preset-registry',{default:'ooo-bidpliot'}],
   ['@deepseek-ai/dsh-subagent',{maxDepth:2,maxActiveSubagents:4}],

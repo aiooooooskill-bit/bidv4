@@ -14,10 +14,10 @@ def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source',
     除exclude的exclusions为逐项对象数组外，其余参数直接填标量，不传JSON字符串或嵌套对象。路径用level1/level2/level3各填本项目完整标题，不能跳级。
     begin：已有实际目录不传其他参数即承接原骨架；只有册名和scope、尚无目录树的册仍是新目录，逐册填volume和root_titles。root_titles为全部实际一级标题，按原顺序换行分隔，前两项依次为封面、目录，随后是正文及独立附件；不能只填正文标题。错误参数不保存，修正后直接重试，无需删除工作稿。
     有SCORE时单册/多册均须真实task子代理独立评分对齐后再decide；不能由主代理预判跳过。
-    decide：unit_id填context必审片段编号，kind选heading/detail/rubric/proof/procedure/out_of_scope，reason至少12字，volume及三级标题字段给出真实承载路径。
+    decide：冻结前unit_id填context中实际存在的片段编号，kind选heading/detail/rubric/proof/procedure/out_of_scope，reason至少12字，volume及三级标题字段给出真实承载路径。
     独立实质分类选heading；类别中有参数/字段/举例不改变其独立性。无评分、其他部分未读到或正文尚缺，不能省略格式条款及用户明确要求的适用方案类别。
     明确数值/阈值/时长等才是detail，分档是rubric，证明是proof；不能以综合章概述或偏离表已覆盖代替独立标题。
-    同一片段需多个标题/承载路径时，可重复decide追加目标，kind及原reason逐字保留；不能删旧目标或改判。
+    冻结前即使remaining_decision_count为0，同一片段仍可重复decide追加目标，kind及原reason逐字保留；未决策的可选片段需要独立标题时，也用其unit_id作heading决策。不能删旧目标或改判。
     bind：用source_id、volume和标题路径挂接普通来源。新增标题须先decide为heading，bindings不能暗中增加参数/证明标题。
     replace_source：回读registry证实旧ID错标后，填source_id及一个正确路径，清除其旧挂接并重建；原节点/说明保留，其余正确路径继续bind。
     回执source_changes_to_review列真实子稿移除的原来源；必须在complete前核对。旧错标纠正计划，旧有效来源重派恢复，不能将错标先冻结再补救。
@@ -77,7 +77,7 @@ def outline_plan(operation: Literal['begin', 'decide', 'bind', 'replace_source',
         waiting_child = any(r.startswith('SCORE-') for r in value['registry']) and not value['aligned_volumes']
         pending = [] if waiting_child else [u for u,v in value['units'].items() if v['review_required'] and u not in done]
         errors = [{'field': '.'.join(map(str, x['loc'])), 'message': x['msg']} for x in e.errors(include_input=False, include_url=False)] if hasattr(e, 'errors') else str(e)
-        raise ValueError('目录审查操作失败，未保存。' + json.dumps({'errors': errors, 'next_decision_unit_ids': pending[:6], 'remaining_decision_count': len(pending), 'next_action': '先begin承接骨架，再task独立评分对齐' if waiting_child else '先按errors点名问题修正；尚有待审片段才用decide。旧错标用replace_source核正全部正确路径，普通来源用bind；不重复complete跳过错误'}, ensure_ascii=False) + '。全部参数直接填写，不传JSON字符串或嵌套数组；不能因报错下调分类或删除原内容。') from e
+        raise ValueError('目录审查操作失败，未保存。' + json.dumps({'errors': errors, 'next_decision_unit_ids': pending[:6], 'remaining_decision_count': len(pending), 'next_action': '先begin承接骨架，再task独立评分对齐' if waiting_child else '先按errors点名问题修正。冻结前新增标题先decide；remaining_decision_count为0仍可对已确认片段重复decide追加目标，保留原kind及reason，未决策的可选片段可用其unit_id作heading决策。冻结后不能decide或改标题；经registry核实的普通来源向已批准路径追加用bind。冻结前旧错标用replace_source核正全部正确路径；不能删目录内容迁就漏登记的计划，也不能重复complete跳过错误'}, ensure_ascii=False) + '。全部参数直接填写，不传JSON字符串或嵌套数组；不能因报错下调分类或删除原内容。') from e
 
 
 def check_outline(volume: str = '') -> dict:

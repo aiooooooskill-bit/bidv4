@@ -1,0 +1,41 @@
+{
+  "version": "0.1.12",
+  "targetDsh": "0.2.2-alpha.2",
+  "scope": "source_regression",
+  "status": "passed",
+  "passed": true,
+  "verifiedAt": "2026-11-02T03:00:43.248772+00:00",
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "24.15.0",
+    "python": "3.13.13"
+  },
+  "typescript": {
+    "passed": true
+  },
+  "build": {
+    "passed": true
+  },
+  "python": {
+    "passed": 871,
+    "failed": 0
+  },
+  "delivery": {
+    "passed": true,
+    "stages": 23
+  },
+  "javascript": {
+    "passed": 274,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "durationMs": 833772.707125
+  },
+  "packageValidation": "Exact archive hashes and installation result are recorded after packaging in the GitHub Release validation.json asset.",
+  "limits": [
+    "Official npm Web host tested on macOS arm64; desktop ASAR and Windows/Linux machines not tested.",
+    "Deterministic model responses verify engineering paths, not real-model tender content quality."
+  ],
+  "logs": "outputs/dsh-alpha2-merge-20261102/"
+}

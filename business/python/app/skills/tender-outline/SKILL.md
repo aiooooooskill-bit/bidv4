@@ -172,7 +172,7 @@ analysis 产物里已有的 MAND/TPL/REQ/SCORE 编号，**不要自己发明编�
 给出真实二三级路径，已有同义标题复用。类别中包含字段、参数或例子，不表示类别本身是参数；
 有明确取值、阈值、时长、频率或具体字段的细节才按detail/proof/rubric等保留在原章。
 不以“综合章已覆盖”“属于评分参数”为由省掉独立评分类别标题。缺标题先规划应补路径，
-完成审查后complete冻结，再只重派受影响册落实。普通来源如需新增标题，使用context的可选
+完成审查后，先只重派受影响册落实，回读实际目录核实通过后再complete冻结。普通来源如需新增标题，使用context的可选
 heading unit作有依据的决策；bindings不能隐式新增标题。回读registry发现旧错标，须用
 operation="replace_source"清除该source_id的旧错误挂接并重给正确标题路径，原有效内容仍保留。
 不适用来源用 `outline_plan(operation="exclude", exclusions=[{source_id:"REQ-01",reason:"该条的完整排除理由"},...])` 每批1至8条，每条保留自己的原文依据和理由，不逐项重复调用、不概括不同条目的理由；外层source_id/reason留空。回执remaining_source_count/remaining_decision_count是剩余数量，next_source_ids/next_decision_unit_ids只列下一小批，不代表全部核查范围。

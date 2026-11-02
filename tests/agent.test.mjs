@@ -6,14 +6,14 @@ import {join} from 'node:path';
 import {root,dataRoot} from '../server/native/business.mjs';
 import {conversationTasks} from '../server/native/conversations.mjs';
 test('原生Agent状态读取真实业务服务，隐藏内部编号且提供当前合册下载',async()=>{
- let filter,tool,presentation;const calls=[],listeners=new Map();
- apply({webServer:{port:3080},tools:{presentAs(value){presentation=value},register(value){tool=value}},agents:{list(){return[]}},on(event,listener){listeners.set(event,listener)},effect(){},bidBusiness:{toolNames:['docx_section_create'],
+ let filter,tool;const calls=[],listeners=new Map();
+ apply({webServer:{port:3080},tools:{register(value){tool=value}},agents:{list(){return[]}},on(event,listener){listeners.set(event,listener)},effect(){},bidBusiness:{toolNames:['docx_section_create'],
   async tasks(){calls.push('tasks');return {tasks:[{id:'t1',title:'REQ-01 项目',stage:'outlined'}]}},
   async state(id){calls.push('state:'+id);return {task:{stage:'outlined'},execution:{session_id:'native-session',state:'completed'},files:[{path:'analysis/评分标准.md'}],body_sections:[{volume:'响应文件',title:'售后服务要求',path:'body/售后服务要求.docx',status:'ready'}],review:{status:'unreviewed',input_version:'review-v1',report:null},volume_states:[{artifact_id:'a1',status:'ready'}]}},
   async artifacts(id){calls.push('artifacts:'+id);return {artifacts:[{artifact_id:'a1',kind:'tender.volume',display_name:'TPL-01 技术标'}]}},
  }});
  await listeners.get('agent/created')({agent:{ctx:{inject(_services,install){install({systemPrompt:{context(){}},tools:{restrict(value){filter=value}}});return {dispose(){}}}}}});
- assert.equal(presentation,'native');assert.ok(chatToolNames.every(name=>filter.allow.includes(name)));assert.ok(filter.allow.includes('docx_section_create'));assert.ok(filter.allow.includes('read_image'));assert.ok(filter.allow.includes('task'));assert.equal(tool.name,'ooo_bidpliot_status');assert.ok(!(await tool.execute({})).includes('REQ-01'));
+ assert.ok(chatToolNames.every(name=>filter.allow.includes(name)));assert.ok(filter.allow.includes('docx_section_create'));assert.ok(filter.allow.includes('read_image'));assert.ok(filter.allow.includes('task'));assert.equal(tool.name,'ooo_bidpliot_status');assert.ok(!(await tool.execute({})).includes('REQ-01'));
  const result=JSON.parse(await tool.execute({task_id:'t1'}));assert.deepEqual(result.body_sections,[{volume:'响应文件',title:'售后服务要求',path:'body/售后服务要求.docx',status:'ready'}]);assert.equal(result.execution.state,'completed');assert.equal(result.outputs[0].name,'技术标');assert.equal(result.outputs[0].link,'http://127.0.0.1:3080/api/bidv4/artifacts/a1/file');assert.equal(result.documents[0].name,'评分标准.md');
  const documentLink=new URL(result.documents[0].link);assert.equal(documentLink.origin,'http://127.0.0.1:3080');assert.equal(documentLink.pathname,'/api/bidv4/workbench/raw');assert.equal(documentLink.searchParams.get('task_id'),'t1');assert.equal(documentLink.searchParams.get('path'),'analysis/评分标准.md');assert.deepEqual(calls,['tasks','state:t1','artifacts:t1']);
 });
@@ -21,7 +21,7 @@ test('原生Agent状态读取真实业务服务，隐藏内部编号且提供当
 test('主子Agent获得实际任务路径，正文派发容量跟随DSH当前配置而非固定两任务',async()=>{
  const listeners=new Map(),prompts=new Map(),agents=new Map();
  let childCapacity=8,toolCapacity=10,writingToolsAvailable=true;
- apply({webServer:{port:3080},tools:{presentAs(){},register(){}},bidBusiness:{toolNames:[]},agents:{list(){return[]}},on(event,listener){listeners.set(event,listener)},effect(){}});
+ apply({webServer:{port:3080},tools:{register(){}},bidBusiness:{toolNames:[]},agents:{list(){return[]}},on(event,listener){listeners.set(event,listener)},effect(){}});
  const create=(id,parentSession)=>{
   const agent={id,session:{header:{cwd:join(root,'unrelated-host-directory'),parentSession}},ctx:{
    agents:{get:id=>agents.get(id)},

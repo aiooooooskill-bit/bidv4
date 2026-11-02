@@ -47,7 +47,7 @@ else test(testName,{timeout:180000},async()=>{
     if(kind==='outline'){
     const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
     const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n- 目录 :: 交付形态=模板或附件填充 | 归位理由=合册机械生成目录页 | 理由来源= | 概述=由Word目录域生成本册章节清单。\n';
-    const sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
+    const sequence=[[write('outline/tender-response-docs.md',outline)],[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[call('check_outline',{})],[call('assemble_tender',{})]];
     calls=sequence[step]??[];
    }
     if(kind==='guide'&&step===0)calls=[write('body/写作指引.md','# 写作指引\n\n| 节 | 模式 | 依据 | 素材 | 缺口/备注 |\n|---|---|---|---|---|\n| 封面 | 推理撰写 | — | — | 无 |\n| 目录 | — | — | — | 合册时自动生成 |\n| 工程验证章节 | 推理撰写 | — | — | 无 |')];
@@ -101,9 +101,9 @@ else test(testName,{timeout:180000},async()=>{
   const hostAgent=await ctx.agents.create({sessionId:'display-unrelated-host',meta:{cwd:root,agentPreset:defaultPreset},agentOptions:model,setup:async c=>{await ctx.agentPresets.mount(c,defaultPreset)}});
   const assertDisplay=async agent=>{
    assert.ok(chatToolNames.every(name=>hostTools.get(name,agent)));assert.ok(hostTools.get('docx_section_create',agent));assert.ok(hostTools.get('task',agent));
-   const status=await hostTools.execute({callId:randomUUID(),name:'ooo_bidpliot_status',arguments:{},agent,signal:AbortSignal.timeout(10000)});
+   const status=await hostTools.execute({calls:[{type:"tool-call",id:randomUUID(),name:'ooo_bidpliot_status',arguments:JSON.stringify({})}],agent,signal:AbortSignal.timeout(10000)}).then(batch=>batch.results[0].result);
    assert.equal(status.isError,false,JSON.stringify(status));assert.deepEqual(JSON.parse(status.value),{tasks:[],attachments:[]});
-   const denied=await hostTools.execute({callId:randomUUID(),name:'bid_fixture_write',arguments:{},agent,signal:AbortSignal.timeout(10000)});
+   const denied=await hostTools.execute({calls:[{type:"tool-call",id:randomUUID(),name:'bid_fixture_write',arguments:JSON.stringify({})}],agent,signal:AbortSignal.timeout(10000)}).then(batch=>batch.results[0].result);
    assert.equal(denied.isError,true);assert.equal(denied.error.info.code,'UNKNOWN_TOOL');assert.equal(probeCalls,0);
   };
   try{
@@ -165,7 +165,7 @@ else test(testName,{timeout:180000},async()=>{
    await bounded(runtime.handles.get(admitted.session_id).agent.whenIdle(),kind);await runtime.settling.get(tid);
    const result=await api('/page-flow/'+tid);assert.equal(result.execution.state,'completed',JSON.stringify({execution:result.execution,tools:runtime.handles.get(admitted.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result').map(e=>e.data)}));
    const stageAgent=runtime.handles.get(admitted.session_id).agent;
-   if(kind==='outline'){assert.ok(hostTools.get('outline_plan',stageAgent));assert.ok(hostTools.get('task',stageAgent));assert.ok(requests.slice(requestStart).every(request=>!(request.tools??[]).some(t=>t.function.name==='docx_section_create')),'目录阶段模型schema不暴露正文制作工具：'+JSON.stringify(requests.slice(requestStart).map(request=>(request.tools??[]).map(t=>t.function.name))));const rejected=await hostTools.execute({callId:randomUUID(),name:'docx_section_create',arguments:{path:'body/禁止目录阶段创建.docx',title:'禁止',paragraphs:'禁止'},agent:stageAgent,signal:AbortSignal.timeout(10000)});assert.equal(rejected.isError,true);assert.match(rejected.error.message,/目录阶段不能修改正文或制作准备/)}
+   if(kind==='outline'){assert.ok(hostTools.get('outline_plan',stageAgent));assert.ok(hostTools.get('task',stageAgent));assert.ok(requests.slice(requestStart).every(request=>!(request.tools??[]).some(t=>t.function.name==='docx_section_create')),'目录阶段模型schema不暴露正文制作工具：'+JSON.stringify(requests.slice(requestStart).map(request=>(request.tools??[]).map(t=>t.function.name))));const rejected=await hostTools.execute({calls:[{type:"tool-call",id:randomUUID(),name:'docx_section_create',arguments:JSON.stringify({path:'body/禁止目录阶段创建.docx',title:'禁止',paragraphs:'禁止'})}],agent:stageAgent,signal:AbortSignal.timeout(10000)}).then(batch=>batch.results[0].result);assert.equal(rejected.isError,true);assert.match(rejected.error.message,/目录阶段不能修改正文或制作准备/)}
    if(['guide','body','revise'].includes(kind))assert.ok(hostTools.get('docx_section_create',stageAgent),'离开目录阶段后恢复原正文能力');
    const errors=runtime.handles.get(admitted.session_id).agent.session.snapshotEvents().filter(e=>e.type==='tool/result'&&(e.data.message.isError||e.data.message.content.some(b=>b.type==='text'&&/^\[(发布失败|创建失败|修订失败|合册失败)\]/.test(b.text))));assert.deepEqual(errors,[],kind);
   }
@@ -194,7 +194,7 @@ else test(testName,{timeout:180000},async()=>{
   const statusAgent=await ctx.agents.create({sessionId:'display-page-results',meta:{cwd:root,agentPreset:'ooo-bidpliot'},agentOptions:model,setup:displaySetup});
   try{
    const before=requests.length;
-   const status=async task_id=>{const result=await hostTools.execute({callId:randomUUID(),name:'ooo_bidpliot_status',arguments:{task_id},agent:statusAgent.agent,signal:AbortSignal.timeout(10000)});assert.equal(result.isError,false,JSON.stringify(result));return JSON.parse(result.value)};
+   const status=async task_id=>{const result=await hostTools.execute({calls:[{type:"tool-call",id:randomUUID(),name:'ooo_bidpliot_status',arguments:JSON.stringify({task_id})}],agent:statusAgent.agent,signal:AbortSignal.timeout(10000)}).then(batch=>batch.results[0].result);assert.equal(result.isError,false,JSON.stringify(result));return JSON.parse(result.value)};
    const projectStatus=await status(tid);assert.equal(projectStatus.task_id,tid);assert.equal(projectStatus.execution.state,'completed');assert.equal(projectStatus.execution.session_id,sessions.at(-1));
    const analysisDocument=projectStatus.documents.find(d=>d.name==='structure.md');assert.ok(analysisDocument);assert.equal(new URL(analysisDocument.link).origin,base);const documentResponse=await fetch(analysisDocument.link,{headers:{Cookie:cookie}});assert.equal(documentResponse.status,200);assert.match(await documentResponse.text(),/工程夹具 structure/);
    const volumeStatus=await status(buildId);assert.equal(volumeStatus.task_id,buildId);assert.equal(volumeStatus.execution.state,'completed');

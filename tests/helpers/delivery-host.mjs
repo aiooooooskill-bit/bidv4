@@ -35,6 +35,12 @@ const endpoint=createServer(async(req,res)=>{
  try{
   if(req.method==='GET'&&req.url==='/login'&&hostContext){res.writeHead(302,{Location:hostContext.connection.authenticatedUrl('http://127.0.0.1:'+hostContext.webServer.port)});res.end();return;}
   const request=await readJson(req);requests.push({tools:request.tools?.map(t=>t.function?.name??t.name),model:request.model});
+  if(JSON.stringify(request.messages.at(-1)).includes('You are now acting as a compaction engine')){
+   res.writeHead(200,{'Content-Type':'text/event-stream'});
+   for(const [delta,finish]of [[{content:'Checkpoint: preserve the project identity, confirmed company facts, current source and artifact paths, saved review decisions, and the latest user request. Read current business artifacts to recover details; do not repeat completed work.'},null],[{},'stop']])res.write('data: '+JSON.stringify({id:'delivery-compaction',object:'chat.completion.chunk',created:1,model:request.model,choices:[{index:0,delta,finish_reason:finish}]})+'\n\n');
+   res.end('data: [DONE]\n\n');return;
+  }
+
   const text=request.messages.filter(m=>m.role==='user').map(m=>typeof m.content==='string'?m.content:JSON.stringify(m.content)).join('\n');
   const latestUser=request.messages.findLast(m=>m.role==='user'),latestText=typeof latestUser?.content==='string'?latestUser.content:JSON.stringify(latestUser?.content??[]);
   const instructionOf=m=>{if(m.role==='user')return typeof m.content==='string'?m.content:JSON.stringify(m.content);if(m.role==='tool'){try{return JSON.parse(m.content).instructions??''}catch{}}return ''};
@@ -114,7 +120,7 @@ const endpoint=createServer(async(req,res)=>{
    if(kind==='outline'){
     const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
     const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n- 目录 :: 交付形态=模板或附件填充 | 归位理由=合册机械生成目录页 | 理由来源= | 概述=由Word目录域生成本册章节清单。\n';
-    const sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
+    const sequence=[[write('outline/tender-response-docs.md',outline)],[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[call('check_outline',{})],[call('assemble_tender',{})]];
     calls=sequence[step]??[];
    }
    if(kind==='guide'&&step===0)calls=[call('read_artifact',{contract:'tender.directory/tender-response-docs@1',view:'full'})];
@@ -428,7 +434,7 @@ process.on('message',async({id,command,args})=>{
   }
   else if(command==='projectTool'){
    const runtime=ctx.get('bidBusiness'),state=await runtime.state(args.taskId),agent=(await runtime.handle({session_id:state.session_id})).agent;
-   const value=await ctx.tools.execute({callId:randomUUID(),name:args.name,arguments:{task_id:args.taskId,...args.parameters},agent,signal:AbortSignal.timeout(15000)});
+   const value=await ctx.tools.execute({calls:[{type:"tool-call",id:randomUUID(),name:args.name,arguments:JSON.stringify({task_id:args.taskId,...args.parameters})}],agent,signal:AbortSignal.timeout(15000)}).then(batch=>batch.results[0].result);
    assert.equal(value.isError,false,JSON.stringify(value));result=JSON.parse(value.value);
   }
   else if(command==='queryProject'){
@@ -452,14 +458,15 @@ process.on('message',async({id,command,args})=>{
   else if(command==='reviewEarlyEnd'){reviewEarlyEnd=args.mode;result={ok:true}}
   else if(command==='chatReady'){const {workspace}=await ctx.workspaceController.create({path:installation});const created=await ctx.sessionController.create({workspaceId:workspace.workspaceId,agentPreset:presetId});await ctx.sessionTitle.rename(ctx.agents.get(created.sessionId).session,'对话上传验收');result={sessionId:created.sessionId}}
   else if(command==='chatAnalysis'||command==='chatFull'){
-   const handle=await ctx.agents.create({sessionId:randomUUID(),meta:{cwd:installation,agentPreset:presetId},agentOptions:model,setup:async c=>{await ctx.agentPresets.mount(c,presetId)}});
+   const {workspace}=await ctx.workspaceController.create({path:installation});
+   const {sessionId}=await ctx.sessionController.create({workspaceId:workspace.workspaceId,agentPreset:presetId});
+   const agent=ctx.agents.get(sessionId);
+   assert.equal(typeof Object.getOwnPropertyDescriptor(agent.options,'provider').get,'function','Exercise the native UI Agent with getter-only model options');
    const attachment=await ctx.attachments.saveFile({data:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64'),name:'交付验收原件.png'});
-   try{
-    handle.agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:command==='chatFull'?'请自动完成上传文件的解读、制作、合册和审查，项目名称：对话全流程验收。公司资料：对话验收公司、验收法人、总经理、验收地址、电话123、fixture@example.test、传真无、2026-10-15签字。':'请解析并解读上传的招标文件，项目名称：对话上传验收。'},{type:'file',attachment}]}));
-    await handle.agent.whenIdle();if(command==='chatFull'){const current=(await api('/tasks')).tasks.find(t=>t.title==='对话全流程验收');await ctx.get('bidBusiness').workflows.wait(current.id);handle.agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:'维护期三年，继续对话全流程验收。'}]}));await handle.agent.whenIdle();await ctx.get('bidBusiness').settling.get(current.id);await ctx.get('bidBusiness').workflows.wait(current.id)}await ctx.sessions.flush(handle.agent.session);
-    const observation=await ctx.sessionQuery.observeSession(handle.agent.id,{projectionMode:'none'});
-    try{result={sessionId:handle.agent.id,events:observation.events,tasks:await api('/tasks')}}finally{observation[Symbol.dispose]()}
-   }finally{await handle.dispose()}
+   agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:command==='chatFull'?'请自动完成上传文件的解读、制作、合册和审查，项目名称：对话全流程验收。公司资料：对话验收公司、验收法人、总经理、验收地址、电话123、fixture@example.test、传真无、2026-10-15签字。':'请解析并解读上传的招标文件，项目名称：对话上传验收。'},{type:'file',attachment}]}));
+   await agent.whenIdle();if(command==='chatFull'){const current=(await api('/tasks')).tasks.find(t=>t.title==='对话全流程验收');await ctx.get('bidBusiness').workflows.wait(current.id);agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:'维护期三年，继续对话全流程验收。'}]}));await agent.whenIdle();await ctx.get('bidBusiness').settling.get(current.id);await ctx.get('bidBusiness').workflows.wait(current.id)}await ctx.sessions.flush(agent.session);
+   const observation=await ctx.sessionQuery.observeSession(agent.id,{projectionMode:'none'});
+   try{result={sessionId:agent.id,events:observation.events,tasks:await api('/tasks')}}finally{observation[Symbol.dispose]()}
   }
   else if(command==='fullWorkflow'){
    const taskId=await startFullWorkflow(args??{});await ctx.get('bidBusiness').workflows.wait(taskId);

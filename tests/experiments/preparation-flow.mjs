@@ -59,7 +59,7 @@ test('隔离制作准备技术验证：'+candidate,{timeout:real?realLimitMs+900
    if(kind==='outline'){
     const doc=directory.response_documents[0],name=doc.name.trim(),titles=doc.directory.map(n=>n.目录名称);
     const outline='# 响应文件：'+name+'\n\nscope：本机工程流程验收\n\n## 目录\n'+titles.map(t=>'- '+t).join('\n')+'\n\n## 来源标注\n\n## 目录说明\n- 目录 :: 交付形态=模板或附件填充 | 归位理由=合册机械生成目录页 | 理由来源= | 概述=由Word目录域生成本册章节清单。\n';
-    sequence=[[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[write('outline/tender-response-docs.md',outline)],[call('check_outline',{})],[call('assemble_tender',{})]];
+    sequence=[[write('outline/tender-response-docs.md',outline)],[call('outline_plan',{operation:'complete',volume:name,root_titles:titles.join('\n')})],[call('check_outline',{})],[call('assemble_tender',{})]];
    }
    if(kind==='guide')sequence=[[write('body/写作指引.md',guide)],[call('validate_body',{section:'body/写作指引.md'})]];
    const question=[call('ask_user_question',{questions:[{id:'term',question:'维护期是多少？',options:[{label:'三年'},{label:'五年'}]}]})];

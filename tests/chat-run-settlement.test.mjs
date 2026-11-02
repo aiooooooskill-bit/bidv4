@@ -50,8 +50,8 @@ async function settlementScenario(mode){
    ];
    const next=[
     [call('next-outline','ooo_bidpliot_run',{task_id:taskId,kind:'outline',page_target:null,numbering:'decimal'})],
-    [call('outline-contract','outline_plan',{operation:'complete',volume:'交接验收册',root_titles:'封面\n目录\n验收章节'})],
     [write('outline-write','outline/tender-response-docs.md',outline)],
+    [call('outline-contract','outline_plan',{operation:'complete',volume:'交接验收册',root_titles:'封面\n目录\n验收章节'})],
     [call('outline-check','check_outline',{})],
     [call('outline-publish','assemble_tender',{})],
    ];

@@ -22,7 +22,7 @@ export async function probePython(directory){
 export async function checkInstallation(directory,{probePython:checkPython=true,dshVersion}={}){
  directory=resolve(directory);const checks=[],errors=[];let manifest,python;
  const check=async(name,fn)=>{try{await fn();checks.push({name,ok:true})}catch(error){checks.push({name,ok:false});errors.push(error.message)}};
- await check('Node.js',()=>{if(Number(process.versions.node.split('.')[0])<24)throw new Error('需要 Node.js 24 或更高版本')});
+ await check('Node.js',()=>{const [major,minor]=process.versions.node.split('.').map(Number);if(major<24||major===24&&minor<9)throw new Error('需要 Node.js 24.9 或更高版本')});
  await check('操作系统',()=>{if(!['darwin','linux','win32'].includes(process.platform))throw new Error('不支持的操作系统：' + process.platform)});
  await check('插件清单',async()=>{manifest=JSON.parse(await readFile(join(directory,'package.json'),'utf8'));if(manifest.name!=='ooo-bidpliot'||manifest.dsh?.bundle?.patch!=='cordis.patch.yml')throw new Error('目录不是有效的 ooo-bidpliot 插件');await access(directory,constants.W_OK)});
  for(const relative of [...requiredFiles,...skills.map(name=>'business/python/app/skills/'+name+'/SKILL.md')])await check(relative,async()=>{const info=await stat(join(directory,relative));if(!info.isFile()||!info.size)throw new Error('缺少或为空的交付文件：'+relative+'；请重新准备完整目录')});

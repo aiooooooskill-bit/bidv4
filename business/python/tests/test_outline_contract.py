@@ -32,19 +32,18 @@ def prepare(env):
         headings=[{'source_id': 'SCORE-01', 'quote': '完整性', 'path': ['技术方案（附件N）', '完整性论述']},
                   {'source_id': 'SCORE-01', 'quote': '可行性', 'path': ['技术方案（附件N）', '可行性论述']}], bindings=bindings)
     excluded = [oc.Exclusion(source_id='SCORE-02', reason='报价评分不适用于本技术册，按本册范围排除')]
-    oc.freeze_plan(tid, [plan], excluded, [oc.UnitDecision(unit_id="SCORE-01:1",kind="heading",reason="完整性与可行性属于需分别论述的实质分类",targets=[{"volume":plan.name,"path":h.path} for h in plan.headings]),oc.UnitDecision(unit_id="SCORE-02:1",kind="out_of_scope",reason="报价评审属于其他响应文件，不在技术册中重复提交",targets=[])])
-    return tid, plan, excluded
-
-
-def complete(env):
-    tid, plan, excluded = prepare(env)
     p = env['out'] / 'outline/tender-response-docs.md'
     text = p.read_text().replace('  - 总体设计', '  - 总体设计\n  - 完整性论述\n  - 可行性论述')
     text = text.replace('## 来源标注\n', '## 来源标注\n- 完整性论述 :: SCORE-01\n- 可行性论述 :: SCORE-01\n')
     text = text.replace('技术方案（附件N） :: MAND-01, REQ-01', '技术方案（附件N） :: MAND-01, REQ-01, TPL-01')
     p.write_text(text)
     (env['out'] / 'outline/fragments' / (plan.name + '.md')).write_text(text)
+    oc.freeze_plan(tid, [plan], excluded, [oc.UnitDecision(unit_id="SCORE-01:1",kind="heading",reason="完整性与可行性属于需分别论述的实质分类",targets=[{"volume":plan.name,"path":h.path} for h in plan.headings]),oc.UnitDecision(unit_id="SCORE-02:1",kind="out_of_scope",reason="报价评审属于其他响应文件，不在技术册中重复提交",targets=[])])
     return tid, plan, excluded
+
+
+def complete(env):
+    return prepare(env)
 
 
 def test_missing_categories_block_publish_and_do_not_replace_old_artifact(env):
@@ -52,6 +51,8 @@ def test_missing_categories_block_publish_and_do_not_replace_old_artifact(env):
     from app.services.page_flow import directory
     before = directory(env['task']['id'])
     tid, _, _ = prepare(env)
+    p = env['out'] / 'outline/tender-response-docs.md'
+    p.write_text(p.read_text().replace('  - 完整性论述\n', '').replace('- 完整性论述 :: SCORE-01\n', ''))
     with pytest.raises(ValueError, match='缺少实际标题路径'):
         oc.check(tid)
     assert assemble_tender().startswith('[组装失败]')
@@ -436,6 +437,8 @@ def test_explicit_composite_scheme_categories_control_score_dimension_depth(env,
 def test_frozen_plan_can_add_verified_sources_without_changing_requirements(env):
     tid, plan, _ = complete(env)
     before = oc._load(tid)['plan']
+    p = env['out'] / 'outline/tender-response-docs.md'
+    p.write_text(p.read_text().replace('- 完整性论述 :: SCORE-01', '- 完整性论述 :: SCORE-01, REQ-01'))
     result = oc.plan_batch(tid, oc.PlanBatch.model_validate({'volumes':[{'name':plan.name,'bindings':[{'source_id':'REQ-01','path':['技术方案（附件N）','完整性论述']}]}]}))
     assert result['frozen']
     after = oc._load(tid)['plan']
@@ -482,3 +485,41 @@ def test_fragment_names_reuse_safe_naming_and_do_not_escape_task(env):
     assert all(p.parent == expected and p.suffix == '.md' for p in paths)
     assert len(set(paths)) == len(paths)
     assert oc.fragment_path(tid,'技术册').name == '技术册.md'
+
+
+@pytest.mark.parametrize('field', ['scope', '节点概述'])
+def test_publish_mismatch_identifies_actual_field_and_both_values_without_replacing_artifact(env, field):
+    from app.services.page_flow import directory
+    tid, plan, _ = complete(env)
+    assert assemble_tender().startswith('[组装发布成功]')
+    before = directory(tid)
+    fragment = oc.fragment_path(tid, plan.name)
+    text = fragment.read_text()
+    if field == 'scope':
+        doc = oc._docs(text)[0]
+        old = doc['scope']
+        assert old
+        text = text.replace(old, old + ' 分册额外说明', 1)
+    else:
+        assert '概述=对招标需求的理解与响应' in text
+        text = text.replace('概述=对招标需求的理解与响应', '概述=分册单独改写说明', 1)
+    fragment.write_text(text)
+    merged_doc = oc._docs((env['out'] / 'outline/tender-response-docs.md').read_text())[0]
+    fragment_doc = oc._docs(text)[0]
+    with pytest.raises(ValueError, match='首个差异') as error:
+        oc.require_publish(tid, before['content'])
+    message = str(error.value)
+    prefix = '数组下标从0开始）：'
+    difference = json.loads(message.split(prefix, 1)[1].split('。请回读 ', 1)[0])
+    assert difference['field'][-1] == field
+    left, right = merged_doc, fragment_doc
+    for key in difference['field']:
+        left, right = left[key], right[key]
+    assert difference['merged'] == left
+    assert difference['fragment'] == right
+    assert left != right
+    assert str(fragment.relative_to(env['out'])) in message
+    assert assemble_tender().startswith('[组装失败]')
+    assert directory(tid) == before
+    fragment.write_text((env['out'] / 'outline/tender-response-docs.md').read_text())
+    assert assemble_tender().startswith('[组装完成]')

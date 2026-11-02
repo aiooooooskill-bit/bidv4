@@ -16,6 +16,7 @@ export const subtaskProfiles={
 };
 export const subtaskProviderNames=Object.keys(subtaskProfiles).map(role=>'ooo-bidpliot-'+role);
 export const presetDefinition={id:'ooo-bidpliot',name:'ooo-bidpliot',description:'页面操作，dsh运行业务，Agent展示真实进度与文档',plugins:[
+ {name:'@deepseek-ai/dsh-tool-executor-native',config:{}},
  // Web/desktop hosts disable global compaction; each preset owns its backend.
  {id:'compaction',name:'cordis:group',group:true,isolate:{compaction:true,toolResultPruner:true},config:[
   {id:'tool-result-pruner',name:'@deepseek-ai/dsh-compaction-tool-result-pruner',config:{}},
