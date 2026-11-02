@@ -84,3 +84,5 @@
 @media(max-width:640px) { .ly-project-head { align-items:flex-start; flex-direction:column; }.ly-project-actions { justify-content:flex-start; }.ly-action-hint { text-align:left; }.ly-task-strip { padding:10px 20px; }.ly-reading-toolbar { align-items:flex-start; flex-wrap:wrap; gap:4px; padding-block:8px; }.ly-category-tabs { width:100%; }.ly-category-tabs button { padding:7px 0; }.ly-root .bp-top { padding:10px 12px; flex-wrap:wrap; gap:8px; }.ly-test-label { display:none; }.ly-root .bp-nav-btn { padding:7px 10px; }.ly-toast { margin:8px 12px 0; max-width:none; flex-wrap:wrap; }.ly-confirm-card { margin:12px; } }
 
 .ly-toast>div{flex:1;min-width:0;overflow-wrap:anywhere}.ly-toast>.bp-btn,.ly-toast>.ly-icon-btn{flex:none}
+
+.ly-notice-actions { display:flex; align-items:center; gap:12px; }.ly-notice-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }.ly-notice-heading>strong { min-width:0; overflow-wrap:anywhere; }.ly-notice-heading>.bp-btn { flex-shrink:0; }

@@ -4,6 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel,TypeAdapter,create_model,ConfigDict
 request=json.load(sys.stdin);os.environ['DATA_DIR']=request['data_root']
 from app import db,artifact_store,runctx,task_stage
+from app.file_lock import file_lock
 from app.services.errors import BusinessError,FileDownload,IncomingFile,Response
 from app.services import page_flow, build_state, review, review_batches
 from app.tools import TOOLS
@@ -76,14 +77,18 @@ async def dispatch():
         import uuid
         tid='t_'+uuid.UUID(args['request_id']).hex;title=args['title'].strip()
         if not title:raise BusinessError(422,'任务名不能为空')
-        task=db.get_task(tid)
-        if task and task['title']!=title:raise BusinessError(409,'同一上传请求对应的项目名称已变化')
-        task=task or db.create_task(title,task_id=tid);artifact_store.ensure_task_skeleton(tid)
-        return {'task':task_stage.enrich([task])[0]}
+        with file_lock(artifact_store.task_dir(tid)):
+            if artifact_store.archive_task_dir(tid).exists():raise BusinessError(409,'原项目已归档，请重新上传创建新项目')
+            task=db.get_task(tid)
+            if task and task['title']!=title:raise BusinessError(409,'同一上传请求对应的项目名称已变化')
+            task=task or db.create_task(title,task_id=tid);artifact_store.ensure_task_skeleton(tid)
+            return {'task':task_stage.enrich([task])[0]}
     if op=='archive_task':
-        tid=args['task_id'];page_flow.require_task(tid)
-        if not artifact_store.archive_task(tid):raise BusinessError(409,'项目目录归档未完成')
-        db.delete_task(tid);return {'ok':True}
+        tid=args['task_id']
+        with file_lock(artifact_store.task_dir(tid)):
+            page_flow.require_task(tid)
+            if not artifact_store.archive_task(tid):raise BusinessError(409,'项目目录归档未完成')
+            db.delete_task(tid);return {'ok':True}
     if op=='prepare':
         tid=args['task_id'];page_flow.require_task(tid);name=args['file_name']
         if Path(name).name!=name or name.startswith('.'):raise BusinessError(422,'来源文件名非法')

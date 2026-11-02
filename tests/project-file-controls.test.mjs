@@ -39,7 +39,7 @@ test('文件管理包含首次主文件，删除使用当前版本；上传Excel
  }finally{view.unmount();f.close()}
 });
 
-test('文件管理拒绝过期来源保存并保留明确错误；运行中不允许删除',async()=>{
+test('文件管理拒绝过期来源保存并记录操作提示；运行中不允许删除',async()=>{
  const f=await fixture(async()=>response({detail:'项目文件已变化'},409)),props={tid:'t1',flow:flow(),sources:[{name:'原件.pdf',size:1024}],disabled:false,onBusy(){},onChanged:async()=>{},onPreview(){}},view=f.mount('ProjectFiles',props);
- try{button(view,'管理文件').props.onClick();button(view,'移除').props.onClick();button(view,'确认移除').props.onClick();await view.settle();assert.ok(nodes(view.render()).some(n=>n.props.role==='alert'&&n.props.children==='项目文件已变化'));props.disabled=true;assert.equal(button(view,'确认移除').props.disabled,true)}finally{view.unmount();f.close()}
+ try{button(view,'管理文件').props.onClick();button(view,'移除').props.onClick();button(view,'确认移除').props.onClick();await view.settle();assert.ok(f.api.useTaskNotices().items.some(n=>n.scope==='t1'&&n.id==='t1:source-files'));assert.ok(!nodes(view.render()).some(n=>n.props.role==='alert'));props.disabled=true;assert.equal(button(view,'确认移除').props.disabled,true)}finally{view.unmount();f.close()}
 });
