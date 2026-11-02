@@ -1,0 +1,63 @@
+{
+  "version": "0.1.13",
+  "targetDsh": "0.2.1-rc.5",
+  "scope": "source_regression_and_actual_desktop",
+  "status": "passed",
+  "passed": true,
+  "verifiedAt": "2026-11-02T07:33:13.265194+00:00",
+  "environment": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "node": "24.15.0",
+    "python": "3.13.13",
+    "desktop": {
+      "dsh": "0.2.1-rc.5",
+      "cordis": "4.0.5",
+      "loader": "1.0.6",
+      "node": "24.21.0",
+      "electron": "44.7.0"
+    }
+  },
+  "typescript": {
+    "passed": true
+  },
+  "build": {
+    "passed": true
+  },
+  "javascript": {
+    "passed": 274,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "durationMs": 795108.940167
+  },
+  "python": {
+    "passed": 871,
+    "failed": 0
+  },
+  "delivery": {
+    "passed": true,
+    "stages": 23
+  },
+  "desktopLink": {
+    "passed": true,
+    "stages": 9,
+    "immutableAppAsar": true,
+    "isolatedProfile": true
+  },
+  "sdk": {
+    "packages": 296,
+    "version": "0.2.1-rc.5",
+    "criticalImplementationsIdenticalToAppAsar": {
+      "dsh-tools": true,
+      "dsh-agent": true,
+      "dsh-api-session-controller": true
+    }
+  },
+  "packageValidation": "Exact final archive hashes, final TGZ official Desktop CLI installation and cold host launch are recorded after packaging in the GitHub Release validation.json asset.",
+  "limits": [
+    "macOS arm64 actual App ASAR and npm Web host tested; Windows/Linux machines not tested.",
+    "Deterministic models validate engineering paths, not real-model tender content quality."
+  ],
+  "logs": "outputs/rc5-install-fix-20261102/"
+}

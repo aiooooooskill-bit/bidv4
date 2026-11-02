@@ -1,5 +1,4 @@
 import test from 'node:test';
-import {AgentModel,modelSelectionProjectionDefinition} from '@deepseek-ai/dsh-agent';
 import assert from 'node:assert/strict';
 import {fixture,nodes,find,response} from './helpers/component-fixture.mjs';
 import {projectStatus} from '../server/native/chat-tools.mjs';
@@ -35,14 +34,13 @@ test('章节变更使整册过期后，页面及Agent均不把旧版列为当前
 });
 
 test('模型选择按原生待选、已执行和新会话状态读取，审查预算采用同一模型信息',async()=>{
- let state=modelSelectionProjectionDefinition.init();const resolved=[];
- const runtime=new BusinessRuntime({agentDefaultModel:{currentSelection:()=>({provider:'default',model:'default-model'})},llm:{resolveModelInfo:async(provider,model)=>{resolved.push({provider,model});return {context:{contextWindow:16384},defaultMaxTokens:8192}}}});
- const options={provider:'initial',model:'initial-model'},session={append(type,data){state=modelSelectionProjectionDefinition.apply(state,{type,data})}};
- const agent={options,session,model:new AgentModel(()=>state,session,options)};
+ let pending=null,header;const resolved=[];
+ const runtime=new BusinessRuntime({sessionProjections:{stateOf:()=>({pending})},agentDefaultModel:{currentSelection:()=>({provider:'default',model:'default-model'})},llm:{resolveModelInfo:async(provider,model)=>{resolved.push({provider,model});return {context:{contextWindow:16384},defaultMaxTokens:8192}}}});
+ const agent={options:{provider:'initial',model:'initial-model'},session:{requestHeader:()=>header}};
  assert.equal(runtime.modelSelection(agent).model,'initial-model');
- session.append('request/header',{header:{config:{provider:'session',model:'used-model',reasoningEffort:'high'},adapterDefaults:{reasoningEffort:true}}});
+ header={config:{provider:'session',model:'used-model',reasoningEffort:'high'},adapterDefaults:{reasoningEffort:true}};
  assert.equal(runtime.modelSelection(agent).model,'used-model');assert.equal(runtime.modelSelection(agent).reasoningEffort,undefined);
- agent.model.select({provider:'session',model:'next-model',reasoningEffort:'low'});
+ pending={provider:'session',model:'next-model',reasoningEffort:'low'};
  const selected=await runtime.select('review',runtime.modelSelection(agent));
  assert.deepEqual(resolved,[{provider:'session',model:'next-model'}]);assert.equal(selected.model,'next-model');assert.equal(selected.reasoningEffort,'low');assert.equal(selected.maxTokens,4096);
 });

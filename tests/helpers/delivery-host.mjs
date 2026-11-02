@@ -434,7 +434,7 @@ process.on('message',async({id,command,args})=>{
   }
   else if(command==='projectTool'){
    const runtime=ctx.get('bidBusiness'),state=await runtime.state(args.taskId),agent=(await runtime.handle({session_id:state.session_id})).agent;
-   const value=await ctx.tools.execute({calls:[{type:"tool-call",id:randomUUID(),name:args.name,arguments:JSON.stringify({task_id:args.taskId,...args.parameters})}],agent,signal:AbortSignal.timeout(15000)}).then(batch=>batch.results[0].result);
+   const value=await ctx.tools.execute({callId:randomUUID(),name:args.name,arguments:{task_id:args.taskId,...args.parameters},agent,signal:AbortSignal.timeout(15000)});
    assert.equal(value.isError,false,JSON.stringify(value));result=JSON.parse(value.value);
   }
   else if(command==='queryProject'){
@@ -461,7 +461,7 @@ process.on('message',async({id,command,args})=>{
    const {workspace}=await ctx.workspaceController.create({path:installation});
    const {sessionId}=await ctx.sessionController.create({workspaceId:workspace.workspaceId,agentPreset:presetId});
    const agent=ctx.agents.get(sessionId);
-   assert.equal(typeof Object.getOwnPropertyDescriptor(agent.options,'provider').get,'function','Exercise the native UI Agent with getter-only model options');
+   assert.equal(Object.getOwnPropertyDescriptor(agent.options,'provider').writable,true,'Exercise the rc.5 native UI Agent with mutable model options');
    const attachment=await ctx.attachments.saveFile({data:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAIAAAACUFjqAAAAFklEQVR4nGP8//8/A27AhEeOYeRKAwCl4wMRx3ocVQAAAABJRU5ErkJggg==','base64'),name:'交付验收原件.png'});
    agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:command==='chatFull'?'请自动完成上传文件的解读、制作、合册和审查，项目名称：对话全流程验收。公司资料：对话验收公司、验收法人、总经理、验收地址、电话123、fixture@example.test、传真无、2026-10-15签字。':'请解析并解读上传的招标文件，项目名称：对话上传验收。'},{type:'file',attachment}]}));
    await agent.whenIdle();if(command==='chatFull'){const current=(await api('/tasks')).tasks.find(t=>t.title==='对话全流程验收');await ctx.get('bidBusiness').workflows.wait(current.id);agent.followup(createUserMessage({source:{kind:'user'},content:[{type:'text',text:'维护期三年，继续对话全流程验收。'}]}));await agent.whenIdle();await ctx.get('bidBusiness').settling.get(current.id);await ctx.get('bidBusiness').workflows.wait(current.id)}await ctx.sessions.flush(agent.session);

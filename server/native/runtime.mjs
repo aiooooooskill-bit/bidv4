@@ -93,7 +93,9 @@ export class BusinessRuntime{
   await symlink(target,path,process.platform==='win32'?'junction':'dir');
  }
  modelSelection(agent){
-  return agent.model.current();
+  const pending=this.ctx.sessionProjections.stateOf(agent.session,'modelSelection')?.pending,header=agent.session.requestHeader();
+  const selection=pending??header?.config??agent.options;
+  return {...selection,...(!pending&&header?.adapterDefaults?.reasoningEffort?{reasoningEffort:undefined}:{})};
  }
  async select(kind,source=this.ctx.agentDefaultModel.currentSelection()){
   const selection={provider:source.provider,model:source.model,...(source.reasoningEffort===undefined?{}:{reasoningEffort:source.reasoningEffort})};
@@ -243,8 +245,7 @@ export class BusinessRuntime{
    try{
     handle=await this.conversation(tid,this.ctx.agentDefaultModel.currentSelection(),options.agent);if(!options.agent&&handle.agent.status==='running')throw new BusinessError(409,'项目会话正在执行，请等待或停止当前对话');const sessionId=handle.agent.id;
     const model=await this.select(payload.kind,this.modelSelection(handle.agent));
-    const {maxTokens,...selection}=model;
-    handle.agent.model.select(selection);handle.agent.options.maxTokens=maxTokens;
+    Object.assign(handle.agent.options,{...model,reasoningEffort:model.reasoningEffort,maxTokens:model.maxTokens});
     this.ctx.get('permissionPresets')?.set(handle.agent.session,'danger-full-access');
     if(this.ctx.get('sessionTitle'))await this.ctx.sessionTitle.rename(handle.agent.session,state.task.title);
     const section_paths=state.body_sections.filter(s=>payload.kind==='build'?(s.status==='missing'||s.status==='draft'):sections.some(p=>p.volume===s.volume&&p.title===s.title)).map(s=>s.path);

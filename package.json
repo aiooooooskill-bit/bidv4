@@ -1,6 +1,6 @@
 {
   "name": "ooo-bidpliot",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "private": true,
   "type": "module",
   "description": "招投标工作台：AI + 招投标平台。",
@@ -41,7 +41,8 @@
     "delivery:update": "node scripts/delivery.mjs update",
     "verify:delivery": "node scripts/verify-delivery.mjs",
     "postinstall": "uv sync --locked --project business/python",
-    "release:package": "node scripts/package-release.mjs"
+    "release:package": "node scripts/package-release.mjs",
+    "verify:desktop": "node scripts/verify-desktop-host.mjs"
   },
   "dependencies": {
     "@floating-ui/dom": "1.7.6",
@@ -58,36 +59,35 @@
     "semver": "7.8.5"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "4.0.6-alpha.1",
-    "@deepseek-ai/cordis-plugin-loader": "1.0.7-alpha.1",
-    "@deepseek-ai/dsh": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-client-locale": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-client-ui-layout": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-compaction-basic": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-llm": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-persona": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-scope": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-skill-filesystem": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-subagent": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-subagent-spawn-in-process": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tool-ask-user": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tool-fs": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tool-fs-search": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tool-skill": "0.2.2-alpha.2",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.6",
+    "@deepseek-ai/dsh": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-locale": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-client-ui-layout": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-compaction-basic": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-persona": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-scope": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-skill-filesystem": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-subagent": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-subagent-spawn-in-process": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tool-ask-user": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tool-fs": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tool-fs-search": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tool-skill": "0.2.1-rc.5",
     "@types/react": "18.3.12",
     "@types/react-dom": "18.3.1",
     "esbuild": "0.28.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "typescript": "5.7.2",
-    "@deepseek-ai/dsh-compaction": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tools": "0.2.2-alpha.2",
-    "@deepseek-ai/dsh-tool-executor-native": "0.2.2-alpha.2"
+    "@deepseek-ai/dsh-compaction": "0.2.1-rc.5",
+    "@deepseek-ai/dsh-tools": "0.2.1-rc.5"
   },
   "engines": {
     "node": ">=24.9.0",
-    "dsh": ">=0.2.2-alpha.2 <0.2.3-0"
+    "dsh": ">=0.2.1-rc.5 <0.2.2-0"
   },
   "overrides": {
     "mermaid": {
@@ -96,28 +96,27 @@
     }
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "4.0.6-alpha.1",
-    "@deepseek-ai/cordis-plugin-loader": "1.0.7-alpha.1",
-    "@deepseek-ai/dsh": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-client-locale": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-client-ui-layout": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-compaction-basic": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-compaction-tool-result-pruner": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-llm": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-persona": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-scope": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-skill-filesystem": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-subagent": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-subagent-spawn-in-process": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-tool-ask-user": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-tool-fs": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-tool-fs-search": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-tool-skill": ">=0.2.2-alpha.2 <0.2.3-0",
+    "@deepseek-ai/cordis": "4.0.5",
+    "@deepseek-ai/cordis-plugin-loader": "1.0.6",
+    "@deepseek-ai/dsh": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-client-locale": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-client-ui-layout": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-compaction-basic": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-compaction-tool-result-pruner": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-llm": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-persona": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-scope": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-skill-filesystem": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-subagent": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-subagent-spawn-in-process": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-tool-ask-user": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-tool-fs": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-tool-fs-search": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-tool-skill": ">=0.2.1-rc.5 <0.2.2-0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "@deepseek-ai/dsh-compaction": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-tools": ">=0.2.2-alpha.2 <0.2.3-0",
-    "@deepseek-ai/dsh-tool-executor-native": ">=0.2.2-alpha.2 <0.2.3-0"
+    "@deepseek-ai/dsh-compaction": ">=0.2.1-rc.5 <0.2.2-0",
+    "@deepseek-ai/dsh-tools": ">=0.2.1-rc.5 <0.2.2-0"
   },
   "files": [
     "cordis.patch.yml",
@@ -154,7 +153,9 @@
     "docs/DSH-RC3-ACCEPTANCE-2026-10-27.md",
     "docs/evidence/dsh-rc3-20261027.jpg",
     "docs/DSH-ALPHA2-ACCEPTANCE-2026-11-02.md",
-    "docs/evidence/release-0.1.12-validation.json"
+    "docs/evidence/release-0.1.12-validation.json",
+    "docs/DSH-RC5-ACCEPTANCE-2026-11-02.md",
+    "docs/evidence/release-0.1.13-validation.json"
   ],
   "peerDependenciesMeta": {
     "@deepseek-ai/dsh": {
@@ -218,9 +219,6 @@
       "optional": true
     },
     "@deepseek-ai/dsh-tools": {
-      "optional": true
-    },
-    "@deepseek-ai/dsh-tool-executor-native": {
       "optional": true
     }
   }

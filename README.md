@@ -4,9 +4,9 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.12**，**DeepSeek Harness 支持范围为 `>=0.2.2-alpha.2 <0.2.3-0`**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.13**，**DeepSeek Harness 支持范围为 `>=0.2.1-rc.5 <0.2.2-0`**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
 
-0.1.12 接入 DeepSeek Harness 0.2.2-alpha.2，更新官方原生工具执行器、原生会话模型选择与安装自检，并合并目录冻结校验及诊断改进。完整 TGZ/ZIP 通过 GitHub Release 交付。升级前关闭客户端，保留独立数据目录及宿主会话、附件。
+0.1.13 修正 0.1.12 选错宿主版本线的问题，以当前桌面 DeepSeek Harness 0.2.1-rc.5 为交付目标；保留目录冻结校验及诊断改进。0.1.12 是另一条 0.2.2 alpha 分支的发行包，不能安装在 0.2.1-rc.5 桌面。完整 TGZ/ZIP 通过 GitHub Release 交付。升级前关闭客户端，保留独立数据目录及宿主会话、附件。
 
 ## 项目 Agent 对话
 
@@ -20,9 +20,9 @@
 
 ## 安装版本要求
 
-本版本支持 DeepSeek Harness `>=0.2.2-alpha.2 <0.2.3-0`，engines、DSH peer 与 doctor 使用同一范围，候选版本参与比较；要求 Cordis `4.0.6-alpha.1`、loader `1.0.7-alpha.1`，不保留旧宿主兼容。官方宿主模块由客户端提供；插件安装包不再安装一套旧核心。开发与独立目录准备通过 devDependencies 固定提供 `0.2.2-alpha.2` SDK，宿主不再限定为单个精确版本。客户预设直接挂载官方 `dsh-tool-executor-native`；模型选择通过 `agent.model.current()/select()` 读取和记录，审查输出预算仍在现有请求钩子设置。浏览器 React 由宿主客户端模块提供，不作为桌面后端 Node 依赖检查。支持范围中的后续版本只通过版本门禁，不等于已经运行验收。
+本版本支持 DeepSeek Harness `>=0.2.1-rc.5 <0.2.2-0`，engines、DSH peer 与 doctor 使用同一范围，候选版本参与比较；要求 Cordis `4.0.5`、loader `1.0.6`，不保留旧宿主兼容。官方宿主模块由客户端提供；插件安装包不再安装一套旧核心。开发与独立目录准备通过 devDependencies 固定提供 `0.2.1-rc.5` SDK，宿主不再限定为单个精确版本。客户预设使用 rc.5 官方 `tools.presentAs('native')`；模型选择读取原生待选投影和请求头，审查输出预算仍在现有请求钩子设置。不引用 0.2.2 alpha 分支的执行器或 `agent.model` API。浏览器 React 由宿主客户端模块提供，不作为桌面后端 Node 依赖检查。支持范围中的后续版本只通过版本门禁，不等于已经运行验收。
 
-完整发行物包括 `ooo-bidpliot-0.1.12.tgz`、`ooo-bidpliot-0.1.12.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24.9+、Python 3.12+、uv 和可访问依赖仓库的网络。
+完整发行物包括 `ooo-bidpliot-0.1.13.tgz`、`ooo-bidpliot-0.1.13.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24.9+、Python 3.12+、uv 和可访问依赖仓库的网络。
 
 业务数据独立保存在 `ooo-bidpliot-data/`，与插件安装树位于同一上级目录。客户端包管理安装放在 profile 下，与 `node_modules/` 并列；固定目录安装则与插件文件夹直接并列。Mac 和 Windows 均按实际安装路径推导，不硬编码用户名或磁盘盘符。插件内 `data` 只是文件系统入口（Mac/Linux 符号链接、Windows junction），不存放数据实体；升级重新建立入口，数据库、原件和成果不随插件目录替换。
 
@@ -33,13 +33,13 @@
 官方 Web profile 的命令示例：
 
 ```sh
-PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.12/ooo-bidpliot-0.1.12.tgz"
+PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.13/ooo-bidpliot-0.1.13.tgz"
 ```
 
 已有桌面安装使用客户端自身的官方 CLI，指定原 `desktop` profile，同样传入上述变量。不要向正在运行的客户端安装或更新。完整 TGZ 地址为：
 
 ```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.12/ooo-bidpliot-0.1.12.tgz
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.13/ooo-bidpliot-0.1.13.tgz
 ```
 
 TGZ 用于宿主的 URL/压缩包安装；ZIP 用于解压到固定目录后准备环境和注册。安装包包含已构建的页面、业务工具、技能、角色和模板；Node/Python 依赖仍需下载。安装时插件的 `postinstall` 使用 uv 准备锁定的 Python 环境。宿主若提示批准构建脚本，按提示批准本版本 URL 对应的 `ooo-bidpliot` 精确规则后重试，并继续传入上述变量。安装完成后启用插件，检查侧边工作台和唯一的 `ooo-bidpliot` Agent 预设。
@@ -52,7 +52,7 @@ GitHub 自动生成的 Source code 压缩包用于查看源码；完整插件安
 
 合册默认只导出可编辑Word，不安装或调用LibreOffice，不生成PDF。标题使用Office/WPS原生标题样式和多级编号；目录、材料页码引用及居中页脚使用原生域，并设置打开文档时请求自动更新。封面独立分节且不计页码；目录从第1页开始，正文及附件连续计入。实际分页和域更新由打开文件的Office/WPS完成，平台不提供预先计算的页码，也不将网页预览视为最终分页。是否自动执行更新由所用办公软件及其设置决定，文档不含自动执行宏。
 
-已验证环境为 macOS arm64、Node.js 24.15.0、Python 3.13.13、uv 和 dsh `0.2.2-alpha.2`。准备要求 Node.js 24.9+ 和 Python 3.12+。0.1.3 已改用跨平台文件锁、Windows Python 路径和 UTF-8 业务进程；**Windows 实机尚未验证**，Linux 也未进行实机验收。当前 alpha.2 的验收记录见 [DSH 适配验收](docs/DSH-ALPHA2-ACCEPTANCE-2026-11-02.md)；旧版本的压缩包及桌面验收仍保留为历史证据。模型和凭证使用现有宿主配置。
+已验证环境为 macOS arm64、Node.js 24.15.0、Python 3.13.13、uv 和 dsh `0.2.1-rc.5`。准备要求 Node.js 24.9+ 和 Python 3.12+。0.1.3 已改用跨平台文件锁、Windows Python 路径和 UTF-8 业务进程；**Windows 实机尚未验证**，Linux 也未进行实机验收。当前 rc.5 的真实桌面与安装包验收记录见 [DSH 适配验收](docs/DSH-RC5-ACCEPTANCE-2026-11-02.md)；此前 alpha.2 及旧版本的验收保留为历史证据。模型和凭证使用现有宿主配置。
 
 将交付目录放在固定且可写的位置，例如自己的应用目录。不要放入 dsh profile 的 `node_modules`，也不要把新目录切换当成更新。关闭使用该目录的宿主后，在插件目录执行：
 

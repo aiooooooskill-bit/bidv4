@@ -62,7 +62,7 @@ test('目录检查清楚拒绝不受支持的 dsh 版本和空环境',()=>fixtur
 
 test('官方门禁与doctor一致接受同系列后续DSH，拒绝旧版和下一系列',async()=>{
  const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
- for(const [version,supported] of [['0.2.2-alpha.2',true],['0.2.2-alpha.3',true],['0.2.2-rc.1',true],['0.2.2',true],['0.2.1-rc.5',false],['0.2.2-alpha.1',false],['0.2.3-alpha.1',false],['0.3.0',false]]){
+ for(const [version,supported] of [['0.2.1-rc.5',true],['0.2.1-rc.6',true],['0.2.1',true],['0.2.1-rc.4',false],['0.2.2-alpha.1',false],['0.2.2-alpha.2',false],['0.2.2',false],['0.3.0',false]]){
   const report=await checkInstallation(root,{probePython:false,dshVersion:version});
   assert.equal(report.checks.find(check=>check.name==='dsh版本').ok,supported,version+' doctor');
   assert.equal(evaluatePluginCompatibility(manifest,{},version)===undefined,supported,version+' official engines');
