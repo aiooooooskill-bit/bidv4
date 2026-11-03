@@ -26,25 +26,11 @@ from ..knowledge.search import search_assets
 from ..knowledge.availability import availability
 _SNIPPET_CHARS = 300
 
-def _kb_image_hint(file_name: str) -> str:
-    """命中条目的可用图提示（证书贴正文的入口指引；无图返回空串）。
-
-    图片产物在 knowledge/parse/<文件名（含扩展名）>/images/（每文档一目录、无 DB 记录，listdir
-    即清单）；PDF 是**整页渲染图，文件名即页码**（img_007.png=第 7 页，空白页跳过），
-    docx 是内嵌图（文件序号即顺序）。
-    """
-    from ..knowledge import images as kb_images
-    meta_path=store.kb_parse_paths(file_name)[2]
-    meta=json.loads(meta_path.read_text()) if meta_path.is_file() else {}
-    warning=('\n  '+meta['image_error']+'；已有文字保留，不能据此宣称证明图片已齐全。') if meta.get('image_error') else ''
-    try:
-        imgs = kb_images.list_images(file_name)
-    except Exception:
-        return ''
-    if not imgs:
-        return warning
-    first = imgs[0]['name']
-    return warning+f'\n  含图 {len(imgs)} 张——贴证书复印件用 docx_image_insert 插入正文节，image 参数：knowledge/parse/{file_name}/images/{first}；普通文件工具查看首图的绝对路径：{store.kb_images_dir(file_name) / first}（PDF 为整页渲染图，文件名即页码（img_007.png=第 7 页，空白页跳过）；docx 为文档内嵌图）'
+def _kb_original_hint(file_name: str) -> str:
+    """引用入口直接指向原件，预览图数量与抽取状态不决定引用完整性。"""
+    return (f'\n  完整原件引用：docx_image_insert，image=knowledge/files/{file_name}，不传 page；'
+            '一次插入全部内容（PDF 所有页、Word 全部正文/表格/图片），禁止只贴首页或首张预览图。'
+            f'原件查看绝对路径：{store.kb_files_dir() / file_name}')
 
 def _excerpt(item: dict, line_start, line_end, *, section_path=None) -> str:
     if section_path and section_path.startswith('条目信息'):
@@ -171,8 +157,8 @@ def search_company_assets(query: str, doc_type: str | None=None) -> str:
 
     Returns:
         命中列表（统一命中头：角色｜类型｜确认状态｜时效；行号区间、摘录、引用键）与
-        精读指引；条目含图（PDF 整页渲染 / docx 内嵌图）时附图片路径——证书复印件用 docx_image_insert 贴进
-        正文节。纪律：**来自历史标书的业绩描述可引用但须与合同/验收核对**；「拟投入
+        精读指引与完整原件路径；证书复印件用 docx_image_insert 一次插入整个原件，不能只贴首页。
+        纪律：**来自历史标书的业绩描述可引用但须与合同/验收核对**；「拟投入
         N 人」「承诺 7×24」类是当年投标承诺，**不是公司现状事实**；数字一律重核；
         过期证书不得写为有效；标注「AI 整理」的说明段引用数字须回原文核对；
         招标要求带时间限定（近三年/近三个会计年度/自某日以来/N 个月内）时，
@@ -220,7 +206,7 @@ def search_company_assets(query: str, doc_type: str | None=None) -> str:
                 state=availability(item)
                 issue = ('；'+('历史机器处理记录（人工内容已可用）：' if state['source']=='human' else '机器处理失败：')+item['error']) if item.get('error') else ''
                 key=f"kb:{item['id']}:identity"
-                out.append(f"- {item['file_name']}［原件定位｜{state['label']}］{issue}\n  仅名称/类型命中，不是事实证据；用 read_company_asset({item['id']}) 读取可用内容并核对原件。引用键：{key}"+_kb_image_hint(item['file_name']))
+                out.append(f"- {item['file_name']}［原件定位｜{state['label']}］{issue}\n  仅名称/类型命中，不是事实证据；用 read_company_asset({item['id']}) 读取可用内容并核对原件。引用键：{key}"+_kb_original_hint(item['file_name']))
                 ev.append({'key':key,'file':item['file_name'],'hash':item['file_hash'],'role':role,'type':item.get('doc_type'),'review':item['review_status'],'usable':state['usable']})
                 continue
             from ..services.asset_usage import record_read
@@ -239,7 +225,7 @@ def search_company_assets(query: str, doc_type: str | None=None) -> str:
                 ai_note = ''
                 key = f"kb:{item['id']}:L{h.get('line_start')}"
             linked = _linked_evidence(item, items) if role == 'fact-candidate' else ''
-            out.append(f"- {item['file_name']}［{header}］{ai_note}{linked}{section}{_loc(h)}\n  摘录：{_excerpt(item, h.get('line_start'), h.get('line_end'), section_path=h.get('section_path'))}\n  引用键：{key}" + _kb_image_hint(item['file_name']))
+            out.append(f"- {item['file_name']}［{header}］{ai_note}{linked}{section}{_loc(h)}\n  摘录：{_excerpt(item, h.get('line_start'), h.get('line_end'), section_path=h.get('section_path'))}\n  引用键：{key}" + _kb_original_hint(item['file_name']))
             ev.append({'key': key, 'file': item['file_name'], 'hash': item['file_hash'], 'role': role, 'type': item.get('doc_type'), 'lines': [h.get('line_start'), h.get('line_end')], 'page': h.get('page_start'), 'review': item['review_status'], 'freshness': _fresh(item)})
         out.append('精读指引：用 read_company_asset(item_id) 读取当前核对字段、出处及核对全文；当前公司事实以人工核对值为准。原件识别文字用于对照。')
         out.append(_evidence_line(ev))

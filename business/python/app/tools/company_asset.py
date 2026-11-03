@@ -19,5 +19,5 @@ def read_company_asset(item_id:str)->str:
         text=asset['corrected_text'] if asset['corrected_text'] is not None else md.read_text() if md.is_file() else ''
         from ..services.asset_usage import record_read
         record_read(ctx.task_id,ctx.conversation_id,item)
-        return json.dumps({'id':item_id,'revision':item['revision'],'file_name':item['file_name'],'availability':availability(item),'parse_status':item['parse_status'],'extract_status':item['extract_status'],'processing_error':item.get('error'),'review_status':item['review_status'],'business':json.loads(item['business_metadata'] or '{}'),'text':text},ensure_ascii=False)
+        return json.dumps({'id':item_id,'revision':item['revision'],'file_name':item['file_name'],'original':{'image':f"knowledge/files/{item['file_name']}",'instruction':'用 docx_image_insert 一次插入完整原件；PDF 全页、Word 全部正文/表格/图片，不传 page，不只贴首页。'},'availability':availability(item),'parse_status':item['parse_status'],'extract_status':item['extract_status'],'processing_error':item.get('error'),'review_status':item['review_status'],'business':json.loads(item['business_metadata'] or '{}'),'text':text},ensure_ascii=False)
     except Exception as error:return '[资料读取失败] '+str(error)

@@ -21,9 +21,9 @@ docx 翻译成文本世界（读视图/编号寻址），写入全由程序机�
   行号区间」元素级拷进正文节；现场跑解析注册表拿 element_lines 定位（确定性、
   不依赖任务侧解析落盘）；格式跟随与格式件（投标函/一览表等模板填充类）场景，
   与素材注入共用同一套迁移引擎
-- docx_image_insert：单图插入——证书复印件/扫描件/截图等独立图片（docx 直出
-  管线的放图通道；素材块/招标件内的图走注入、不经此工具）。图源=知识库图片
-  （PDF 整页渲染/ docx 内嵌图）/任务 sources 图片/PDF 原件按页现场渲染；全宽居中、段落标记+内容双插入修订
+- docx_image_insert：公司资料完整原件/独立图片插入（docx 直出
+  管线的放图通道；素材块/招标件内的图走注入、不经此工具）。公司资料始终读取
+  原件：PDF 全页渲染、DOCX 全部正文元素；图片全宽居中、段落标记+内容双插入修订
   （与插段同构——拒绝修订=整段含图消失）
 - docx_section_revise：定向修订，全部落成 Word 原生修订标记（w:ins/w:del，
   author=ooo-bidpliot）——用户在 Word 审阅界面逐条接受/拒绝；正文段落按
@@ -139,6 +139,7 @@ def _docx_path_lock(path: Path):
         yield
 
 _MATERIAL_VAR = 'bidv4.materials'
+_ORIGINAL_VAR_PREFIX = 'bidv4.original.'
 
 def material_usage(doc) -> list[str]:
     nodes = doc.settings.element.findall(qn('w:docVars'))
@@ -803,6 +804,10 @@ def _blank_from(template: Path) -> Document:
     for child in list(body):
         if child.tag != qn('w:sectPr'):
             body.remove(child)
+    for variables in doc.settings.element.findall(qn('w:docVars')):
+        for variable in list(variables):
+            if (variable.get(qn('w:name')) or '').startswith(_ORIGINAL_VAR_PREFIX):
+                variables.remove(variable)
     return doc
 
 def _new_document() -> Document:
@@ -1670,7 +1675,7 @@ def _place_after_anchor(doc: Document, p_el, after: str, label: str) -> tuple[st
             idx = int((after or '').strip().lstrip('Pp'))
         except ValueError:
             return (f'{label} after 须为段落号（如 5 或 P5，以 docx_section_read 视图为准）', '')
-        paras = doc.paragraphs
+        paras = [p for p in doc.paragraphs if p._p is not p_el]
         if not 1 <= idx <= len(paras):
             return (f'{label} 段落号超范围：after={idx}，本节视图共 {len(paras)} 段', '')
         paras[idx - 1]._p.addnext(p_el)
@@ -1682,26 +1687,53 @@ def _place_after_anchor(doc: Document, p_el, after: str, label: str) -> tuple[st
         doc.element.body.append(p_el)
     return (None, '节末')
 
+def _insert_original_docx(doc, src: Path, after: str) -> tuple[str | None, str, str]:
+    """复用元素迁移引擎，完整拷入公司 Word 原件，不经过预览图片筛选。"""
+    original = Document(str(src))
+    copied = []
+    images = 0
+    heading_ids = _heading_style_ids(original)
+    for element in original.element.body:
+        if element.tag == qn('w:sectPr'):
+            continue
+        new = deepcopy(element)
+        _strip_inner_sectpr(new)
+        _strip_copy_residue(new, heading_ids)
+        images += _migrate_images(original, doc, new)
+        copied.append(new)
+    if not copied:
+        return '[插图失败] Word 原件没有正文内容', '', ''
+    err, where = _place_after_anchor(doc, copied[0], after, '[插图失败]')
+    if err:
+        return err, '', ''
+    for previous, following in zip(copied, copied[1:]):
+        previous.addnext(following)
+    _merge_count, remap = _merge_missing_styles(original, doc, copied)
+    _merge_missing_numbering(original, doc, copied, style_id_remap=remap)
+    _merge_missing_comments(original, doc, copied)
+    paragraphs = sum(1 for el in copied for _ in el.iter(qn('w:p')))
+    tables = sum(1 for el in copied for _ in el.iter(qn('w:tbl')))
+    return None, where, f'全部正文（段落 {paragraphs} 个、表格 {tables} 张、图片 {images} 张）'
+
+
 @_tool_guard('插图')
 def docx_image_insert(dest: str, image: str, after: str='', page: int=1) -> str:
-    """把一张图片插入正文节 docx（证书复印件/扫描件/系统截图——独立图片进正文的唯一
-    通道，自写文字无法带图）。
+    """把公司资料完整原件或独立图片插入正文节 docx（证书复印件/扫描件/系统截图）。
 
-    图片作为新段落落在指定位置：全宽适配（页宽减边距）、居中、带插入修订标记
-    （Word 审阅可逐张接受/拒绝）。多张图=多次调用。
+    公司资料始终完整插入：PDF 全部页面（含空白页），DOCX 全部正文、表格、图片。
+    即使传入公司资料的某张预览图，也会定位原件完整插入；同一原件在同一节只插一次。
+    PDF 每页独立成图、保持页序；图片全宽适配、居中、带插入修订标记。
     Args:
         dest: 目标节文件（须已用 docx_section_create 创建）
         image: 图源业务参数（不使用普通文件工具的绝对路径，三类来源）：①知识库图片（相对数据根目录下的workspace/）
-               knowledge/parse/<文件名（含扩展名）>/images/img_001.png——search_company_assets
-               命中行会给出路径；PDF 是整页渲染图、文件名即页码（img_007.png=第 7 页，
-               空白页跳过），docx 是文档内嵌图；
+               knowledge/files/<原文件名>——search_company_assets 命中行会给出路径；
+               knowledge/parse/<文件名>/images/ 下的预览图同样按完整原件插入；
                ②当前任务上传图 sources/<文件名>，相对当前任务目录；
-               ③PDF 原件（knowledge/files/xxx.pdf 或 sources/xxx.pdf）——传页号
-               现场渲染那一页为图。支持 png/jpg/bmp/gif/webp（webp 自动转 png
-               插入）；docx 原件不支持（换 PDF 或图片版）。
+               ③任务 PDF 原件 sources/xxx.pdf——按 page 指定的单页插入。
+               支持 png/jpg/bmp/gif/webp（webp 自动转 png 插入）；公司 DOCX 原件直接拷入。
         after: 插在该段落号之后（P 序号以 docx_section_read 视图为准，可带 P 前缀）；
                留空=追加到节末尾
-        page: image 指向 PDF 时的页号（1 起；图片文件忽略此参数）
+        page: 仅任务 sources/ PDF 的单页页号（1 起，默认 1）；公司资料忽略此参数，始终完整插入。
     """
     task_id = _task_id()
     if not task_id:
@@ -1727,55 +1759,89 @@ def docx_image_insert(dest: str, image: str, after: str='', page: int=1) -> str:
         src = (root / '/'.join(segs)).resolve()
         if root != src and root not in src.parents:
             return f'[插图失败] 路径越界或不在工作区内：{image}（图源=知识库图片 knowledge/parse/…/images/ 或任务 sources/ 下的文件）'
-    if not src.is_file():
-        return f'[插图失败] 图片文件不存在：{image}（以检索命中行给出的路径或任务 sources/ 清单为准）'
     from ..company_store import require_asset_path
     asset=require_asset_path(task_id,src)
+    if asset:
+        from ..knowledge import store
+        item = db.kb_get_item(asset['id'])
+        src = (store.kb_files_dir() / item['file_name']).resolve()
+        require_asset_path(task_id, src)
+        image = f"knowledge/files/{item['file_name']}"
+    if not src.is_file():
+        return f'[插图失败] 原件或图片文件不存在：{image}（不能用预览图代替完整原件）'
     suffix = src.suffix.lower()
-    if suffix == '.pdf':
-        n_pages = pdfium_kit.page_count(src)
-        if not 1 <= int(page) <= n_pages:
-            return f'[插图失败] 页号超范围：该 PDF 共 {n_pages} 页（page 须 1-{n_pages}）'
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tf:
-            tmp_png = Path(tf.name)
-        try:
-            render_page_png(src, int(page), tmp_png)
-            data = tmp_png.read_bytes()
-        finally:
-            tmp_png.unlink(missing_ok=True)
-        src_label = f'{image} 第 {page} 页（按页渲染）'
-    elif suffix in ('.png', '.jpg', '.jpeg', '.bmp', '.gif'):
-        data = src.read_bytes()
-        src_label = image
-    elif suffix == '.webp':
-        from PIL import Image
-        try:
-            with Image.open(src) as im:
-                buf = BytesIO()
-                im.convert('RGBA').save(buf, format='PNG')
-        except Exception:
-            return f'[插图失败] {image} 不是有效的 webp 图片（无法解码）——请确认文件完好，或换 png/jpg 上传'
-        data = buf.getvalue()
-        src_label = f'{image}（webp 已转 png）'
-    else:
-        return f"[插图失败] 「{image}」不是可插入的图片或 PDF（{suffix or '无后缀'}）——docx 原件不作图源，请传 PDF 或图片版"
     with _docx_path_lock(dst):
         doc = Document(str(dst))
+        variable_name = _ORIGINAL_VAR_PREFIX + asset['id'] if asset else None
+        digest = hashlib.sha256(src.read_bytes()).hexdigest() if asset else None
+        variables = doc.settings.element.find(qn('w:docVars'))
+        if variable_name and variables is not None:
+            previous = next((v for v in variables if v.get(qn('w:name')) == variable_name), None)
+            if previous is not None:
+                if previous.get(qn('w:val')) != digest:
+                    return '[插图失败] 已插入的公司资料原件已变化，请重建本节后重新引用'
+                return f'[已插图] {image} 已完整插入 work/{rel}，未重复插入'
         before = _flatten_rejected(doc)
-        try:
-            p_el = _tracked_image_paragraph(doc, data)
-        except ValueError as e:
-            return f'[插图失败] {e}——请确认文件是完好的 png/jpg 图片'
-        err, where = _place_after_anchor(doc, p_el, after, '[插图失败]')
-        if err:
-            return err
-        if _flatten_rejected(doc) != before:
+        if suffix == '.docx' and asset:
+            err, where, stat = _insert_original_docx(doc, src, after)
+            if err:
+                return err
+            src_label = image
+        else:
+            src_label = image
+            if suffix == '.pdf':
+                n_pages = pdfium_kit.page_count(src)
+                if not n_pages:
+                    return '[插图失败] PDF 原件没有页面'
+                if not asset and not 1 <= page <= n_pages:
+                    return f'[插图失败] 页号超范围：该 PDF 共 {n_pages} 页（page 须 1-{n_pages}）'
+                pages = [page] if not asset else range(1, n_pages + 1)
+                src_label += f' 第 {page} 页（按页渲染）' if not asset else f' 全部 {n_pages} 页'
+            elif suffix in ('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp'):
+                pages = [None]
+            else:
+                return f"[插图失败] 「{image}」不是可插入的公司资料原件或图片（{suffix or '无后缀'}）"
+            previous = None
+            with tempfile.TemporaryDirectory(prefix='bid-original-') as directory:
+                tmp_png = Path(directory) / 'page.png'
+                for pno in pages:
+                    if pno is not None:
+                        render_page_png(src, pno, tmp_png)
+                        data = tmp_png.read_bytes()
+                    elif suffix == '.webp':
+                        from PIL import Image
+                        with Image.open(src) as im:
+                            buf = BytesIO()
+                            im.convert('RGBA').save(buf, format='PNG')
+                        data = buf.getvalue()
+                        src_label += '（webp 已转 png）'
+                    else:
+                        data = src.read_bytes()
+                    p_el = _tracked_image_paragraph(doc, data)
+                    if previous is None:
+                        err, where = _place_after_anchor(doc, p_el, after, '[插图失败]')
+                        if err:
+                            return err
+                    else:
+                        p_el.get_or_add_pPr().get_or_add_pageBreakBefore().val = True
+                        previous.addnext(p_el)
+                    previous = p_el
+            stat = f'图片 {len(pages)} 张，全宽居中、带插入修订标记'
+        if suffix != '.docx' and _flatten_rejected(doc) != before:
             return '[插图失败] 修订标记自校验未通过（未保存，文件未变）——请重试或换图源'
+        if variable_name:
+            if variables is None:
+                variables = OxmlElement('w:docVars')
+                doc.settings.element.append(variables)
+            variable = OxmlElement('w:docVar')
+            variable.set(qn('w:name'), variable_name)
+            variable.set(qn('w:val'), digest)
+            variables.append(variable)
         _atomic_save(doc, dst)
     if asset:
         from ..services.asset_usage import record_read
         record_read(task_id,runctx.current_run().conversation_id,asset)
-    return f'[已插图] {src_label} → work/{rel}（{where}）：图片 1 张，全宽居中、带插入修订标记\n下一步：docx_section_read 确认位置（图片段显示〔图×1〕）；需要图注可在该段前后用 docx_section_revise 插文字段。'
+    return f'[已插图] {src_label} → work/{rel}（{where}）：{stat}\n下一步：docx_section_read 确认完整内容与位置；需要图注可用 docx_section_revise 插文字段。'
 _HTML_MAX_BYTES = 100 * 1024
 _SCRIPT_BLOCK_RE = re.compile('<script\\b[^>]*>.*?</script\\s*>|<script\\b[^>]*/\\s*>', re.I | re.S)
 _IFRAME_TAG_RE = re.compile('</?iframe\\b[^>]*/?\\s*>', re.I)
