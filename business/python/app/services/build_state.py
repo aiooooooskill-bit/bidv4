@@ -71,13 +71,12 @@ def section_basis(tid, section):
                 if found:
                     return found
     doc = next(d for d in content['response_documents'] if document_name(d) == section['volume'])
-    versions = page_flow.input_versions(tid)
     # 编号和树序只影响合册；正文依据按章节内容及共享规划比对。
     root = artifact_store.work_dir(tid)
     shared = {f: page_flow.file_hash(root / f) if (root / f).is_file() else None for f in ('body/写作指引.md', 'body/关键事实与承诺.md')}
     from .asset_usage import basis as asset_basis
     from .source_usage import basis as reference_basis
-    return page_flow.digest({'references':reference_basis(tid,['guide','promises',section['path']]), 'assets':asset_basis(tid,['guide','promises',section['path']]), 'source_analysis': versions['outline'], 'planning': shared, 'bidder':bidder.basis(tid),
+    return page_flow.digest({'references':reference_basis(tid,['guide','promises',section['path']]), 'assets':asset_basis(tid,['guide','promises',section['path']]), 'source_analysis': page_flow.outline_input_version(tid), 'planning': shared, 'bidder':bidder.basis(tid),
                              'page_target': content.get('page_target'), 'volume': section['volume'],
                              'scope': doc.get('scope'), 'node': find(doc.get('directory', []))})
 
@@ -301,7 +300,7 @@ def volume_basis(tid, doc):
     from .document_format import inspect_rules
     return page_flow.digest({'references':reference_basis(tid,['guide','promises',*paths]), 'formatting':inspect_rules(tid), 'assets':asset_basis(tid,['guide','promises',*paths]), 'document': doc, 'numbering': content.get('numbering'),
                              'page_target': content.get('page_target'),
-                             'source_analysis': page_flow.input_versions(tid)['outline'], 'bidder':bidder.basis(tid),
+                             'source_analysis': page_flow.outline_input_version(tid), 'bidder':bidder.basis(tid),
                              'files': {p: page_flow.file_hash(root / p) if (root / p).is_file() else None for p in paths}})
 
 

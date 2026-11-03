@@ -48,6 +48,12 @@ def file_hash(path: Path):
 def analysis_source_version(tid):
     return digest(source_basis(tid))
 
+def outline_input_version(tid):
+    """正文核对只需要解读版本，不展开全项目制作和审查依赖。"""
+    root = artifact_store.work_dir(tid)
+    analysis = {p.relative_to(root).as_posix(): file_hash(p) for p in (root / 'analysis').glob('*.md')}
+    return digest({**source_basis(tid), 'analysis': analysis})
+
 def source_basis(tid):
     """Only selected tender inputs define interpretation and downstream freshness."""
     selected = source_selection(tid)
