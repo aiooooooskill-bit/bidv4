@@ -27,7 +27,8 @@ def schemas():
 
 def state(tid):
     task=page_flow.require_task(tid);d=page_flow.directory(tid);work=artifact_store.work_dir(tid)
-    return {'task':task_stage.enrich([task])[0],'files':page_flow.files(tid),'directory':d,'source_selection':page_flow.source_selection(tid),'body_files':[p.relative_to(work).as_posix() for p in work.joinpath('body').rglob('*.docx')], **build_state.snapshot(tid), 'bidder':__import__('app.services.bidder',fromlist=['status']).status(tid), 'review':review.snapshot(tid), 'input_versions':page_flow.input_versions(tid)}
+    versions=page_flow.input_versions(tid)
+    return {'task':task_stage.enrich([task])[0],'files':page_flow.files(tid),'directory':d,'source_selection':page_flow.source_selection(tid),'body_files':[p.relative_to(work).as_posix() for p in work.joinpath('body').rglob('*.docx')], **build_state.snapshot(tid,versions), 'bidder':__import__('app.services.bidder',fromlist=['status']).status(tid), 'review':review.snapshot(tid), 'input_versions':versions}
 
 def tool_context():
     runctx.set_run(request.get('session_id',''),request.get('call_id',''),request.get('task_id'))

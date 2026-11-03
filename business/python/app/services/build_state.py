@@ -81,10 +81,12 @@ def section_basis(tid, section):
                              'scope': doc.get('scope'), 'node': find(doc.get('directory', []))})
 
 
-def snapshot(tid):
+def snapshot(tid, versions=None):
     stored = read(tid)
     root = artifact_store.work_dir(tid)
-    planning = {kind: 'missing' if not (root / path).is_file() else 'ready' if stored.get(kind) == preparation_stamp(tid, kind) else 'stale' if stored.get(kind) else 'missing'
+    versions = page_flow.input_versions(tid) if versions is None else versions
+    stamps = {kind: preparation_stamp(tid, kind, versions) for kind in ('guide', 'promises')}
+    planning = {kind: 'missing' if not (root / path).is_file() else 'ready' if stored.get(kind) == stamps[kind] else 'stale' if stored.get(kind) else 'missing'
                 for kind, path in [('guide', 'body/写作指引.md'), ('promises', 'body/关键事实与承诺.md')]}
     guide_path = root / 'body/写作指引.md'
     reference_issues = guide_reference_issues(tid, guide_path.read_text()) if guide_path.is_file() else []
@@ -94,7 +96,7 @@ def snapshot(tid):
     labels = {'sources': '招标来源', 'analysis': '招标解读', 'directory': '目录内容或目标篇幅', 'guide': '写作指引', 'bidder':'投标主体或代表', 'assets':'已采用公司资料', 'references':'已采用参考来源'}
     for kind in ('guide', 'promises'):
         previous = stored.get(kind)
-        current = preparation_stamp(tid, kind)
+        current = stamps[kind]
         changes[kind] = []
         if planning[kind] == 'stale':
             old_inputs = previous.get('inputs', {}) if isinstance(previous, dict) else {}
@@ -123,7 +125,7 @@ def snapshot(tid):
             'volume_states': volume_states(tid, stored)}
 
 
-def preparation_stamp(tid, stage):
+def preparation_stamp(tid, stage, versions=None):
     root = artifact_store.work_dir(tid)
     path = root / ('body/写作指引.md' if stage == 'guide' else 'body/关键事实与承诺.md')
     directory = page_flow.directory(tid)
@@ -142,7 +144,8 @@ def preparation_stamp(tid, stage):
     if stage == 'promises':
         guide = root / 'body/写作指引.md'
         inputs['guide'] = page_flow.file_hash(guide) if guide.is_file() else None
-    return {'basis': page_flow.input_versions(tid)[stage], 'hash': page_flow.file_hash(path) if path.is_file() else None, 'inputs': inputs}
+    versions = page_flow.input_versions(tid) if versions is None else versions
+    return {'basis': versions[stage], 'hash': page_flow.file_hash(path) if path.is_file() else None, 'inputs': inputs}
 
 
 def promise_values(content):

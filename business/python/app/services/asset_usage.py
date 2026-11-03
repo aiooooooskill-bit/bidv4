@@ -1,13 +1,16 @@
 """Versions of company assets consumed by preparation files and chapters."""
+import json
 from .. import artifact_store, company_store as cs
 from . import build_state
 
 
 def current_assets(assets):
-    result = {}
-    for kid in assets:
-        state = cs.asset_state(kid)
-        result[kid] = {'revision': state['revision'], 'company_id': state['company_id']}
+    result = {kid: {'revision': 0, 'company_id': None} for kid in assets}
+    if result:
+        rows = cs.read('SELECT item_id,revision,company_id FROM company_assets WHERE item_id IN (SELECT value FROM json_each(?))',
+                       (json.dumps(list(result)),))
+        for row in rows:
+            result[row['item_id']] = {'revision': row['revision'], 'company_id': row['company_id']}
     return result
 
 
@@ -94,7 +97,9 @@ def inherit_reads(tid, session_id, from_session_id, seed=False):
 
 def basis(tid, paths):
     dependencies = build_state.read(tid).get('asset_dependencies', {})
-    return {path: current_assets(dependencies[path]['assets']) for path in paths if path in dependencies}
+    selected = {path: dependencies[path]['assets'] for path in paths if path in dependencies}
+    assets = current_assets({kid for items in selected.values() for kid in items})
+    return {path: {kid: assets[kid] for kid in items} for path, items in selected.items()}
 
 
 def stale(tid, bidder_revision):
