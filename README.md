@@ -4,9 +4,9 @@
 
 插件只注册一个客户可选择的 `ooo-bidpliot` Agent 预设。每个项目持久绑定一个主会话：从对话创建时绑定当前会话，从页面首次执行时创建并绑定；后续解析、解读、制作、审查与页面自动流程都在该主会话继续。原有目录／正文写手与图片识别子任务、业务方法和校验保留，不暴露独立业务执行或审查模式。
 
-插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.13**，**DeepSeek Harness 支持范围为 `>=0.2.1-rc.5 <0.2.2-0`**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
+插件名称为 `ooo-bidpliot`，描述为「招投标工作台：AI + 招投标平台。」。当前**插件版本为 0.1.14**，**DeepSeek Harness 支持范围为 `>=0.2.1-rc.5 <0.2.2-0`**；这是两个独立的版本号。修改内容见 [版本说明](CHANGELOG.md)。数据库与生成文件保存在安装树旁的 `ooo-bidpliot-data/`，插件内 `data` 仅为目录入口。交付组成与历史验收见 [交付核对](docs/PLUGIN-DELIVERY-2026-10-13.md)。
 
-0.1.13 修正 0.1.12 选错宿主版本线的问题，以当前桌面 DeepSeek Harness 0.2.1-rc.5 为交付目标；保留目录冻结校验及诊断改进。0.1.12 是另一条 0.2.2 alpha 分支的发行包，不能安装在 0.2.1-rc.5 桌面。完整 TGZ/ZIP 通过 GitHub Release 交付。升级前关闭客户端，保留独立数据目录及宿主会话、附件。
+0.1.14 修复公司资料在标书中只插入首页的问题：PDF 按页序插入全部页面，Word 插入全部正文、表格和图片；重复引用同一原件不会在同一节重复插入。包含归档项目隔离、操作提示恢复和详情核对性能改进。宿主支持范围沿用 0.1.13 的 DeepSeek Harness 0.2.1-rc.5 版本线。完整 TGZ/ZIP 通过 GitHub Release 交付。升级前关闭客户端，保留独立数据目录及宿主会话、附件。
 
 ## 项目 Agent 对话
 
@@ -22,7 +22,7 @@
 
 本版本支持 DeepSeek Harness `>=0.2.1-rc.5 <0.2.2-0`，engines、DSH peer 与 doctor 使用同一范围，候选版本参与比较；要求 Cordis `4.0.5`、loader `1.0.6`，不保留旧宿主兼容。官方宿主模块由客户端提供；插件安装包不再安装一套旧核心。开发与独立目录准备通过 devDependencies 固定提供 `0.2.1-rc.5` SDK，宿主不再限定为单个精确版本。客户预设使用 rc.5 官方 `tools.presentAs('native')`；模型选择读取原生待选投影和请求头，审查输出预算仍在现有请求钩子设置。不引用 0.2.2 alpha 分支的执行器或 `agent.model` API。浏览器 React 由宿主客户端模块提供，不作为桌面后端 Node 依赖检查。支持范围中的后续版本只通过版本门禁，不等于已经运行验收。
 
-完整发行物包括 `ooo-bidpliot-0.1.13.tgz`、`ooo-bidpliot-0.1.13.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24.9+、Python 3.12+、uv 和可访问依赖仓库的网络。
+完整发行物包括 `ooo-bidpliot-0.1.14.tgz`、`ooo-bidpliot-0.1.14.zip` 和 `SHA256SUMS.txt`，由现有打包脚本生成，以 [GitHub Releases](https://github.com/aiooooooskill-bit/bidv4/releases) 的对应版本附件与校验值为准。安装需要 Node.js 24.9+、Python 3.12+、uv 和可访问依赖仓库的网络。
 
 业务数据独立保存在 `ooo-bidpliot-data/`，与插件安装树位于同一上级目录。客户端包管理安装放在 profile 下，与 `node_modules/` 并列；固定目录安装则与插件文件夹直接并列。Mac 和 Windows 均按实际安装路径推导，不硬编码用户名或磁盘盘符。插件内 `data` 只是文件系统入口（Mac/Linux 符号链接、Windows junction），不存放数据实体；升级重新建立入口，数据库、原件和成果不随插件目录替换。
 
@@ -33,13 +33,13 @@
 官方 Web profile 的命令示例：
 
 ```sh
-PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.13/ooo-bidpliot-0.1.13.tgz"
+PNPM_CONFIG_SIDE_EFFECTS_CACHE=false dsh plugin --profile web add "https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.14/ooo-bidpliot-0.1.14.tgz"
 ```
 
 已有桌面安装使用客户端自身的官方 CLI，指定原 `desktop` profile，同样传入上述变量。不要向正在运行的客户端安装或更新。完整 TGZ 地址为：
 
 ```text
-https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.13/ooo-bidpliot-0.1.13.tgz
+https://github.com/aiooooooskill-bit/bidv4/releases/download/v0.1.14/ooo-bidpliot-0.1.14.tgz
 ```
 
 TGZ 用于宿主的 URL/压缩包安装；ZIP 用于解压到固定目录后准备环境和注册。安装包包含已构建的页面、业务工具、技能、角色和模板；Node/Python 依赖仍需下载。安装时插件的 `postinstall` 使用 uv 准备锁定的 Python 环境。宿主若提示批准构建脚本，按提示批准本版本 URL 对应的 `ooo-bidpliot` 精确规则后重试，并继续传入上述变量。安装完成后启用插件，检查侧边工作台和唯一的 `ooo-bidpliot` Agent 预设。
@@ -98,7 +98,7 @@ npm run build
 node scripts/delivery.mjs export /absolute/new-delivery
 ```
 
-白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁、说明和测试；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。`npm run release:package` 生成当前版本完整 TGZ/ZIP 和 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；源码压缩包不保证包含已构建的 dist，应使用打包脚本生成的完整交付物。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
+白名单携带运行代码、完整前端资源、技能与角色、基础 Word 模板、依赖锁和说明；测试套件、夹具及测试入口脚本仅保留本地，不进入发行包；排除业务数据、备份、缓存、Node/Python 本机环境。收件人仍需执行目录准备。`npm run release:package` 生成当前版本完整 TGZ/ZIP 和 SHA-256 校验文件。下载并解压到固定目录后，按上面的本地目录安装步骤准备环境并注册插件；源码压缩包不保证包含已构建的 dist，应使用打包脚本生成的完整交付物。安装包包含 DSH Agent 预设、原生 Chat 接入、页面和后端、完整 PDF/图表资源、Python 业务工具、全部技能与角色及 Word 模板。Node/Python 运行环境和依赖由准备脚本安装，不携带本机环境或模型凭证。
 
 ## 页面流程
 

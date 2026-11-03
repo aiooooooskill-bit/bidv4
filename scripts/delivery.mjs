@@ -4,13 +4,13 @@ import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 import {assertInstallation,assertStopped} from '../server/installation.mjs';
 const root=fileURLToPath(new URL('..',import.meta.url));
-const excluded=new Set(['data','backups','node_modules','.venv','__pycache__','.pytest_cache','.git','.DS_Store']);
+const excluded=new Set(['data','backups','node_modules','.venv','__pycache__','.pytest_cache','.git','.DS_Store','tests','__tests__']);
 async function absent(path){try{await lstat(path);throw new Error('目标目录已经存在：'+path)}catch(error){if(error.code!=='ENOENT')throw error}}
 async function copyDelivery(source,target){
  const pkg=JSON.parse(await readFile(join(source,'package.json'),'utf8'));if(pkg.name!=='ooo-bidpliot'||!Array.isArray(pkg.files))throw new Error('交付来源缺少 ooo-bidpliot 文件白名单');
  for(const item of ['package.json','package-lock.json',...pkg.files]){
   if(item.includes('..')||item.includes('*')||excluded.has(item.split('/')[0]))throw new Error('不允许的交付文件规则：'+item);
-  await cp(join(source,item),join(target,item),{recursive:true,dereference:false,filter:async path=>{const rel=relative(source,path),parts=rel.split(sep);if(parts.some(p=>excluded.has(p))||rel.endsWith('.pyc')||rel.endsWith('.bak')||rel.endsWith('.db'))return false;if((await lstat(path)).isSymbolicLink())throw new Error('交付源码不允许符号链接：'+rel);return true}});
+  await cp(join(source,item),join(target,item),{recursive:true,dereference:false,filter:async path=>{const rel=relative(source,path),parts=rel.split(sep),name=parts.at(-1);if(parts.some(p=>excluded.has(p))||rel.endsWith('.pyc')||rel.endsWith('.bak')||rel.endsWith('.db')||/\.(?:test|spec)\./.test(name)||/^test_.*\.py$|_test\.py$|^conftest\.py$/.test(name)||parts[0]==='scripts'&&/^test-.*\.mjs$/.test(name))return false;if((await lstat(path)).isSymbolicLink())throw new Error('交付源码不允许符号链接：'+rel);return true}});
  }
  const files=[];
  async function walk(dir){for(const entry of await readdir(dir,{withFileTypes:true})){const path=join(dir,entry.name);if(entry.isDirectory())await walk(path);else files.push(relative(target,path).split(sep).join('/'))}}await walk(target);
